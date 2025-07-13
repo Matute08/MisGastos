@@ -1,0 +1,98 @@
+{
+  "name": "MisGastos - Control de Gastos",
+  "short_name": "MisGastos",
+  "description": "Aplicación para gestionar gastos personales",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "/miwalletlogo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/miwalletlogo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/miwalletlogo.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "/miwalletlogo.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/miwalletlogo.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/miwalletlogo.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "/miwalletlogo.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "/miwalletlogo.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshot-narrow.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nuevo Gasto",
+      "short_name": "Gasto",
+      "description": "Agregar un nuevo gasto",
+      "url": "/expenses?action=new",
+      "icons": [
+        {
+          "src": "/miwalletlogo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Ver resumen de gastos",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/miwalletlogo.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+} 
