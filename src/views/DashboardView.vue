@@ -263,33 +263,38 @@ function isDirectCashOrTransfer(expense) {
   return isDirect && isCashOrTransfer
 }
 
-// Total del mes/año: cuotas a pagar + gastos directos en efectivo/transferencia
+// Total del mes/año: cuotas a pagar + todos los gastos
 const totalExpensesView = computed(() => {
   const now = new Date()
   const currentMonth = now.getMonth() + 1
   const currentYear = now.getFullYear()
-  // Cuotas a pagar en el mes/año actual
-  const installments = expensesStore.upcomingInstallments.filter(inst => {
-    const due = parseISO(inst.due_date)
-    if (isAnnual.value) {
-      return due.getFullYear() === currentYear && inst.payment_status_id !== 3
-    } else {
-      return due.getMonth() + 1 === currentMonth && due.getFullYear() === currentYear && inst.payment_status_id !== 3
-    }
-  })
-  // Gastos directos en efectivo/transferencia
-  const direct = expensesStore.expenses.filter(expense => {
-    const date = parseISO(expense.purchase_date)
-    if (!isDirectCashOrTransfer(expense)) return false
-    if (isAnnual.value) {
+  
+  if (isAnnual.value) {
+    // Vista anual: solo todos los gastos del año (ya incluyen las cuotas)
+    const annualExpenses = expensesStore.expenses.filter(expense => {
+      const date = parseISO(expense.purchase_date)
       return date.getFullYear() === currentYear
-    } else {
+    })
+    const annualTotal = annualExpenses.reduce((sum, exp) => sum + exp.amount, 0)
+    
+    return annualTotal
+  } else {
+    // Vista mensual: gastos del mes + cuotas que vencen en el mes
+    const monthlyExpenses = expensesStore.expenses.filter(expense => {
+      const date = parseISO(expense.purchase_date)
       return date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear
-    }
-  })
-  const totalInstallments = installments.reduce((sum, inst) => sum + inst.amount, 0)
-  const totalDirect = direct.reduce((sum, exp) => sum + exp.amount, 0)
-  return totalInstallments + totalDirect
+    })
+    const monthlyTotal = monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0)
+    
+    // Cuotas que vencen en el mes actual (incluyendo las ya pagadas)
+    const monthlyInstallments = expensesStore.upcomingInstallments.filter(inst => {
+      const due = parseISO(inst.due_date)
+      return due.getMonth() + 1 === currentMonth && due.getFullYear() === currentYear
+    })
+    const monthlyInstallmentsTotal = monthlyInstallments.reduce((sum, inst) => sum + inst.amount, 0)
+    
+    return monthlyTotal + monthlyInstallmentsTotal
+  }
 })
 
 // Datos para los gráficos (anual o mensual)
@@ -468,22 +473,43 @@ const formatDate = (date) => {
 
 const creditCards = computed(() => cardsStore.creditCards)
 
-// Total por tarjeta de crédito (solo cuotas a pagar de esa tarjeta en el mes/año)
+// Total por tarjeta de crédito (cuotas a pagar + gastos directos de esa tarjeta en el mes/año)
 function cardTotal(card) {
   const now = new Date()
   const currentMonth = now.getMonth() + 1
   const currentYear = now.getFullYear()
-  // Sumar solo cuotas de esa tarjeta
-  const installments = expensesStore.upcomingInstallments.filter(inst => {
-    const due = parseISO(inst.due_date)
-    const isCard = inst.expenses && inst.expenses.card_id === card.id
-    if (isAnnual.value) {
-      return isCard && due.getFullYear() === currentYear && inst.payment_status_id !== 3
-    } else {
-      return isCard && due.getMonth() + 1 === currentMonth && due.getFullYear() === currentYear && inst.payment_status_id !== 3
-    }
-  })
-  return installments.reduce((sum, inst) => sum + inst.amount, 0)
+  
+  if (isAnnual.value) {
+    // Vista anual: solo todos los gastos del año (ya incluyen las cuotas)
+    const annualExpenses = expensesStore.expenses.filter(expense => {
+      const expenseDate = parseISO(expense.purchase_date)
+      const isCard = expense.card_id === card.id
+      return isCard && expenseDate.getFullYear() === currentYear
+    })
+    const annualTotal = annualExpenses.reduce((sum, exp) => sum + exp.amount, 0)
+    
+    return annualTotal
+  } else {
+    // Vista mensual: gastos del mes + cuotas que vencen en el mes
+    const monthlyExpenses = expensesStore.expenses.filter(expense => {
+      const expenseDate = parseISO(expense.purchase_date)
+      const isCard = expense.card_id === card.id
+      return isCard && expenseDate.getMonth() + 1 === currentMonth && expenseDate.getFullYear() === currentYear
+    })
+    const monthlyTotal = monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0)
+    
+    // Cuotas que vencen en el mes actual (incluyendo las ya pagadas)
+    const monthlyInstallments = expensesStore.upcomingInstallments.filter(inst => {
+      const due = parseISO(inst.due_date)
+      // Buscar el gasto original para obtener la tarjeta
+      const originalExpense = expensesStore.expenses.find(exp => exp.id === inst.expense_id)
+      const isCard = originalExpense && originalExpense.card_id === card.id
+      return isCard && due.getMonth() + 1 === currentMonth && due.getFullYear() === currentYear
+    })
+    const monthlyInstallmentsTotal = monthlyInstallments.reduce((sum, inst) => sum + inst.amount, 0)
+    
+    return monthlyTotal + monthlyInstallmentsTotal
+  }
 }
 
 // Estado para paginación de próximos vencimientos

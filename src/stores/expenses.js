@@ -28,11 +28,11 @@ export const useExpensesStore = defineStore('expenses', () => {
     let filtered = expenses.value
 
     if (filters.value.card_id) {
-      filtered = filtered.filter(expense => expense.card_id === filters.value.card_id)
+      filtered = filtered.filter(expense => expense.cards?.id === filters.value.card_id)
     }
     
     if (filters.value.category_id) {
-      filtered = filtered.filter(expense => expense.category_id === filters.value.category_id)
+      filtered = filtered.filter(expense => expense.categories?.id === filters.value.category_id)
     }
     
     if (filters.value.month) {
@@ -82,16 +82,13 @@ export const useExpensesStore = defineStore('expenses', () => {
   const filteredExpensesWithInstallments = computed(() => {
     let filtered = monthlyExpensesWithInstallments.value
 
-    if (filters.value.card_id) {
-      filtered = filtered.filter(item => item.card_id === filters.value.card_id)
-    }
-    
+    // Aplicar filtros de categoría y tarjeta si están definidos
     if (filters.value.category_id) {
-      filtered = filtered.filter(item => item.category_id === filters.value.category_id)
+      filtered = filtered.filter(expense => expense.categories?.id === filters.value.category_id)
     }
     
-    if (filters.value.payment_status_code) {
-      filtered = filtered.filter(item => item.payment_status_code === filters.value.payment_status_code)
+    if (filters.value.card_id) {
+      filtered = filtered.filter(expense => expense.cards?.id === filters.value.card_id)
     }
 
     return filtered
@@ -162,35 +159,30 @@ export const useExpensesStore = defineStore('expenses', () => {
   }
 
   // Cargar gastos con cuotas por mes
-  const loadMonthlyExpensesWithInstallments = async (month, year) => {
+  const loadMonthlyExpensesWithInstallments = async (month, year, filters = {}) => {
     if (!authStore.user) return
     
     loading.value = true
     error.value = null
     
-    console.log('🔍 Debug Store - Cargando datos para:', { month, year, userId: authStore.user.id })
     
     try {
       const response = await expensesApi.getMonthlyExpensesWithInstallments(
         authStore.user.id, 
         month, 
-        year
+        year,
+        filters
       )
       
-      console.log('🔍 Debug Store - Respuesta del API:', response)
       
       if (!response.success) {
         error.value = response.error || 'Error al cargar gastos mensuales'
-        console.log('🔍 Debug Store - Error en respuesta:', response.error)
         return { success: false, error: response.error || 'Error al cargar gastos mensuales' }
       }
       
-      console.log('🔍 Debug Store - Datos recibidos:', response.data)
-      console.log('🔍 Debug Store - Cantidad de elementos:', response.data?.length || 0)
       
+      // Asegurar que accedemos al array real de gastos
       monthlyExpensesWithInstallments.value = response.data || []
-      
-      console.log('🔍 Debug Store - Datos guardados en store:', monthlyExpensesWithInstallments.value)
       
       return { success: true, data: response.data }
     } catch (err) {
@@ -234,7 +226,6 @@ export const useExpensesStore = defineStore('expenses', () => {
     error.value = null
     
     try {
-      console.log('🔍 Frontend Store - Datos recibidos para crear gasto:', expenseData);
       
       // Preparar datos para enviar al backend
       const expenseWithUserId = {
@@ -242,7 +233,6 @@ export const useExpensesStore = defineStore('expenses', () => {
         user_id: authStore.user.id
       }
       
-      console.log('🔍 Frontend Store - Datos a enviar al backend:', expenseWithUserId);
       
       const response = await expensesApi.createExpense(expenseWithUserId)
       
@@ -252,7 +242,6 @@ export const useExpensesStore = defineStore('expenses', () => {
         return { success: false, error: response.error }
       }
       
-      console.log('🔍 Frontend Store - Gasto creado exitosamente:', response.data)
       
       const newExpense = response.data
       expenses.value.unshift(newExpense)
@@ -378,7 +367,6 @@ export const useExpensesStore = defineStore('expenses', () => {
       // Buscar la cuota antes del update para obtener el expense_id
       const installment = installments.value.find(inst => inst.id === id)
       const expense_id = installment ? installment.expense_id : null
-      console.log('[markInstallmentAsPaid] id:', id, 'statusCode:', statusCode, 'expense_id:', expense_id)
       
       const statusResponse = await expensesApi.getPaymentStatusByCode(statusCode)
       if (!statusResponse.success || !statusResponse.data || statusResponse.data.length === 0) {
@@ -388,7 +376,6 @@ export const useExpensesStore = defineStore('expenses', () => {
       }
       
       const payment_status_id = statusResponse.data[0].id
-      console.log('[markInstallmentAsPaid] payment_status_id:', payment_status_id)
       
       const response = await expensesApi.updateInstallmentStatus(id, payment_status_id)
       if (!response.success) {

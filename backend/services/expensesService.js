@@ -194,47 +194,72 @@ export class ExpensesService {
   // NOTA: Las cuotas se crean manualmente por el backend
 
   // Obtener gastos mensuales con cuotas
-  static async getMonthlyExpensesWithInstallments(userId, month, year) {
+  static async getMonthlyExpensesWithInstallments(userId, month, year, filters = {}) {
     try {
 
       // Calcular fechas de inicio y fin del mes
       const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
       const endDate = `${year}-${(month + 1).toString().padStart(2, '0')}-01`;
-
+      
+      // Validar que month y year sean números válidos
+      if (!month || !year || month < 1 || month > 12) {
+        return {
+          success: true,
+          data: []
+        };
+      }
 
       // Consulta SQL directa para obtener SOLO gastos directos (sin cuotas) del mes
-      const { data: directExpenses, error: directError } = await supabase
+      let directQuery = supabase
         .from('expenses')
         .select(`
           *,
-          cards(name, type),
-          categories(name, color),
+          cards(id, name, type),
+          categories(id, name, color),
           payment_status(code, label)
         `)
         .eq('user_id', userId)
         .eq('installments_count', 1) // Solo gastos directos (sin cuotas)
         .gte('purchase_date', startDate)
-        .lt('purchase_date', endDate)
-        .order('purchase_date', { ascending: false });
+        .lt('purchase_date', endDate);
+
+      // Aplicar filtros de tarjeta y categoría
+      if (filters.card_id && filters.card_id !== 'null' && filters.card_id !== null) {
+        directQuery = directQuery.eq('card_id', filters.card_id);
+      }
+
+      if (filters.category_id && filters.category_id !== 'null' && filters.category_id !== null) {
+        directQuery = directQuery.eq('category_id', filters.category_id);
+      }
+
+      const { data: directExpenses, error: directError } = await directQuery.order('purchase_date', { ascending: false });
 
       if (directError) throw directError;
 
-
       // Consulta SQL directa para obtener cuotas que vencen en el mes
-      const { data: installments, error: installmentsError } = await supabase
+      let installmentsQuery = supabase
         .from('installments')
         .select(`
           *,
-          expenses!inner(description, user_id, installments_count, cards(name, type), categories(name, color)),
+          expenses!inner(description, user_id, installments_count, cards(id, name, type), categories(id, name, color)),
           payment_status(code, label)
         `)
         .eq('expenses.user_id', userId)
         .gte('due_date', startDate)
-        .lt('due_date', endDate)
-        .order('due_date', { ascending: true });
+        .lt('due_date', endDate);
+
+      // Aplicar filtros de tarjeta y categoría a las cuotas
+      if (filters.card_id && filters.card_id !== 'null' && filters.card_id !== null) {
+        installmentsQuery = installmentsQuery.eq('expenses.card_id', filters.card_id);
+      }
+
+      if (filters.category_id && filters.category_id !== 'null' && filters.category_id !== null) {
+        installmentsQuery = installmentsQuery.eq('expenses.category_id', filters.category_id);
+      }
+
+      const { data: installments, error: installmentsError } = await installmentsQuery.order('due_date', { ascending: true });
 
       if (installmentsError) throw installmentsError;
-
 
       // Marcar gastos directos
       const markedDirectExpenses = (directExpenses || []).map(expense => ({
@@ -262,10 +287,21 @@ export class ExpensesService {
         ...markedInstallments
       ];
 
+      // Validación adicional: filtrar por fecha de manera más estricta
+      const filteredResults = combinedResults.filter(item => {
+        const itemDate = item.is_installment ? item.due_date : item.purchase_date;
+        const itemDateObj = new Date(itemDate);
+        const startDateObj = new Date(startDate);
+        const endDateObj = new Date(endDate);
+        
+        const isInRange = itemDateObj >= startDateObj && itemDateObj < endDateObj;
+        
+        return isInRange;
+      });
 
       return {
         success: true,
-        data: combinedResults
+        data: filteredResults
       };
 
     } catch (error) {

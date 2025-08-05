@@ -31,10 +31,10 @@ const validateExpense = [
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const filters = {
-      card_id: req.query.card_id && req.query.card_id !== 'null' ? req.query.card_id : null,
-      category_id: req.query.category_id && req.query.category_id !== 'null' ? req.query.category_id : null,
-      month: req.query.month && req.query.month !== 'null' ? parseInt(req.query.month) : null,
-      year: req.query.year && req.query.year !== 'null' ? parseInt(req.query.year) : null
+      card_id: req.query.card_id || null,
+      category_id: req.query.category_id || null,
+      month: req.query.month ? parseInt(req.query.month) : null,
+      year: req.query.year ? parseInt(req.query.year) : null
     };
 
     const result = await ExpensesService.getExpenses(req.user.id, filters);
@@ -52,7 +52,7 @@ router.get('/', authenticateToken, async (req, res) => {
 // GET /api/expenses/monthly - Obtener gastos mensuales con cuotas
 router.get('/monthly', authenticateToken, async (req, res) => {
   try {
-    const { month, year } = req.query;
+    const { month, year, card_id, category_id } = req.query;
     
     if (!month || !year) {
       return res.status(400).json({
@@ -61,11 +61,27 @@ router.get('/monthly', authenticateToken, async (req, res) => {
       });
     }
 
+    console.log('🔍 Backend Route - Parámetros recibidos:', { month, year, card_id, category_id });
+
+    // Preparar filtros
+    const filters = {
+      card_id: card_id && card_id !== 'null' ? card_id : null,
+      category_id: category_id && category_id !== 'null' ? category_id : null
+    };
+
+    console.log('🔍 Backend Route - Filtros preparados:', filters);
+
     const result = await ExpensesService.getMonthlyExpensesWithInstallments(
       req.user.id,
       parseInt(month),
-      parseInt(year)
+      parseInt(year),
+      filters
     );
+
+    console.log('🔍 Backend Route - Resultado final:', {
+      success: result.success,
+      dataLength: result.data?.length || 0
+    });
 
     res.json(result);
   } catch (error) {

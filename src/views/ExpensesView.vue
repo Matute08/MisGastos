@@ -255,7 +255,7 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <!-- Gastos directos y cuotas -->
-                            <template v-if="filters.year">
+                            <template v-if="filteredExpensesToShow.length > 0">
                                 <tr
                                     v-for="item in filteredExpensesToShow"
                                     :key="
@@ -402,7 +402,7 @@
                             </template>
 
                             <!-- Gastos normales (cuando no hay filtros de mes) -->
-                            <template v-else>
+                            <template v-else-if="!filters.value || !filters.value.month || !filters.value.year">
                                 <tr
                                     v-for="expense in directExpenses"
                                     :key="expense.id"
@@ -634,39 +634,59 @@ onMounted(async () => {
         cardsStore.loadCards(),
         categoriesStore.loadCategories(),
     ]);
+    
+    // Actualizar filtros iniciales en el store
+    expensesStore.updateFilters({
+        card_id: filters.value.card_id || null,
+        category_id: filters.value.category_id || null,
+        month: filters.value.month || null,
+        year: filters.value.year || null
+    });
+    
     // Si hay mes y año seleccionados, cargar los datos mensuales automáticamente
-    if (filters.value.year) {
+    if (filters.value && filters.value.year) {
         loadMonthlyData();
     }
 });
 
+
+
 const updateFilters = () => {
-    const filterData = {};
-    Object.keys(filters.value).forEach((key) => {
-        if (filters.value[key] !== "") {
-            filterData[key] = filters.value[key];
-        }
+    // Actualizar filtros en el store
+    expensesStore.updateFilters({
+        card_id: filters.value.card_id || null,
+        category_id: filters.value.category_id || null,
+        month: filters.value.month || null,
+        year: filters.value.year || null
     });
-    expensesStore.updateFilters(filterData);
-    loadMonthlyData();
+    
+    // Recargar datos del backend cuando cambien los filtros
+    if (filters.value && filters.value.month && filters.value.year) {
+        loadMonthlyData();
+    }
 };
 
-const loadMonthlyData = async () => {
-    if (filters.value.month && filters.value.year) {
-        
 
+
+const loadMonthlyData = async () => {
+    if (filters.value && filters.value.month && filters.value.year) {
+        // Normalizar filtros para enviar al backend
+        const backendFilters = {
+            card_id: filters.value.card_id && filters.value.card_id !== 'null' ? filters.value.card_id : null,
+            category_id: filters.value.category_id && filters.value.category_id !== 'null' ? filters.value.category_id : null
+        };
+        
         const result = await Promise.all([
             expensesStore.loadMonthlyExpensesWithInstallments(
                 parseInt(filters.value.month),
-                parseInt(filters.value.year)
+                parseInt(filters.value.year),
+                backendFilters
             ),
             expensesStore.loadMonthlyTotals(
                 parseInt(filters.value.month),
                 parseInt(filters.value.year)
             ),
         ]);
-
-       
     }
 };
 
@@ -686,6 +706,7 @@ const monthNames = [
     "Diciembre",
 ];
 const monthYearTitle = computed(() => {
+    if (!filters.value || !filters.value.month || !filters.value.year) return "";
     const month = parseInt(filters.value.month);
     const year = filters.value.year;
     if (!month || !year) return "";
@@ -698,8 +719,17 @@ const clearFilters = () => {
     filters.value.category_id = "";
     filters.value.month = new Date().getMonth() + 1; // Mes actual por defecto
     filters.value.year = new Date().getFullYear(); // Año actual por defecto
-    expensesStore.clearFilters();
-    updateFilters();
+    
+    // Actualizar filtros en el store
+    expensesStore.updateFilters({
+        card_id: null,
+        category_id: null,
+        month: filters.value.month,
+        year: filters.value.year
+    });
+    
+    // Recargar datos después de limpiar filtros
+    loadMonthlyData();
 };
 
 const editExpense = (expense) => {
@@ -725,7 +755,7 @@ const deleteExpense = async (expenseId) => {
 
             if (result.success) {
                 // Recargar datos según el contexto actual
-                if (filters.value.year) {
+                if (filters.value && filters.value.year) {
                     await loadMonthlyData();
                 } else {
                     await expensesStore.loadExpenses();
@@ -802,7 +832,7 @@ const saveExpense = async (expenseData) => {
         }
 
         // Recargar datos según el contexto actual
-        if (filters.value.year) {
+        if (filters.value && filters.value.year) {
             await loadMonthlyData();
         } else {
             await expensesStore.loadExpenses();
@@ -1004,46 +1034,29 @@ const formatDate = (date) => {
 // Checkbox para alternar entre gastos directos y cuotas
 const showDirectExpenses = ref(false);
 
-// Computed para filtrar lo que se muestra en la tabla según el checkbox
+// Computed para filtrar lo que se muestra en la tabla
 const filteredExpensesToShow = computed(() => {
-    const month = parseInt(filters.value.month);
-    const year = parseInt(filters.value.year);
+    // Obtener todos los datos del store
+    const allData = expensesStore.filteredExpensesWithInstallments;
+    
+    // Si no hay datos, retornar array vacío
+    if (!allData || allData.length === 0) {
+        return [];
+    }
 
+    // Ordenar por fecha
+    const sorted = allData.sort((a, b) => {
+        const dateA = a.is_installment ? a.due_date : a.purchase_date;
+        const dateB = b.is_installment ? b.due_date : b.purchase_date;
+        return new Date(dateA) - new Date(dateB);
+    });
 
-    // Simplificar el filtro - mostrar todos los datos que vengan del backend
-    const filtered = expensesStore.filteredExpensesWithInstallments
-        .filter((e) => {
-
-            // Si el elemento está marcado como cuota, verificar la fecha de vencimiento
-            if (e.is_installment) {
-                const due = new Date(e.due_date);
-                const matches =
-                    due.getMonth() + 1 === month && due.getFullYear() === year;
-                
-                return matches;
-            }
-            // Si es un gasto directo, verificar la fecha de compra
-            else {
-                const purchase = new Date(e.purchase_date);
-                const matches =
-                    purchase.getMonth() + 1 === month &&
-                    purchase.getFullYear() === year;
-                
-                return matches;
-            }
-        })
-        .sort((a, b) => {
-            const dateA = a.is_installment ? a.due_date : a.purchase_date;
-            const dateB = b.is_installment ? b.due_date : b.purchase_date;
-            return new Date(dateA) - new Date(dateB);
-        });
-
-
-    return filtered;
+    return sorted;
 });
 
 // Funciones para cambiar de mes con las flechas
 function previousMonth() {
+    if (!filters.value) return;
     let month = parseInt(filters.value.month);
     let year = filters.value.year;
     if (month === 1) {
@@ -1058,6 +1071,7 @@ function previousMonth() {
 }
 
 function nextMonth() {
+    if (!filters.value) return;
     let month = parseInt(filters.value.month);
     let year = filters.value.year;
     if (month === 12) {

@@ -36,7 +36,6 @@ class ApiClient {
 
       // Si el token expiró, intentar renovarlo
       if (response.status === 401 && this.token) {
-        console.log('Token expirado, intentando renovar...');
         const refreshed = await this.refreshToken();
         if (refreshed) {
           // Reintentar la petición original con el nuevo token
@@ -275,7 +274,6 @@ export const cards = {
   async getCards() {
     try {
       const response = await apiClient.get('/cards');
-      console.log('🔍 Debug API - getCards response:', response);
       return response;
     } catch (error) {
       console.error('🔍 Debug API - Error en getCards:', error);
@@ -286,9 +284,7 @@ export const cards = {
   // Crear nueva tarjeta
   async createCard(cardData) {
     try {
-      console.log('🔍 Debug API - createCard data:', cardData);
       const response = await apiClient.post('/cards', cardData);
-      console.log('🔍 Debug API - createCard response:', response);
       return response;
     } catch (error) {
       console.error('🔍 Debug API - Error en createCard:', error);
@@ -348,10 +344,9 @@ export const expenses = {
   },
 
   // Obtener gastos mensuales con cuotas
-  async getMonthlyExpensesWithInstallments(userId, month, year) {
-    console.log('🔍 Debug API - Llamando endpoint con:', { userId, month, year })
-    const response = await apiClient.get('/expenses/monthly', { month, year });
-    console.log('🔍 Debug API - Respuesta del backend:', response)
+  async getMonthlyExpensesWithInstallments(userId, month, year, filters = {}) {
+    const params = { month, year, ...filters };
+    const response = await apiClient.get('/expenses/monthly', params);
     return response;
   },
 
