@@ -51,10 +51,7 @@
                 <span>Banco:</span>
                 <span class="font-medium">{{ card.bank }}</span>
               </div>
-              <div v-if="card.type === 'Crédito'" class="flex justify-between">
-                <span>Cierre:</span>
-                <span class="font-medium">Día {{ card.closing_day }}</span>
-              </div>
+              
             </div>
           </div>
 

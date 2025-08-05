@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { cards as cardsApi } from '@/lib/supabase'
+import { cards as cardsApi } from '@/lib/api'
 import { useAuthStore } from './auth'
 
 export const useCardsStore = defineStore('cards', () => {
@@ -26,16 +26,21 @@ export const useCardsStore = defineStore('cards', () => {
     error.value = null
     
     try {
-      const { data, error: apiError } = await cardsApi.getCards(authStore.user.id)
+      console.log('🔍 Debug - Cargando tarjetas para usuario:', authStore.user.id)
       
-      if (apiError) {
-        error.value = apiError.message
-        return { success: false, error: apiError.message }
+      const response = await cardsApi.getCards()
+      console.log('🔍 Debug - Respuesta de getCards:', response)
+      
+      if (response.error) {
+        error.value = response.error
+        return { success: false, error: response.error }
       }
       
-      cards.value = data || []
-      return { success: true, data }
+      cards.value = response.data || []
+      console.log('🔍 Debug - Tarjetas cargadas:', cards.value)
+      return { success: true, data: response.data }
     } catch (err) {
+      console.error('🔍 Debug - Error en loadCards:', err)
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
@@ -56,16 +61,25 @@ export const useCardsStore = defineStore('cards', () => {
         user_id: authStore.user.id
       }
       
-      const { data, error: apiError } = await cardsApi.createCard(cardWithUserId)
+      console.log('🔍 Debug - Creando tarjeta con datos:', cardWithUserId)
       
-      if (apiError) {
-        error.value = apiError.message
-        return { success: false, error: apiError.message }
+      const response = await cardsApi.createCard(cardWithUserId)
+      console.log('🔍 Debug - Respuesta del API:', response)
+      
+      if (response.error) {
+        error.value = response.error
+        return { success: false, error: response.error }
       }
       
-      cards.value.unshift(data[0])
-      return { success: true, data: data[0] }
+      if (!response.data) {
+        error.value = 'No se recibieron datos de la tarjeta creada'
+        return { success: false, error: 'No se recibieron datos de la tarjeta creada' }
+      }
+      
+      cards.value.unshift(response.data)
+      return { success: true, data: response.data }
     } catch (err) {
+      console.error('🔍 Debug - Error en createCard:', err)
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
@@ -88,10 +102,10 @@ export const useCardsStore = defineStore('cards', () => {
       
       const index = cards.value.findIndex(card => card.id === id)
       if (index !== -1) {
-        cards.value[index] = data[0]
+        cards.value[index] = data
       }
       
-      return { success: true, data: data[0] }
+      return { success: true, data: data }
     } catch (err) {
       error.value = err.message
       return { success: false, error: err.message }

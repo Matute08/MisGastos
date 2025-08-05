@@ -71,7 +71,7 @@ const router = createRouter({
   routes
 })
 
-// Guardia de navegación para Vue Router 4 (sin next)
+// Guardia de navegación mejorado
 router.beforeEach(async (to, from) => {
   // Espera a que la app esté montada y Pinia inicializado
   if (!window.__appMounted) {
@@ -91,6 +91,7 @@ router.beforeEach(async (to, from) => {
   const { useAuthStore } = await import('@/stores/auth');
   const authStore = useAuthStore();
 
+  // Esperar a que la autenticación esté lista
   if (!authStore.isAuthReady) {
     await new Promise(resolve => {
       const stop = watch(
@@ -105,12 +106,23 @@ router.beforeEach(async (to, from) => {
     });
   }
 
-  if (to.meta.requiresAuth && !authStore.user) {
-    return { path: '/login' };
+  // Si está inicializando, permitir la navegación
+  if (authStore.isInitializing) {
+    return true;
   }
-  if ((to.path === '/login' || to.path === '/register') && authStore.user) {
-    return { path: '/' };
+
+  // Rutas que requieren autenticación
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    console.log('Redirigiendo a login: usuario no autenticado');
+    return { path: '/login', query: { redirect: to.fullPath } };
   }
+
+  // Rutas que requieren ser invitado (no autenticado)
+  if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    console.log('Redirigiendo a dashboard: usuario ya autenticado');
+    return { path: '/dashboard' };
+  }
+
   return true;
 });
 

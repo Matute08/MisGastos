@@ -97,6 +97,8 @@ export const cards = {
 export const expenses = {
   // Obtener todos los gastos del usuario
   async getExpenses(userId, filters = {}) {
+    console.log('getExpenses:', { userId, filters })
+    
     let query = supabase
       .from('expenses')
       .select(`
@@ -113,6 +115,7 @@ export const expenses = {
     if (filters.year) query = query.eq('year', filters.year)
     
     const { data, error } = await query.order('created_at', { ascending: false })
+    console.log('getExpenses result:', { data, error })
     return { data, error }
   },
 
@@ -265,47 +268,101 @@ export const installments = {
 
   // Obtener gastos y cuotas activas por mes
   async getMonthlyExpensesWithInstallments(userId, month, year) {
-    const { data, error } = await supabase
-      .rpc('get_monthly_expenses_with_installments', {
-        p_user_id: userId,
-        p_month: month,
-        p_year: year
-      })
+    console.log('getMonthlyExpensesWithInstallments:', { userId, month, year })
     
+    // Por ahora, obtener solo los gastos del mes
+    const { data, error } = await supabase
+      .from('expenses')
+      .select(`
+        *,
+        cards(name, type, bank),
+        categories(name, color),
+        installments(*)
+      `)
+      .eq('user_id', userId)
+      .eq('month', month)
+      .eq('year', year)
+      .order('created_at', { ascending: false })
+    
+    console.log('getMonthlyExpensesWithInstallments result:', { data, error })
     return { data, error }
   },
 
   // Obtener total mensual con cuotas
   async getMonthlyTotalWithInstallments(userId, month, year) {
-    const { data, error } = await supabase
-      .rpc('get_monthly_total_with_installments', {
-        p_user_id: userId,
-        p_month: month,
-        p_year: year
-      })
+    console.log('getMonthlyTotalWithInstallments:', { userId, month, year })
     
-    return { data, error }
+    // Calcular totales en el frontend por ahora
+    const { data: expenses, error } = await supabase
+      .from('expenses')
+      .select('amount, installments_count')
+      .eq('user_id', userId)
+      .eq('month', month)
+      .eq('year', year)
+    
+    console.log('getMonthlyTotalWithInstallments expenses:', { expenses, error })
+    
+    if (error) {
+      return { data: null, error }
+    }
+    
+    // Calcular totales
+    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0)
+    const totalInstallments = expenses
+      .filter(expense => expense.installments_count > 1)
+      .reduce((sum, expense) => sum + expense.amount, 0)
+    
+    const result = [{
+      total_expenses: totalExpenses,
+      total_installments: totalInstallments,
+      total_combined: totalExpenses + totalInstallments
+    }]
+    
+    console.log('getMonthlyTotalWithInstallments result:', result)
+    return { data: result, error: null }
   },
 
   // Obtener resumen de cuotas por gasto
   async getExpenseInstallmentsSummary(expenseId) {
     const { data, error } = await supabase
-      .rpc('get_expense_installments_summary', {
-        p_expense_id: expenseId
-      })
+      .from('installments')
+      .select('*')
+      .eq('expense_id', expenseId)
+      .order('due_date', { ascending: true })
     
     return { data, error }
   },
 
   // Obtener todas las cuotas próximas a vencer para un usuario
   async getUpcomingInstallments(userId, limit = 1000) {
+    // Primero obtener los gastos del usuario
+    const { data: expenses, error: expensesError } = await supabase
+      .from('expenses')
+      .select('id')
+      .eq('user_id', userId)
+    
+    if (expensesError) {
+      return { data: null, error: expensesError }
+    }
+    
+    const expenseIds = expenses.map(expense => expense.id)
+    
+    if (expenseIds.length === 0) {
+      return { data: [], error: null }
+    }
+    
+    // Luego obtener las cuotas de esos gastos
     const { data, error } = await supabase
       .from('installments')
-      .select('*, expenses(*, cards(name, type), categories(name, color))')
-      .eq('expenses.user_id', userId)
+      .select(`
+        *,
+        expenses!inner(id, user_id, cards(name, type), categories(name, color))
+      `)
+      .in('expense_id', expenseIds)
       .in('payment_status_id', [1, 2]) // 1: pendiente, 2: en deuda
       .order('due_date', { ascending: true })
       .limit(limit)
+    
     return { data, error }
   }
 } 

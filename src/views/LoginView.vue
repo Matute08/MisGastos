@@ -46,6 +46,19 @@
           />
         </div>
 
+        <!-- Checkbox Recordar mis datos -->
+        <div class="flex items-center">
+          <input
+            id="rememberMe"
+            v-model="rememberMe"
+            type="checkbox"
+            class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+          />
+          <label for="rememberMe" class="ml-2 block text-sm text-gray-700">
+            Recordar mis datos
+          </label>
+        </div>
+
         <!-- Error -->
         <div v-if="authStore.error" class="bg-danger-50 border border-danger-200 rounded-md p-4">
           <div class="flex">
@@ -83,12 +96,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { CreditCard, AlertCircle } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const form = ref({
@@ -96,18 +110,65 @@ const form = ref({
   password: ''
 })
 
+const rememberMe = ref(false)
+
+// Función para guardar credenciales
+const saveCredentials = () => {
+  if (rememberMe.value) {
+    localStorage.setItem('rememberedCredentials', JSON.stringify({
+      email: form.value.email,
+      rememberMe: true
+    }))
+  } else {
+    localStorage.removeItem('rememberedCredentials')
+  }
+}
+
+// Función para cargar credenciales guardadas
+const loadSavedCredentials = () => {
+  const saved = localStorage.getItem('rememberedCredentials')
+  if (saved) {
+    const credentials = JSON.parse(saved)
+    form.value.email = credentials.email
+    rememberMe.value = credentials.rememberMe
+  }
+}
+
+// Función para limpiar credenciales
+const clearCredentials = () => {
+  localStorage.removeItem('rememberedCredentials')
+}
+
 const handleLogin = async () => {
   const { success } = await authStore.signIn(form.value.email, form.value.password)
   
   if (success) {
-    router.push('/dashboard')
+    // Guardar credenciales si está marcado "Recordar mis datos"
+    saveCredentials()
+    
+    // Redirigir a la página original o al dashboard
+    const redirectTo = route.query.redirect || '/dashboard'
+    router.push(redirectTo)
   }
 }
 
+// Watcher para limpiar credenciales si se desmarca "Recordar mis datos"
+watch(rememberMe, (newValue) => {
+  if (!newValue) {
+    clearCredentials()
+  }
+})
+
 onMounted(() => {
   authStore.clearError()
+  
+  // Cargar credenciales guardadas
+  loadSavedCredentials()
+  
+  // Si ya está autenticado, redirigir
   if (authStore.isAuthenticated) {
-    router.push('/dashboard')
+    const redirectTo = route.query.redirect || '/dashboard'
+    router.push(redirectTo)
   }
 })
 </script> 

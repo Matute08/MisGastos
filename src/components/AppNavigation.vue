@@ -74,40 +74,6 @@
               </button>
             </div>
           </div>
-
-          <!-- Menú móvil -->
-          <button
-            @click="toggleMobileMenu"
-            class="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-200"
-            ref="mobileMenuButton"
-          >
-            <Menu class="h-5 w-5" />
-          </button>
-        </div>
-      </div>
-
-      <!-- Menú móvil -->
-      <div
-        v-show="showMobileMenu"
-        class="md:hidden border-t border-gray-200 py-4 transition-all duration-300 ease-in-out"
-        ref="mobileMenuRef"
-      >
-        <div class="space-y-2">
-          <router-link
-            v-for="item in navigationItems"
-            :key="item.name"
-            :to="item.path"
-            @click="closeMobileMenu"
-            :class="[
-              'block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200',
-              $route.name === item.name
-                ? 'bg-primary-100 text-primary-700'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            ]"
-          >
-            <component :is="item.icon" class="h-4 w-4 inline mr-2" />
-            {{ item.label }}
-          </router-link>
         </div>
       </div>
     </div>
@@ -115,7 +81,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import {
@@ -128,7 +94,6 @@ import {
   Bell,
   User,
   ChevronDown,
-  Menu,
   LogOut
 } from 'lucide-vue-next'
 
@@ -136,13 +101,10 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const showUserMenu = ref(false)
-const showMobileMenu = ref(false)
 const userMenuRef = ref(null)
-const mobileMenuRef = ref(null)
-const mobileMenuButton = ref(null)
 
 const userEmail = computed(() => {
-  return authStore.user?.email || 'Usuario'
+  return authStore.user?.email || authStore.userProfile?.email || 'Usuario'
 })
 
 const userRoleDisplay = computed(() => {
@@ -200,31 +162,10 @@ const navigationItems = computed(() => {
 
 const toggleUserMenu = () => {
   showUserMenu.value = !showUserMenu.value
-  // Cerrar menú móvil si está abierto
-  if (showMobileMenu.value) {
-    showMobileMenu.value = false
-  }
-}
-
-const toggleMobileMenu = () => {
-  showMobileMenu.value = !showMobileMenu.value
-  // Cerrar menú de usuario si está abierto
-  if (showUserMenu.value) {
-    showUserMenu.value = false
-  }
-}
-
-const closeMobileMenu = () => {
-  showMobileMenu.value = false
 }
 
 const closeUserMenu = () => {
   showUserMenu.value = false
-}
-
-const closeAllMenus = () => {
-  showUserMenu.value = false
-  showMobileMenu.value = false
 }
 
 const signOut = async () => {
@@ -247,31 +188,14 @@ const handleClickOutside = (event) => {
   if (userMenuRef.value && !userMenuRef.value.contains(event.target)) {
     closeUserMenu()
   }
-  
-  // Verificar si el clic fue fuera del menú móvil y su botón
-  if (mobileMenuRef.value && mobileMenuButton.value) {
-    const isClickInsideMobileMenu = mobileMenuRef.value.contains(event.target)
-    const isClickOnMobileButton = mobileMenuButton.value.contains(event.target)
-    
-    if (!isClickInsideMobileMenu && !isClickOnMobileButton) {
-      closeMobileMenu()
-    }
-  }
 }
-
-// Cerrar menú móvil al cambiar de ruta
-watch(() => router.currentRoute.value, () => {
-  if (showMobileMenu.value) {
-    closeMobileMenu()
-  }
-})
 
 // Escuchar clics fuera de los menús
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      closeAllMenus()
+      closeUserMenu()
     }
   })
 })

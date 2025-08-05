@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { expenses as expensesApi, installments as installmentsApi } from '@/lib/supabase'
+import { expenses as expensesApi } from '@/lib/api'
 import { useAuthStore } from './auth'
 import { format, addMonths, parseISO } from 'date-fns'
 import { useCardsStore } from './cards'
@@ -143,16 +143,17 @@ export const useExpensesStore = defineStore('expenses', () => {
     error.value = null
     
     try {
-      const { data, error: apiError } = await expensesApi.getExpenses(authStore.user.id, filters.value)
+      const response = await expensesApi.getExpenses(authStore.user.id, filters.value)
       
-      if (apiError) {
-        error.value = apiError.message
-        return { success: false, error: apiError.message }
+      if (!response.success) {
+        error.value = response.error || 'Error al cargar gastos'
+        return { success: false, error: response.error || 'Error al cargar gastos' }
       }
       
-      expenses.value = data || []
-      return { success: true, data }
+      expenses.value = response.data || []
+      return { success: true, data: response.data }
     } catch (err) {
+      console.error('Error cargando gastos:', err)
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
@@ -167,21 +168,33 @@ export const useExpensesStore = defineStore('expenses', () => {
     loading.value = true
     error.value = null
     
+    console.log('🔍 Debug Store - Cargando datos para:', { month, year, userId: authStore.user.id })
+    
     try {
-      const { data, error: apiError } = await installmentsApi.getMonthlyExpensesWithInstallments(
+      const response = await expensesApi.getMonthlyExpensesWithInstallments(
         authStore.user.id, 
         month, 
         year
       )
       
-      if (apiError) {
-        error.value = apiError.message
-        return { success: false, error: apiError.message }
+      console.log('🔍 Debug Store - Respuesta del API:', response)
+      
+      if (!response.success) {
+        error.value = response.error || 'Error al cargar gastos mensuales'
+        console.log('🔍 Debug Store - Error en respuesta:', response.error)
+        return { success: false, error: response.error || 'Error al cargar gastos mensuales' }
       }
       
-      monthlyExpensesWithInstallments.value = data || []
-      return { success: true, data }
+      console.log('🔍 Debug Store - Datos recibidos:', response.data)
+      console.log('🔍 Debug Store - Cantidad de elementos:', response.data?.length || 0)
+      
+      monthlyExpensesWithInstallments.value = response.data || []
+      
+      console.log('🔍 Debug Store - Datos guardados en store:', monthlyExpensesWithInstallments.value)
+      
+      return { success: true, data: response.data }
     } catch (err) {
+      console.error('Error cargando gastos mensuales:', err)
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
@@ -194,19 +207,19 @@ export const useExpensesStore = defineStore('expenses', () => {
     if (!authStore.user) return
     
     try {
-      const { data, error: apiError } = await installmentsApi.getMonthlyTotalWithInstallments(
+      const response = await expensesApi.getMonthlyTotalWithInstallments(
         authStore.user.id, 
         month, 
         year
       )
       
-      if (apiError) {
-        console.error('Error al cargar totales:', apiError)
-        return { success: false, error: apiError.message }
+      if (!response.success) {
+        console.error('Error al cargar totales:', response.error)
+        return { success: false, error: response.error }
       }
       
-      monthlyTotals.value = data?.[0] || null
-      return { success: true, data: data?.[0] }
+      monthlyTotals.value = response.data?.[0] || null
+      return { success: true, data: response.data?.[0] }
     } catch (err) {
       console.error('Error al cargar totales:', err)
       return { success: false, error: err.message }
@@ -221,26 +234,27 @@ export const useExpensesStore = defineStore('expenses', () => {
     error.value = null
     
     try {
-      // Eliminar el campo auxiliar antes de guardar en la base
-      const { first_installment_date, ...expenseToSave } = expenseData
+      console.log('🔍 Frontend Store - Datos recibidos para crear gasto:', expenseData);
+      
+      // Preparar datos para enviar al backend
       const expenseWithUserId = {
-        ...expenseToSave,
+        ...expenseData,
         user_id: authStore.user.id
       }
       
-      console.log('Creando gasto con datos:', expenseWithUserId)
+      console.log('🔍 Frontend Store - Datos a enviar al backend:', expenseWithUserId);
       
-      const { data, error: apiError } = await expensesApi.createExpense(expenseWithUserId)
+      const response = await expensesApi.createExpense(expenseWithUserId)
       
-      if (apiError) {
-        console.error('Error al crear gasto:', apiError)
-        error.value = apiError.message
-        return { success: false, error: apiError.message }
+      if (!response.success) {
+        console.error('🔍 Frontend Store - Error al crear gasto:', response.error)
+        error.value = response.error
+        return { success: false, error: response.error }
       }
       
-      console.log('Gasto creado exitosamente:', data)
+      console.log('🔍 Frontend Store - Gasto creado exitosamente:', response.data)
       
-      const newExpense = data[0]
+      const newExpense = response.data
       expenses.value.unshift(newExpense)
       
       // Recargar gastos para obtener los datos actualizados con cuotas
@@ -248,61 +262,11 @@ export const useExpensesStore = defineStore('expenses', () => {
       
       return { success: true, data: newExpense }
     } catch (err) {
-      console.error('Error inesperado al crear gasto:', err)
+      console.error('🔍 Frontend Store - Error inesperado al crear gasto:', err)
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
       loading.value = false
-    }
-  }
-
-  // Crear cuotas para un gasto
-  const createInstallmentsForExpense = async (expense, expenseData) => {
-    const { card_id, amount, installments_count, purchase_date, first_installment_date } = expenseData
-    
-    // Obtener información de la tarjeta para calcular las fechas de cierre
-    const cardsStore = useCardsStore()
-    const card = cardsStore.getCardById(card_id)
-    
-    if (!card || card.type !== 'Crédito') return
-    
-    // Usar la fecha manual si existe, si no, calcular como antes
-    let firstDate
-    if (first_installment_date) {
-      firstDate = parseISO(first_installment_date)
-    } else {
-      const purchaseDate = parseISO(purchase_date)
-      const closingDay = card.closing_day
-      // Calcular el cierre más próximo
-      let cierre = new Date(purchaseDate)
-      cierre.setDate(closingDay)
-      if (purchaseDate.getDate() >= closingDay) {
-        // Si la compra es el día del cierre o después, el cierre es el mes siguiente
-        cierre.setMonth(cierre.getMonth() + 1)
-      }
-      // La primer cuota vence el mes siguiente al cierre
-      firstDate = new Date(cierre)
-      firstDate.setMonth(firstDate.getMonth() + 1)
-    }
-    const installmentAmount = amount / installments_count
-    
-    // Crear las cuotas
-    const installmentsData = []
-    for (let i = 0; i < installments_count; i++) {
-      const dueDate = addMonths(firstDate, i)
-      installmentsData.push({
-        expense_id: expense.id,
-        installment_number: i + 1,
-        amount: installmentAmount,
-        due_date: format(dueDate, 'yyyy-MM-dd'),
-        payment_status_id: 1 // 1 = pendiente
-      })
-    }
-    
-    const { error: apiError } = await installmentsApi.createInstallments(installmentsData)
-    
-    if (apiError) {
-      console.error('Error al crear cuotas:', apiError)
     }
   }
 
@@ -312,19 +276,19 @@ export const useExpensesStore = defineStore('expenses', () => {
     error.value = null
     
     try {
-      const { data, error: apiError } = await expensesApi.updateExpense(id, updates)
+      const response = await expensesApi.updateExpense(id, updates)
       
-      if (apiError) {
-        error.value = apiError.message
-        return { success: false, error: apiError.message }
+      if (!response.success) {
+        error.value = response.error
+        return { success: false, error: response.error }
       }
       
       const index = expenses.value.findIndex(expense => expense.id === id)
       if (index !== -1) {
-        expenses.value[index] = data[0]
+        expenses.value[index] = response.data
       }
       
-      return { success: true, data: data[0] }
+      return { success: true, data: response.data }
     } catch (err) {
       error.value = err.message
       return { success: false, error: err.message }
@@ -339,11 +303,11 @@ export const useExpensesStore = defineStore('expenses', () => {
     error.value = null
     
     try {
-      const { error: apiError } = await expensesApi.deleteExpense(id)
+      const response = await expensesApi.deleteExpense(id)
       
-      if (apiError) {
-        error.value = apiError.message
-        return { success: false, error: apiError.message }
+      if (!response.success) {
+        error.value = response.error
+        return { success: false, error: response.error }
       }
       
       expenses.value = expenses.value.filter(expense => expense.id !== id)
@@ -389,15 +353,15 @@ export const useExpensesStore = defineStore('expenses', () => {
     error.value = null
     
     try {
-      const { data, error: apiError } = await installmentsApi.getInstallments(expenseId)
+      const response = await expensesApi.getInstallments(expenseId)
       
-      if (apiError) {
-        error.value = apiError.message
-        return { success: false, error: apiError.message }
+      if (!response.success) {
+        error.value = response.error
+        return { success: false, error: response.error }
       }
       
-      installments.value = data || []
-      return { success: true, data }
+      installments.value = response.data || []
+      return { success: true, data: response.data }
     } catch (err) {
       error.value = err.message
       return { success: false, error: err.message }
@@ -415,29 +379,36 @@ export const useExpensesStore = defineStore('expenses', () => {
       const installment = installments.value.find(inst => inst.id === id)
       const expense_id = installment ? installment.expense_id : null
       console.log('[markInstallmentAsPaid] id:', id, 'statusCode:', statusCode, 'expense_id:', expense_id)
-      const { data: statusData, error: statusError } = await installmentsApi.getPaymentStatusByCode(statusCode)
-      if (statusError || !statusData || !statusData[0]) {
+      
+      const statusResponse = await expensesApi.getPaymentStatusByCode(statusCode)
+      if (!statusResponse.success || !statusResponse.data || statusResponse.data.length === 0) {
         error.value = 'No se pudo obtener el estado de pago.'
-        console.error('[markInstallmentAsPaid] Error al obtener estado:', statusError, statusData)
+        console.error('[markInstallmentAsPaid] Error al obtener estado:', statusResponse.error, statusResponse.data)
         return { success: false, error: error.value }
       }
-      const payment_status_id = statusData[0].id
+      
+      const payment_status_id = statusResponse.data[0].id
       console.log('[markInstallmentAsPaid] payment_status_id:', payment_status_id)
-      const { data, error: apiError } = await installmentsApi.updateInstallmentStatus(id, payment_status_id)
-      if (apiError) {
-        error.value = apiError.message
-        console.error('[markInstallmentAsPaid] Error al actualizar cuota:', apiError)
-        return { success: false, error: apiError.message }
+      
+      const response = await expensesApi.updateInstallmentStatus(id, payment_status_id)
+      if (!response.success) {
+        error.value = response.error
+        console.error('[markInstallmentAsPaid] Error al actualizar cuota:', response.error)
+        return { success: false, error: response.error }
       }
+      
+      // Actualizar la cuota en el store local
       const index = installments.value.findIndex(installment => installment.id === id)
       if (index !== -1) {
-        installments.value[index] = data[0]
+        installments.value[index] = response.data
       }
-      // Usar el expense_id guardado antes del update
+      
+      // Recargar los datos mensuales para actualizar la vista
       if (expense_id) {
         await loadInstallments(expense_id)
       }
-      return { success: true, data: data[0] }
+      
+      return { success: true, data: response.data }
     } catch (err) {
       error.value = err.message
       console.error('[markInstallmentAsPaid] Error inesperado:', err)
@@ -453,13 +424,13 @@ export const useExpensesStore = defineStore('expenses', () => {
     loading.value = true
     error.value = null
     try {
-      const { data, error: apiError } = await installmentsApi.getUpcomingInstallments(authStore.user.id, limit)
-      if (apiError) {
-        error.value = apiError.message
-        return { success: false, error: apiError.message }
+      const response = await expensesApi.getUpcomingInstallments(authStore.user.id, limit)
+      if (!response.success) {
+        error.value = response.error
+        return { success: false, error: response.error }
       }
-      upcomingInstallments.value = data || []
-      return { success: true, data }
+      upcomingInstallments.value = response.data || []
+      return { success: true, data: response.data }
     } catch (err) {
       error.value = err.message
       return { success: false, error: err.message }
@@ -518,7 +489,6 @@ export const useExpensesStore = defineStore('expenses', () => {
     updateFilters,
     clearFilters,
     clearError,
-    createInstallmentsForExpense,
     upcomingInstallments,
     loadUpcomingInstallments,
     filteredUpcomingInstallments

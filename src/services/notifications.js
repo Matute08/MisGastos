@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+// import { supabase } from '@/lib/supabase'
 
 class NotificationService {
   constructor() {
@@ -62,21 +62,21 @@ class NotificationService {
         })
       }
 
-      // Guardar suscripción en Supabase
-      const { data, error } = await supabase
-        .from('push_subscriptions')
-        .upsert({
-          user_id: (await supabase.auth.getUser()).data.user?.id,
-          subscription: subscription,
-          created_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id'
-        })
+      // Guardar suscripción en Supabase (comentado temporalmente)
+      // const { data, error } = await supabase
+      //   .from('push_subscriptions')
+      //   .upsert({
+      //     user_id: (await supabase.auth.getUser()).data.user?.id,
+      //     subscription: subscription,
+      //     created_at: new Date().toISOString()
+      //   }, {
+      //     onConflict: 'user_id'
+      //   })
 
-      if (error) {
-        console.error('Error guardando suscripción:', error)
-        return false
-      }
+      // if (error) {
+      //   console.error('Error guardando suscripción:', error)
+      //   return false
+      //   }
 
       console.log('Suscripción push registrada exitosamente')
       return true

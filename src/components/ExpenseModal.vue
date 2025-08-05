@@ -106,8 +106,8 @@
           />
         </div>
 
-        <!-- Tipo de pago -->
-        <div>
+        <!-- Tipo de pago (solo para tarjetas de crédito) -->
+        <div v-if="selectedCard && selectedCard.type === 'Crédito'">
           <label class="block text-sm font-medium text-gray-700 mb-2">
             Tipo de pago
           </label>
@@ -153,10 +153,38 @@
           </p>
         </div>
 
-        <!-- Fecha de la primera cuota (editable) -->
+        <!-- Fecha de cuota única (para tarjetas de crédito con pago único) -->
+        <div v-if="selectedCard && selectedCard.type === 'Crédito' && form.payment_type === 'single'">
+          <label for="single_installment_date" class="block text-sm font-medium text-gray-700">
+            Fecha de la cuota <span class="text-red-500">*</span>
+          </label>
+          <input 
+            id="single_installment_date" 
+            v-model="singleInstallmentDate" 
+            type="date" 
+            required
+            class="input-field mt-1" 
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            Fecha en que vence la cuota
+          </p>
+        </div>
+
+        <!-- Fecha de la primera cuota (obligatoria para cuotas) -->
         <div v-if="form.payment_type === 'installments'">
-          <label for="first_installment_date" class="block text-sm font-medium text-gray-700">Fecha de la primera cuota</label>
-          <input id="first_installment_date" v-model="firstInstallmentDateManual" type="date" class="input-field mt-1" />
+          <label for="first_installment_date" class="block text-sm font-medium text-gray-700">
+            Fecha de la primera cuota <span class="text-red-500">*</span>
+          </label>
+          <input 
+            id="first_installment_date" 
+            v-model="firstInstallmentDateManual" 
+            type="date" 
+            required
+            class="input-field mt-1" 
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            Fecha en que vence la primera cuota
+          </p>
         </div>
 
         <!-- Estado de pago -->
@@ -180,16 +208,16 @@
               <p class="font-medium text-blue-900">{{ selectedCard.name }}</p>
             </div>
             <div>
-              <p class="text-blue-700">Día de cierre</p>
-              <p class="font-medium text-blue-900">{{ selectedCard.closing_day || 'No definido' }}</p>
-            </div>
-            <div>
               <p class="text-blue-700">Primera cuota</p>
               <p class="font-medium text-blue-900">{{ firstInstallmentDatePreview }}</p>
             </div>
             <div>
               <p class="text-blue-700">Última cuota</p>
               <p class="font-medium text-blue-900">{{ lastInstallmentDatePreview }}</p>
+            </div>
+            <div>
+              <p class="text-blue-700">Monto por cuota</p>
+              <p class="font-medium text-blue-900">{{ formatCurrency(installmentAmount) }}</p>
             </div>
           </div>
         </div>
@@ -259,6 +287,10 @@ const form = ref({
 const loading = ref(false)
 const error = ref('')
 
+// Declarar las variables de fecha ANTES de resetForm
+const firstInstallmentDateManual = ref('')
+const singleInstallmentDate = ref('')
+
 // Mover resetForm antes del watcher
 const resetForm = () => {
   form.value = {
@@ -271,11 +303,13 @@ const resetForm = () => {
     installments_count: 1,
     payment_status_id: 1 // Por defecto, pendiente (id=1)
   }
+  firstInstallmentDateManual.value = '';
+  singleInstallmentDate.value = '';
   error.value = ''
 }
 
 // Cambiar el checkbox para que maneje un booleano auxiliar y asigne el id correcto
-const isPaid = ref(false)
+// const isPaid = ref(false)
 
 const selectedCard = computed(() => {
   return cardsStore.cards.find(card => card.id === form.value.card_id)
@@ -284,25 +318,21 @@ const selectedCard = computed(() => {
 // Nuevo watcher para el tipo de tarjeta (debe ir después de selectedCard)
 watch(selectedCard, (card) => {
   if (!card) return;
-  if (card.type === 'Débito' || card.type === 'Transferencia') {
-    form.value.payment_status_id = 2; // Pagada
-    isPaid.value = true;
+  if (card.type === 'Débito') {
+    form.value.payment_type = 'single';
+    form.value.payment_status_id = 2; // Pagada para débito
+    // Limpiar fechas de cuotas
+    firstInstallmentDateManual.value = '';
+    singleInstallmentDate.value = '';
   } else if (card.type === 'Crédito') {
-    // Solo cambiar a pendiente si el usuario no marcó manualmente como pagado
-    if (!isPaid.value) {
-      form.value.payment_status_id = 1;
-    }
+    form.value.payment_status_id = 1; // Pendiente para crédito
   }
 });
-
-watch(isPaid, (nuevoValor) => {
-  form.value.payment_status_id = nuevoValor ? 2 : 1 // 2 = pagada, 1 = pendiente
-})
 
 // Al inicializar el formulario, setear el valor del checkbox según el estado
 watch(() => props.expense, (newExpense) => {
   if (newExpense) {
-    isPaid.value = newExpense.payment_status_id === 2
+    // isPaid.value = newExpense.payment_status_id === 2
     form.value = {
       description: newExpense.description,
       amount: newExpense.amount,
@@ -313,9 +343,20 @@ watch(() => props.expense, (newExpense) => {
       installments_count: newExpense.installments_count || 1,
       payment_status_id: newExpense.payment_status_id
     }
+    
+    // Cargar fechas de cuotas si existen
+    if (newExpense.first_installment_date) {
+      if (newExpense.installments_count > 1) {
+        firstInstallmentDateManual.value = newExpense.first_installment_date;
+      } else {
+        singleInstallmentDate.value = newExpense.first_installment_date;
+      }
+    }
   } else {
     resetForm()
-    isPaid.value = false
+    firstInstallmentDateManual.value = '';
+    singleInstallmentDate.value = '';
+    // isPaid.value = false
   }
 }, { immediate: true })
 
@@ -331,22 +372,9 @@ const firstInstallmentDate = computed(() => {
   
   const purchaseDate = new Date(form.value.purchase_date)
   let firstDate = new Date(purchaseDate)
-  const purchaseDay = purchaseDate.getDate()
-  const closingDay = selectedCard.value.closing_day
   
-  // Calcular la primera fecha de cuota según las reglas correctas
-  if (closingDay) {
-    if (purchaseDay <= closingDay) {
-      // Compra ANTES del día de cierre: primera cuota en el PRÓXIMO mes
-      firstDate.setMonth(firstDate.getMonth() + 1)
-    } else {
-      // Compra DESPUÉS del día de cierre: primera cuota en DOS MESES
-      firstDate.setMonth(firstDate.getMonth() + 2)
-    }
-  } else {
-    // Si no hay día de cierre definido, usar el mes siguiente
-    firstDate.setMonth(firstDate.getMonth() + 1)
-  }
+  // Por defecto, primera cuota en el mes siguiente
+  firstDate.setMonth(firstDate.getMonth() + 1)
   
   return formatDate(firstDate)
 })
@@ -356,22 +384,9 @@ const lastInstallmentDate = computed(() => {
   
   const purchaseDate = new Date(form.value.purchase_date)
   let firstDate = new Date(purchaseDate)
-  const purchaseDay = purchaseDate.getDate()
-  const closingDay = selectedCard.value.closing_day
   
-  // Calcular la primera fecha de cuota según las reglas correctas
-  if (closingDay) {
-    if (purchaseDay <= closingDay) {
-      // Compra ANTES del día de cierre: primera cuota en el PRÓXIMO mes
-      firstDate.setMonth(firstDate.getMonth() + 1)
-    } else {
-      // Compra DESPUÉS del día de cierre: primera cuota en DOS MESES
-      firstDate.setMonth(firstDate.getMonth() + 2)
-    }
-  } else {
-    // Si no hay día de cierre definido, usar el mes siguiente
-    firstDate.setMonth(firstDate.getMonth() + 1)
-  }
+  // Por defecto, primera cuota en el mes siguiente
+  firstDate.setMonth(firstDate.getMonth() + 1)
   
   // Calcular la última cuota
   const lastDate = new Date(firstDate)
@@ -380,38 +395,29 @@ const lastInstallmentDate = computed(() => {
   return formatDate(lastDate)
 })
 
-const firstInstallmentDateManual = ref('')
-
-// Lógica para calcular la fecha de la primera cuota según el ciclo de facturación
-function calcularFechaPrimeraCuota(purchaseDateStr, closingDay) {
-  if (!purchaseDateStr || !closingDay) return ''
-  const purchaseDate = new Date(purchaseDateStr)
-  let cierre = new Date(purchaseDate)
-  cierre.setDate(closingDay)
-  if (purchaseDate.getDate() >= closingDay) {
-    cierre.setMonth(cierre.getMonth() + 1)
-  }
-  // La primer cuota vence el mes siguiente al cierre
-  let primerCuota = new Date(cierre)
-  primerCuota.setMonth(primerCuota.getMonth() + 1)
-  return primerCuota.toISOString().split('T')[0]
-}
-
 // Computed para la fecha de la primera cuota (usada en la vista previa y como valor por defecto)
 const firstInstallmentDatePreview = computed(() => {
   if (firstInstallmentDateManual.value) return firstInstallmentDateManual.value
-  if (form.value.payment_type === 'installments' && selectedCard.value && form.value.purchase_date) {
-    return calcularFechaPrimeraCuota(form.value.purchase_date, selectedCard.value.closing_day)
+  if (form.value.payment_type === 'installments' && form.value.purchase_date) {
+    // Calcular fecha por defecto (mes siguiente)
+    const purchaseDate = new Date(form.value.purchase_date)
+    const defaultDate = new Date(purchaseDate)
+    defaultDate.setMonth(defaultDate.getMonth() + 1)
+    return defaultDate.toISOString().split('T')[0]
   }
   return ''
 })
 
 // Sincronizar el campo editable con la lógica por defecto si el usuario no lo cambia
 watch(
-  [() => form.value.purchase_date, () => selectedCard.value?.closing_day, () => form.value.payment_type],
-  ([nuevaFecha, nuevoCierre, tipoPago]) => {
-    if (tipoPago === 'installments' && !firstInstallmentDateManual.value) {
-      firstInstallmentDateManual.value = calcularFechaPrimeraCuota(nuevaFecha, nuevoCierre)
+  [() => form.value.purchase_date, () => form.value.payment_type],
+  ([nuevaFecha, tipoPago]) => {
+    if (tipoPago === 'installments' && nuevaFecha) {
+      // SIEMPRE calcular fecha por defecto (mes siguiente)
+      const purchaseDate = new Date(nuevaFecha)
+      const defaultDate = new Date(purchaseDate)
+      defaultDate.setMonth(defaultDate.getMonth() + 1)
+      firstInstallmentDateManual.value = defaultDate.toISOString().split('T')[0]
     }
   },
   { immediate: true }
@@ -440,16 +446,71 @@ const handleSubmit = () => {
     error.value = 'El número de cuotas no puede ser mayor a 24'
     return
   }
+  if (form.value.payment_type === 'installments' && !firstInstallmentDateManual.value) {
+    error.value = 'La fecha de la primera cuota es obligatoria para cuotas'
+    return
+  }
+  
+  // Validar fecha de cuota única para tarjetas de crédito
+  if (selectedCard.value && selectedCard.value.type === 'Crédito' && form.value.payment_type === 'single' && !singleInstallmentDate.value) {
+    error.value = 'La fecha de la cuota es obligatoria para tarjetas de crédito'
+    return
+  }
+  
+  console.log('Fecha de compra:', form.value.purchase_date)
+  console.log('Tipo de fecha:', typeof form.value.purchase_date)
+  
+  // Asegurar que la fecha esté en formato YYYY-MM-DD
+  const formatDateForAPI = (dateString) => {
+    if (!dateString) return null
+    const date = new Date(dateString)
+    return date.toISOString().split('T')[0]
+  }
+  
+  // Determinar la fecha de primera cuota según el tipo de pago y tarjeta
+  let firstInstallmentDate = null;
+  if (selectedCard.value && selectedCard.value.type === 'Crédito') {
+    if (form.value.payment_type === 'single') {
+      firstInstallmentDate = formatDateForAPI(singleInstallmentDate.value);
+      console.log('🔍 Frontend - Pago único, fecha:', firstInstallmentDate);
+    } else if (form.value.payment_type === 'installments') {
+      // OBLIGATORIO: Usar la fecha manual
+      if (!firstInstallmentDateManual.value) {
+        error.value = 'Debes seleccionar la fecha de la primera cuota';
+        return;
+      }
+      firstInstallmentDate = formatDateForAPI(firstInstallmentDateManual.value);
+      console.log('🔍 Frontend - Cuotas, fecha manual:', firstInstallmentDateManual.value);
+      console.log('🔍 Frontend - Cuotas, fecha formateada:', firstInstallmentDate);
+    }
+  }
+  // Para tarjetas de débito, NO enviar first_installment_date (el backend lo manejará)
+  
+  // Debug: Verificar que la fecha se está enviando
+  console.log('🔍 Frontend - firstInstallmentDate final:', firstInstallmentDate);
+  console.log('🔍 Frontend - Tipo de firstInstallmentDate:', typeof firstInstallmentDate);
+  
+  // Preparar datos para enviar
   const expenseData = {
     description: form.value.description,
     amount: form.value.amount,
     card_id: form.value.card_id,
     category_id: form.value.category_id,
-    purchase_date: form.value.purchase_date,
+    purchase_date: formatDateForAPI(form.value.purchase_date),
     installments_count: form.value.payment_type === 'installments' ? form.value.installments_count : 1,
-    payment_status_id: form.value.payment_status_id,
-    first_installment_date: form.value.payment_type === 'installments' ? firstInstallmentDateManual.value : null
+    payment_status_id: form.value.payment_status_id
   }
+  
+  // Solo incluir first_installment_date si se determinó (para tarjetas de crédito)
+  if (firstInstallmentDate) {
+    expenseData.first_installment_date = firstInstallmentDate;
+  }
+  
+  console.log('🔍 Frontend - Datos a enviar:', expenseData)
+  console.log('🔍 Frontend - firstInstallmentDateManual:', firstInstallmentDateManual.value)
+  console.log('🔍 Frontend - firstInstallmentDate final:', firstInstallmentDate)
+  console.log('🔍 Frontend - Tipo de tarjeta:', selectedCard.value?.type)
+  console.log('🔍 Frontend - Tipo de pago:', form.value.payment_type)
   emit('save', expenseData)
 }
 
@@ -479,6 +540,7 @@ const lastInstallmentDatePreview = computed(() => {
 })
 
 onMounted(async () => {
+  console.log('🔍 Debug - ExpenseModal montado');
   await Promise.all([
     cardsStore.loadCards(),
     categoriesStore.loadCategories()

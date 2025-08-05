@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { categories as categoriesApi } from '@/lib/supabase'
+import { categories as categoriesApi } from '@/lib/api'
 import { useAuthStore } from './auth'
 
 export const useCategoriesStore = defineStore('categories', () => {

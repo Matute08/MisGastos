@@ -63,26 +63,6 @@
           />
         </div>
 
-        <!-- Día de cierre (solo para crédito) -->
-        <div v-if="form.type === 'Crédito'">
-          <label for="closing_day" class="block text-sm font-medium text-gray-700">
-            Día de cierre
-          </label>
-          <input
-            id="closing_day"
-            v-model.number="form.closing_day"
-            type="number"
-            min="1"
-            max="31"
-            required
-            class="input-field mt-1"
-            placeholder="Ej: 28"
-          />
-          <p class="mt-1 text-xs text-gray-500">
-            Día del mes en que cierra el resumen
-          </p>
-        </div>
-
         <!-- Error -->
         <div v-if="error" class="bg-danger-50 border border-danger-200 rounded-md p-4">
           <div class="flex">
@@ -132,8 +112,7 @@ const emit = defineEmits(['close', 'save'])
 const form = ref({
   name: '',
   type: '',
-  bank: '',
-  closing_day: null
+  bank: ''
 })
 
 const loading = ref(false)
@@ -144,8 +123,7 @@ const resetForm = () => {
   form.value = {
     name: '',
     type: '',
-    bank: '',
-    closing_day: null
+    bank: ''
   }
   error.value = ''
 }
@@ -156,8 +134,7 @@ watch(() => props.card, (newCard) => {
     form.value = {
       name: newCard.name,
       type: newCard.type,
-      bank: newCard.bank,
-      closing_day: newCard.closing_day
+      bank: newCard.bank
     }
   } else {
     resetForm()
@@ -169,26 +146,11 @@ const handleSubmit = async () => {
   error.value = ''
 
   try {
-    // Validaciones
-    if (form.value.type === 'Crédito' && !form.value.closing_day) {
-      error.value = 'El día de cierre es obligatorio para tarjetas de crédito'
-      return
-    }
-
-    if (form.value.closing_day && (form.value.closing_day < 1 || form.value.closing_day > 31)) {
-      error.value = 'El día de cierre debe estar entre 1 y 31'
-      return
-    }
-
     // Preparar datos
     const cardData = {
       name: form.value.name,
       type: form.value.type,
       bank: form.value.bank
-    }
-
-    if (form.value.type === 'Crédito') {
-      cardData.closing_day = form.value.closing_day
     }
 
     emit('save', cardData)

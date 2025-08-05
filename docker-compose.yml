@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: misgastos-postgres
+    environment:
+      POSTGRES_DB: misgastos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/scripts/setup-database.sql:/docker-entrypoint-initdb.d/setup-database.sql
+    restart: unless-stopped
+
+volumes:
+  postgres_data: 

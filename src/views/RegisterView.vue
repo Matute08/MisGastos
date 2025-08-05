@@ -65,6 +65,19 @@
           />
         </div>
 
+        <!-- Checkbox Recordar mis datos -->
+        <div class="flex items-center">
+          <input
+            id="rememberMe"
+            v-model="rememberMe"
+            type="checkbox"
+            class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+          />
+          <label for="rememberMe" class="ml-2 block text-sm text-gray-700">
+            Recordar mis datos
+          </label>
+        </div>
+
         <!-- Error de validación -->
         <div v-if="validationError" class="bg-warning-50 border border-warning-200 rounded-md p-4">
           <div class="flex">
@@ -114,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { CreditCard, AlertCircle, AlertTriangle } from 'lucide-vue-next'
@@ -127,6 +140,35 @@ const form = ref({
   password: '',
   confirmPassword: ''
 })
+
+const rememberMe = ref(false)
+
+// Función para guardar credenciales
+const saveCredentials = () => {
+  if (rememberMe.value) {
+    localStorage.setItem('rememberedCredentials', JSON.stringify({
+      email: form.value.email,
+      rememberMe: true
+    }))
+  } else {
+    localStorage.removeItem('rememberedCredentials')
+  }
+}
+
+// Función para cargar credenciales guardadas
+const loadSavedCredentials = () => {
+  const saved = localStorage.getItem('rememberedCredentials')
+  if (saved) {
+    const credentials = JSON.parse(saved)
+    form.value.email = credentials.email
+    rememberMe.value = credentials.rememberMe
+  }
+}
+
+// Función para limpiar credenciales
+const clearCredentials = () => {
+  localStorage.removeItem('rememberedCredentials')
+}
 
 const validationError = computed(() => {
   if (form.value.password && form.value.confirmPassword && form.value.password !== form.value.confirmPassword) {
@@ -146,11 +188,24 @@ const handleRegister = async () => {
   const { success } = await authStore.signUp(form.value.email, form.value.password)
   
   if (success) {
+    // Guardar credenciales si está marcado "Recordar mis datos"
+    saveCredentials()
+    
     router.push('/dashboard')
   }
 }
 
+// Watcher para limpiar credenciales si se desmarca "Recordar mis datos"
+watch(rememberMe, (newValue) => {
+  if (!newValue) {
+    clearCredentials()
+  }
+})
+
 onMounted(() => {
   authStore.clearError()
+  
+  // Cargar credenciales guardadas
+  loadSavedCredentials()
 })
 </script> 
