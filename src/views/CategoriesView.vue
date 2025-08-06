@@ -41,66 +41,179 @@
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
     </div>
 
-    <!-- Lista de categorías -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Lista de categorías mejorada -->
+    <div v-else class="space-y-4">
       <div
         v-for="category in categoriesStore.categories"
         :key="category.id"
-        class="card hover:shadow-md transition-shadow duration-200"
+        class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200"
       >
-        <div class="flex justify-between items-start">
-          <div class="flex-1">
-            <div class="flex items-center space-x-2 mb-2">
-              <div
-                class="w-4 h-4 rounded-full"
-                :style="{ backgroundColor: category.color }"
-              ></div>
-              <h3 class="text-lg font-semibold text-gray-900">{{ category.name }}</h3>
-              <!-- Indicador de categoría del sistema -->
-              <span 
-                v-if="!authStore.isAdmin && category.user_id !== authStore.user?.id"
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-              >
-                Sistema
-              </span>
-            </div>
-            
-            <div class="text-sm text-gray-600">
-              <p>Total gastos: ${{ formatCurrency(getCategoryTotal(category.id)) }}</p>
-              <p>Cantidad: {{ getCategoryCount(category.id) }} gastos</p>
+        <!-- Header de la categoría -->
+        <div 
+          class="flex items-center justify-between p-4 cursor-pointer"
+          @click="toggleCategory(category.id)"
+        >
+          <div class="flex items-center space-x-3 flex-1">
+            <div
+              class="w-4 h-4 rounded-full flex-shrink-0"
+              :style="{ backgroundColor: category.color }"
+            ></div>
+            <div class="flex-1">
+              <div class="flex items-center space-x-2">
+                <h3 class="text-lg font-semibold text-gray-900">{{ category.name }}</h3>
+                <!-- Indicador de categoría del sistema -->
+                <span 
+                  v-if="!authStore.isAdmin && category.user_id !== authStore.user?.id"
+                  class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                >
+                  Sistema
+                </span>
+              </div>
+              <div class="text-sm text-gray-600 mt-1">
+                <span>Total: {{ formatCurrency(getCategoryTotal(category.id)) }}</span>
+                <span class="mx-2">•</span>
+                <span>{{ getCategoryCount(category.id) }} gastos</span>
+                <span class="mx-2">•</span>
+                <span>{{ getSubcategoriesForCategory(category.id).length }} subcategorías</span>
+              </div>
             </div>
           </div>
-
-          <!-- Menú de acciones (solo para admins) -->
-          <div v-if="categoriesStore.canEditCategory() || categoriesStore.canDeleteCategory()" class="relative">
+          
+          <!-- Botones de acción -->
+          <div class="flex items-center space-x-2">
+            <!-- Botón expandir/colapsar -->
             <button
-              @click="toggleCategoryMenu(category.id)"
-              class="p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+              @click.stop="toggleCategory(category.id)"
+              class="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
             >
-              <MoreVertical class="h-4 w-4" />
+              <ChevronDown 
+                v-if="!expandedCategories.includes(category.id)"
+                class="h-5 w-5 transform transition-transform duration-200" 
+              />
+              <ChevronUp 
+                v-else
+                class="h-5 w-5 transform transition-transform duration-200" 
+              />
             </button>
+            
+            <!-- Menú de acciones -->
+            <div v-if="categoriesStore.canEditCategory() || categoriesStore.canDeleteCategory()" class="relative" data-category-menu>
+              <button
+                @click.stop="toggleCategoryMenu(category.id)"
+                class="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+              >
+                <MoreVertical class="h-4 w-4" />
+              </button>
 
-            <!-- Menú desplegable -->
-            <div
-              v-if="activeCategoryMenu === category.id"
-              class="absolute right-0 mt-2 w-32 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200"
-            >
-              <button
-                v-if="categoriesStore.canEditCategory()"
-                @click="editCategory(category)"
-                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+              <!-- Menú desplegable -->
+              <div
+                v-if="activeCategoryMenu === category.id"
+                class="absolute right-0 w-32 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
+                style="top: calc(100% + 8px);"
               >
-                <Edit class="h-4 w-4 inline mr-2" />
-                Editar
-              </button>
+                <button
+                  v-if="categoriesStore.canEditCategory()"
+                  @click="editCategory(category)"
+                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                >
+                  <Edit class="h-4 w-4 inline mr-2" />
+                  Editar
+                </button>
+                <button
+                  v-if="categoriesStore.canDeleteCategory()"
+                  @click="deleteCategory(category.id)"
+                  class="block w-full text-left px-4 py-2 text-sm text-danger-700 hover:bg-danger-50 transition-colors duration-200"
+                >
+                  <Trash2 class="h-4 w-4 inline mr-2" />
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contenido expandible -->
+        <div 
+          v-if="expandedCategories.includes(category.id)"
+          class="border-t border-gray-100 bg-gray-50 transition-all duration-300 ease-in-out"
+        >
+          <!-- Subcategorías -->
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-sm font-medium text-gray-700">Subcategorías</h4>
               <button
-                v-if="categoriesStore.canDeleteCategory()"
-                @click="deleteCategory(category.id)"
-                class="block w-full text-left px-4 py-2 text-sm text-danger-700 hover:bg-danger-50 transition-colors duration-200"
+                v-if="subcategoriesStore.canCreateSubcategory()"
+                @click="addSubcategory(category)"
+                class="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 px-2 py-1 rounded-md hover:bg-blue-50 transition-colors duration-200"
               >
-                <Trash2 class="h-4 w-4 inline mr-2" />
-                Eliminar
+                <FolderPlus class="h-3 w-3" />
+                Agregar
               </button>
+            </div>
+            
+            <div class="space-y-2">
+              <div
+                v-for="subcategory in getSubcategoriesForCategory(category.id)"
+                :key="subcategory.id"
+                class="flex items-center justify-between p-3 bg-white rounded-md border border-gray-200 hover:border-gray-300 transition-colors duration-200"
+              >
+                <div class="flex items-center space-x-3">
+                  <div
+                    class="w-3 h-3 rounded-full flex-shrink-0"
+                    :style="{ backgroundColor: subcategory.color }"
+                  ></div>
+                  <span class="text-sm text-gray-700 font-medium">{{ subcategory.name }}</span>
+                </div>
+                
+                <!-- Menú de acciones para subcategorías -->
+                <div v-if="subcategoriesStore.canEditSubcategory() || subcategoriesStore.canDeleteSubcategory()" class="relative" data-subcategory-menu>
+                  <button
+                    @click="toggleSubcategoryMenu(subcategory.id)"
+                    class="p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                  >
+                    <MoreVertical class="h-3 w-3" />
+                  </button>
+
+                  <!-- Menú desplegable para subcategorías -->
+                  <div
+                    v-if="activeSubcategoryMenu === subcategory.id"
+                    class="absolute right-0 w-24 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
+                    style="top: calc(100% + 4px);"
+                  >
+                    <button
+                      v-if="subcategoriesStore.canEditSubcategory()"
+                      @click="editSubcategory(subcategory)"
+                      class="block w-full text-left px-3 py-1 text-xs text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                    >
+                      <Edit class="h-3 w-3 inline mr-1" />
+                      Editar
+                    </button>
+                    <button
+                      v-if="subcategoriesStore.canDeleteSubcategory()"
+                      @click="deleteSubcategory(subcategory.id)"
+                      class="block w-full text-left px-3 py-1 text-xs text-danger-700 hover:bg-danger-50 transition-colors duration-200"
+                    >
+                      <Trash2 class="h-3 w-3 inline mr-1" />
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div
+                v-if="getSubcategoriesForCategory(category.id).length === 0"
+                class="text-center py-6 text-gray-500"
+              >
+                <Folder class="mx-auto h-8 w-8 text-gray-300 mb-2" />
+                <p class="text-sm">Sin subcategorías</p>
+                <button
+                  v-if="subcategoriesStore.canCreateSubcategory()"
+                  @click="addSubcategory(category)"
+                  class="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  + Agregar primera subcategoría
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -109,7 +222,7 @@
       <!-- Estado vacío -->
       <div
         v-if="categoriesStore.categories.length === 0"
-        class="col-span-full text-center py-12"
+        class="text-center py-12"
       >
         <Tag class="mx-auto h-12 w-12 text-gray-400" />
         <h3 class="mt-4 text-lg font-medium text-gray-900">
@@ -136,42 +249,98 @@
       @close="closeModal"
       @save="saveCategory"
     />
+
+    <!-- Modal para agregar/editar subcategoría -->
+    <SubcategoryModal
+      v-if="showSubcategoryModal"
+      :subcategory="editingSubcategory"
+      :selected-category="selectedCategoryForSubcategory"
+      @close="closeSubcategoryModal"
+      @save="saveSubcategory"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useCategoriesStore } from '@/stores/categories'
+import { useSubcategoriesStore } from '@/stores/subcategories'
 import { useExpensesStore } from '@/stores/expenses'
 import { useAuthStore } from '@/stores/auth'
 import CategoryModal from '@/components/CategoryModal.vue'
+import SubcategoryModal from '@/components/SubcategoryModal.vue'
+import Swal from 'sweetalert2'
+import 'sweetalert2/dist/sweetalert2.min.css'
 import {
   Tag,
   Plus,
   MoreVertical,
   Edit,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  FolderPlus,
+  ChevronDown,
+  ChevronUp,
+  Folder
 } from 'lucide-vue-next'
 
 const categoriesStore = useCategoriesStore()
+const subcategoriesStore = useSubcategoriesStore()
 const expensesStore = useExpensesStore()
 const authStore = useAuthStore()
 
 const showModal = ref(false)
+const showSubcategoryModal = ref(false)
 const editingCategory = ref(null)
+const editingSubcategory = ref(null)
 const activeCategoryMenu = ref(null)
+const activeSubcategoryMenu = ref(null)
+const selectedCategoryForSubcategory = ref(null)
+const expandedCategories = ref([])
 
 onMounted(async () => {
   console.log('Llamando a loadCategories...')
   await Promise.all([
     categoriesStore.loadCategories(),
+    subcategoriesStore.loadCategoriesWithSubcategories(),
     expensesStore.loadExpenses()
   ])
+  
+  // Ya no expandimos automáticamente las categorías con subcategorías
+  // expandCategoriesWithSubcategories()
 })
 
+// Función para expandir automáticamente categorías con subcategorías (comentada)
+// const expandCategoriesWithSubcategories = () => {
+//   categoriesStore.categories.forEach(category => {
+//     const subcategories = getSubcategoriesForCategory(category.id)
+//     if (subcategories.length > 0 && !expandedCategories.value.includes(category.id)) {
+//       expandedCategories.value.push(category.id)
+//     }
+//   })
+// }
+
+const toggleCategory = (categoryId) => {
+  const index = expandedCategories.value.indexOf(categoryId)
+  if (index > -1) {
+    expandedCategories.value.splice(index, 1)
+  } else {
+    expandedCategories.value.push(categoryId)
+  }
+}
+
 const toggleCategoryMenu = (categoryId) => {
+  // Cerrar menú de subcategorías si está abierto
+  activeSubcategoryMenu.value = null
+  // Toggle menú de categorías
   activeCategoryMenu.value = activeCategoryMenu.value === categoryId ? null : categoryId
+}
+
+const toggleSubcategoryMenu = (subcategoryId) => {
+  // Cerrar menú de categorías si está abierto
+  activeCategoryMenu.value = null
+  // Toggle menú de subcategorías
+  activeSubcategoryMenu.value = activeSubcategoryMenu.value === subcategoryId ? null : subcategoryId
 }
 
 const editCategory = (category) => {
@@ -181,9 +350,108 @@ const editCategory = (category) => {
 }
 
 const deleteCategory = async (categoryId) => {
-  if (confirm('¿Estás seguro de que quieres eliminar esta categoría?')) {
-    await categoriesStore.deleteCategory(categoryId)
-    activeCategoryMenu.value = null
+  const result = await Swal.fire({
+    title: '¿Estás seguro de que quieres eliminar esta categoría?',
+    text: 'Esta acción no se puede deshacer.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  })
+
+  if (result.isConfirmed) {
+    try {
+      const deleteResult = await categoriesStore.deleteCategory(categoryId)
+      
+      if (deleteResult.success) {
+        activeCategoryMenu.value = null
+        // Remover de expandedCategories si estaba expandida
+        const index = expandedCategories.value.indexOf(categoryId)
+        if (index > -1) {
+          expandedCategories.value.splice(index, 1)
+        }
+        await Swal.fire({
+          icon: 'success',
+          title: '¡Categoría eliminada!',
+          text: 'La categoría se eliminó correctamente.',
+          timer: 2000,
+          showConfirmButton: false
+        })
+      } else {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error al eliminar',
+          text: deleteResult.error || 'No se pudo eliminar la categoría.'
+        })
+      }
+    } catch (error) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error inesperado',
+        text: error.message || 'Ocurrió un error al eliminar la categoría.'
+      })
+    }
+  }
+}
+
+const addSubcategory = (category) => {
+  selectedCategoryForSubcategory.value = category
+  editingSubcategory.value = null
+  showSubcategoryModal.value = true
+  activeSubcategoryMenu.value = null
+  // Expandir la categoría si no está expandida
+  if (!expandedCategories.value.includes(category.id)) {
+    expandedCategories.value.push(category.id)
+  }
+}
+
+const editSubcategory = (subcategory) => {
+  editingSubcategory.value = { ...subcategory }
+  showSubcategoryModal.value = true
+  activeSubcategoryMenu.value = null
+}
+
+const deleteSubcategory = async (subcategoryId) => {
+  const result = await Swal.fire({
+    title: '¿Estás seguro de que quieres eliminar esta subcategoría?',
+    text: 'Esta acción no se puede deshacer.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  })
+
+  if (result.isConfirmed) {
+    try {
+      const deleteResult = await subcategoriesStore.deleteSubcategory(subcategoryId)
+      
+      if (deleteResult.success) {
+        activeSubcategoryMenu.value = null
+        await Swal.fire({
+          icon: 'success',
+          title: '¡Subcategoría eliminada!',
+          text: 'La subcategoría se eliminó correctamente.',
+          timer: 2000,
+          showConfirmButton: false
+        })
+      } else {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error al eliminar',
+          text: deleteResult.error || 'No se pudo eliminar la subcategoría.'
+        })
+      }
+    } catch (error) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error inesperado',
+        text: error.message || 'Ocurrió un error al eliminar la subcategoría.'
+      })
+    }
   }
 }
 
@@ -192,14 +460,122 @@ const closeModal = () => {
   editingCategory.value = null
 }
 
+const closeSubcategoryModal = () => {
+  showSubcategoryModal.value = false
+  editingSubcategory.value = null
+  selectedCategoryForSubcategory.value = null
+}
+
 const saveCategory = async (categoryData) => {
-  if (editingCategory.value) {
-    await categoriesStore.updateCategory(editingCategory.value.id, categoryData)
-  } else {
-    await categoriesStore.createCategory(categoryData)
+  try {
+    let result
+    if (editingCategory.value) {
+      result = await categoriesStore.updateCategory(editingCategory.value.id, categoryData)
+      if (!result.success) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error al actualizar categoría',
+          text: result.error || 'Ocurrió un error inesperado.'
+        })
+        return
+      }
+    } else {
+      result = await categoriesStore.createCategory(categoryData)
+      if (!result.success) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error al crear categoría',
+          text: result.error || 'Ocurrió un error inesperado.'
+        })
+        return
+      }
+    }
+
+    await Promise.all([
+      categoriesStore.loadCategories(), // Recarga la lista de categorías
+      subcategoriesStore.loadCategoriesWithSubcategories() // Recarga las subcategorías
+    ])
+
+    await Swal.fire({
+      icon: 'success',
+      title: editingCategory.value ? '¡Categoría actualizada!' : '¡Categoría creada!',
+      text: editingCategory.value 
+        ? 'La categoría se actualizó correctamente.' 
+        : 'La categoría se creó correctamente.',
+      timer: 2000,
+      showConfirmButton: false
+    })
+
+    closeModal()
+  } catch (error) {
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error inesperado',
+      text: error.message || 'Ocurrió un error inesperado.'
+    })
   }
-  await categoriesStore.loadCategories() // Recarga la lista después de crear/editar
-  closeModal()
+}
+
+const saveSubcategory = async (subcategoryData) => {
+  try {
+    let result
+    if (editingSubcategory.value) {
+      result = await subcategoriesStore.updateSubcategory(editingSubcategory.value.id, subcategoryData)
+      if (!result.success) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error al actualizar subcategoría',
+          text: result.error || 'Ocurrió un error inesperado.'
+        })
+        return
+      }
+    } else {
+      result = await subcategoriesStore.createSubcategory(subcategoryData)
+      if (!result.success) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error al crear subcategoría',
+          text: result.error || 'Ocurrió un error inesperado.'
+        })
+        return
+      }
+    }
+
+    await subcategoriesStore.loadCategoriesWithSubcategories() // Recarga la lista después de crear/editar
+
+    await Swal.fire({
+      icon: 'success',
+      title: editingSubcategory.value ? '¡Subcategoría actualizada!' : '¡Subcategoría creada!',
+      text: editingSubcategory.value 
+        ? 'La subcategoría se actualizó correctamente.' 
+        : 'La subcategoría se creó correctamente.',
+      timer: 2000,
+      showConfirmButton: false
+    })
+
+    closeSubcategoryModal()
+  } catch (error) {
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error inesperado',
+      text: error.message || 'Ocurrió un error inesperado.'
+    })
+  }
+}
+
+// Obtener subcategorías para una categoría específica
+const getSubcategoriesForCategory = (categoryId) => {
+  // Buscar en categoriesWithSubcategories que tiene la estructura correcta
+  const categoryData = subcategoriesStore.categoriesWithSubcategories.find(
+    cat => cat.id === categoryId
+  )
+  
+  if (categoryData && categoryData.subcategories) {
+    return categoryData.subcategories
+  }
+  
+  // Fallback: buscar en subcategories directo
+  return subcategoriesStore.subcategories.filter(subcategory => subcategory.category_id === categoryId)
 }
 
 // Funciones de utilidad
@@ -225,8 +601,16 @@ const formatCurrency = (amount) => {
 // Cerrar menús al hacer clic fuera
 onMounted(() => {
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.relative')) {
+    // Verificar si el clic fue fuera de los menús
+    const isOutsideCategoryMenu = !e.target.closest('[data-category-menu]')
+    const isOutsideSubcategoryMenu = !e.target.closest('[data-subcategory-menu]')
+    
+    if (isOutsideCategoryMenu) {
       activeCategoryMenu.value = null
+    }
+    
+    if (isOutsideSubcategoryMenu) {
+      activeSubcategoryMenu.value = null
     }
   })
 })

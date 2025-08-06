@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.js';
 import expensesRoutes from './routes/expenses.js';
 import cardsRoutes from './routes/cards.js';
 import categoriesRoutes from './routes/categories.js';
+import subcategoriesRoutes from './routes/subcategories.js';
 
 // Configurar variables de entorno
 dotenv.config();
@@ -88,7 +89,8 @@ app.get('/', (req, res) => {
       auth: '/api/auth',
       expenses: '/api/expenses',
       cards: '/api/cards',
-      categories: '/api/categories'
+      categories: '/api/categories',
+      subcategories: '/api/subcategories'
     }
   });
 });
@@ -98,6 +100,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expensesRoutes);
 app.use('/api/cards', cardsRoutes);
 app.use('/api/categories', categoriesRoutes);
+app.use('/api/subcategories', subcategoriesRoutes);
 
 // Middleware de manejo de errores
 app.use((err, req, res, next) => {

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { categories as categoriesApi } from '@/lib/api'
+import { categories as categoriesApi, subcategories as subcategoriesApi } from '@/lib/api'
 import { useAuthStore } from './auth'
 
 export const useCategoriesStore = defineStore('categories', () => {
@@ -42,8 +42,16 @@ export const useCategoriesStore = defineStore('categories', () => {
         error.value = apiError.message
         return { success: false, error: apiError.message }
       }
-      categories.value.push(data[0])
-      return { success: true, data: data[0] }
+      
+      const newCategory = data[0]
+      categories.value.push(newCategory)
+      
+      // Si hay subcategorías, mostrar mensaje de éxito
+      if (categoryData.subcategories && categoryData.subcategories.length > 0) {
+        console.log(`Categoría "${newCategory.name}" creada con ${categoryData.subcategories.length} subcategorías`)
+      }
+      
+      return { success: true, data: newCategory }
     } catch (err) {
       error.value = err.message
       return { success: false, error: err.message }
