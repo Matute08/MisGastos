@@ -448,5 +448,50 @@ export const categories = {
   }
 };
 
+// Funciones para subcategorías
+export const subcategories = {
+  // Obtener todas las subcategorías
+  async getSubcategories() {
+    const response = await apiClient.get('/subcategories');
+    return response;
+  },
+
+  // Obtener subcategorías por categoría
+  async getSubcategoriesByCategory(categoryId) {
+    const response = await apiClient.get(`/subcategories/category/${categoryId}`);
+    return response;
+  },
+
+  // Obtener categorías con sus subcategorías
+  async getCategoriesWithSubcategories() {
+    const response = await apiClient.get('/subcategories/with-categories');
+    return response;
+  },
+
+  // Crear nueva subcategoría
+  async createSubcategory(subcategoryData) {
+    const response = await apiClient.post('/subcategories', subcategoryData);
+    return response;
+  },
+
+  // Actualizar subcategoría
+  async updateSubcategory(id, updates) {
+    const response = await apiClient.put(`/subcategories/${id}`, updates);
+    return response;
+  },
+
+  // Eliminar subcategoría
+  async deleteSubcategory(id) {
+    const response = await apiClient.delete(`/subcategories/${id}`);
+    return response;
+  },
+
+  // Obtener subcategoría por ID
+  async getSubcategoryById(id) {
+    const response = await apiClient.get(`/subcategories/${id}`);
+    return response;
+  }
+};
+
 // Exportar el cliente API para uso directo si es necesario
 export { apiClient }; 

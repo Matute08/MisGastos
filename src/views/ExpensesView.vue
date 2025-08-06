@@ -117,20 +117,6 @@
             </div>
         </div>
 
-        <!-- Checkbox para alternar entre gastos directos y cuotas -->
-        <!-- <div class="flex justify-end mt-2">
-      <div class="checkbox-container">
-        <input
-          v-model="showDirectExpenses"
-          type="checkbox"
-          id="showDirectExpenses"
-        />
-        <label for="showDirectExpenses" class="text-sm text-gray-700 font-medium cursor-pointer select-none">
-          Ver gastos directos
-        </label>
-      </div>
-    </div> -->
-
         <!-- Error -->
         <div
             v-if="expensesStore.error"
@@ -205,8 +191,8 @@
                 </button>
             </div>
 
-            <!-- Tabla de gastos -->
-            <div class="card">
+            <!-- Vista Desktop: Tabla de gastos -->
+            <div class="hidden md:block card">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -255,9 +241,9 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <!-- Gastos directos y cuotas -->
-                            <template v-if="filteredExpensesToShow.length > 0">
+                            <template v-if="paginatedExpensesDesktop.length > 0">
                                 <tr
-                                    v-for="item in filteredExpensesToShow"
+                                    v-for="item in paginatedExpensesDesktop"
                                     :key="
                                         item.is_installment
                                             ? `installment-${item.installment_id}`
@@ -404,7 +390,7 @@
                             <!-- Gastos normales (cuando no hay filtros de mes) -->
                             <template v-else-if="!filters.value || !filters.value.month || !filters.value.year">
                                 <tr
-                                    v-for="expense in directExpenses"
+                                    v-for="expense in paginatedDirectExpensesDesktop"
                                     :key="expense.id"
                                 >
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -507,26 +493,377 @@
                     </table>
                 </div>
 
-                <!-- Estado vacío -->
-                <div
-                    v-if="filteredExpensesToShow.length === 0"
-                    class="text-center py-12"
-                >
-                    <Receipt class="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 class="mt-4 text-lg font-medium text-gray-900">
-                        No hay gastos
-                    </h3>
-                    <p class="mt-2 text-gray-600">
-                        Comienza agregando tu primer gasto
-                    </p>
+                <!-- Paginación desktop -->
+                <div v-if="totalPagesDesktop > 1" class="flex justify-center items-center gap-2 mt-6 py-4 border-t border-gray-200">
                     <button
-                        @click="showModal = true"
-                        class="mt-4 btn-primary flex items-center gap-2"
+                        @click="previousPageDesktop"
+                        :disabled="currentPageDesktop === 1"
+                        class="px-3 py-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 text-sm font-medium"
                     >
-                        <Plus class="h-4 w-4" />
-                        Agregar Gasto
+                        Anterior
+                    </button>
+                    
+                    <div class="flex items-center gap-1">
+                        <span
+                            v-for="page in visiblePagesDesktop"
+                            :key="page"
+                            @click="goToPageDesktop(page)"
+                            :class="[
+                                'px-3 py-1 rounded-lg text-sm font-medium cursor-pointer transition-colors duration-200',
+                                page === currentPageDesktop
+                                    ? 'bg-primary-600 text-white'
+                                    : 'text-gray-600 hover:bg-gray-100'
+                            ]"
+                        >
+                            {{ page }}
+                        </span>
+                    </div>
+                    
+                    <button
+                        @click="nextPageDesktop"
+                        :disabled="currentPageDesktop === totalPagesDesktop"
+                        class="px-3 py-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 text-sm font-medium"
+                    >
+                        Siguiente
                     </button>
                 </div>
+            </div>
+
+            <!-- Vista Móvil: Lista de tarjetas de gastos -->
+            <div class="md:hidden space-y-3">
+                <template v-if="paginatedExpenses.length > 0">
+                    <div
+                        v-for="item in paginatedExpenses"
+                        :key="
+                            item.is_installment
+                                ? `installment-${item.installment_id}`
+                                : `expense-${item.id}`
+                        "
+                        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+                    >
+                        <!-- Header de la tarjeta -->
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <!-- Icono del tipo de gasto -->
+                                <div
+                                    class="w-10 h-10 rounded-full flex items-center justify-center"
+                                    :class="
+                                        item.is_installment
+                                            ? 'bg-blue-100'
+                                            : 'bg-gray-100'
+                                    "
+                                >
+                                    <CreditCard
+                                        v-if="item.is_installment"
+                                        class="h-5 w-5 text-blue-600"
+                                    />
+                                    <Receipt
+                                        v-else
+                                        class="h-5 w-5 text-gray-600"
+                                    />
+                                </div>
+                                
+                                <!-- Información principal -->
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-900 text-base">
+                                        {{ item.description }}
+                                    </h3>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span
+                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                                            :style="{
+                                                backgroundColor:
+                                                    item.categories?.color +
+                                                    '20',
+                                                color: item.categories?.color,
+                                            }"
+                                        >
+                                            {{ item.categories?.name || "Sin categoría" }}
+                                        </span>
+                                        <span
+                                            class="text-xs text-gray-500"
+                                            :class="
+                                                item.is_installment
+                                                    ? 'text-blue-600'
+                                                    : 'text-gray-600'
+                                            "
+                                        >
+                                            {{ item.is_installment ? "Cuota" : "Gasto" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Monto y menú de acciones -->
+                            <div class="text-right relative">
+                                <!-- Menú de acciones con tres puntitos -->
+                                <div class="relative action-menu-container mb-2">
+                                    <button
+                                        @click="toggleActionMenu(item.id)"
+                                        class="p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                                        title="Más opciones"
+                                    >
+                                        <MoreVertical class="h-4 w-4" />
+                                    </button>
+                                    
+                                    <!-- Menú desplegable -->
+                                    <div
+                                        v-if="activeActionMenu === item.id"
+                                        class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[120px]"
+                                    >
+                                        <button
+                                            v-if="!item.is_installment"
+                                            @click="editExpense(item)"
+                                            class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                        >
+                                            <Edit class="h-4 w-4" />
+                                            Editar
+                                        </button>
+                                        <button
+                                            v-if="!item.is_installment"
+                                            @click="deleteExpense(item.id)"
+                                            class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                        >
+                                            <Trash2 class="h-4 w-4" />
+                                            Eliminar
+                                        </button>
+                                        <button
+                                            v-if="item.is_installment"
+                                            @click="showInstallments(item.expense_id, item.installment_number)"
+                                            class="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
+                                        >
+                                            <CreditCard class="h-4 w-4" />
+                                            Ver cuota
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div
+                                    class="text-lg font-bold"
+                                    :class="
+                                        item.is_installment
+                                            ? 'text-blue-600'
+                                            : 'text-gray-900'
+                                    "
+                                >
+                                    {{ formatCurrency(
+                                        item.is_installment
+                                            ? item.installment_amount
+                                            : item.amount
+                                    ) }}
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    {{ formatDate(
+                                        item.is_installment
+                                            ? item.due_date
+                                            : item.purchase_date
+                                    ) }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detalles adicionales -->
+                        <div class="space-y-2">
+                            <!-- Información de cuota -->
+                            <div
+                                v-if="item.is_installment"
+                                class="flex items-center justify-between text-sm"
+                            >
+                                <span class="text-gray-600">Cuota {{ item.installment_number }} de {{ item.installments_count }}</span>
+                                <span class="text-blue-600 font-medium">Vence: {{ formatDate(item.due_date) }}</span>
+                            </div>
+
+                            <!-- Tarjeta -->
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-600">Tarjeta</span>
+                                <span class="text-gray-900 font-medium">{{ item.cards?.name || "Sin tarjeta" }}</span>
+                            </div>
+
+                            <!-- Estado -->
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Estado</span>
+                                <button
+                                    @click="item.is_installment ? showInstallments(item.expense_id, item.installment_number) : togglePaidStatus(item)"
+                                    :class="[
+                                        'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors duration-200',
+                                        getStatusColor(item)
+                                    ]"
+                                >
+                                    {{ getStatusLabel(item) }}
+                                </button>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </template>
+
+                <!-- Gastos normales (cuando no hay filtros de mes) -->
+                <template v-else-if="!filters.value || !filters.value.month || !filters.value.year">
+                    <div
+                        v-for="expense in paginatedDirectExpenses"
+                        :key="expense.id"
+                        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+                    >
+                        <!-- Header de la tarjeta -->
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <!-- Icono del tipo de gasto -->
+                                <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                    <Receipt class="h-5 w-5 text-gray-600" />
+                                </div>
+                                
+                                <!-- Información principal -->
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-900 text-base">
+                                        {{ expense.description }}
+                                    </h3>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span
+                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                                            :style="{
+                                                backgroundColor:
+                                                    expense.categories?.color +
+                                                    '20',
+                                                color: expense.categories?.color,
+                                            }"
+                                        >
+                                            {{ expense.categories?.name || "Sin categoría" }}
+                                        </span>
+                                        <span class="text-xs text-gray-500">Gasto</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Monto y menú de acciones -->
+                            <div class="text-right relative">
+                                <!-- Menú de acciones con tres puntitos -->
+                                <div class="relative action-menu-container mb-2">
+                                    <button
+                                        @click="toggleActionMenu(expense.id)"
+                                        class="p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                                        title="Más opciones"
+                                    >
+                                        <MoreVertical class="h-4 w-4" />
+                                    </button>
+                                    
+                                    <!-- Menú desplegable -->
+                                    <div
+                                        v-if="activeActionMenu === expense.id"
+                                        class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[120px]"
+                                    >
+                                        <button
+                                            @click="editExpense(expense)"
+                                            class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                        >
+                                            <Edit class="h-4 w-4" />
+                                            Editar
+                                        </button>
+                                        <button
+                                            @click="deleteExpense(expense.id)"
+                                            class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                        >
+                                            <Trash2 class="h-4 w-4" />
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-lg font-bold text-gray-900">
+                                    {{ formatCurrency(expense.amount) }}
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    {{ formatDate(expense.purchase_date) }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detalles adicionales -->
+                        <div class="space-y-2">
+                            <!-- Tarjeta -->
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-600">Tarjeta</span>
+                                <span class="text-gray-900 font-medium">{{ expense.cards?.name || "Sin tarjeta" }}</span>
+                            </div>
+
+                            <!-- Estado -->
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Estado</span>
+                                <button
+                                    @click="togglePaidStatus(expense)"
+                                    :class="[
+                                        'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors duration-200',
+                                        paymentStatusMap[expense.payment_status_id]?.code === 'pagada'
+                                            ? 'bg-success-100 text-success-800 hover:bg-success-200'
+                                            : paymentStatusMap[expense.payment_status_id]?.code === 'en_deuda'
+                                            ? 'bg-danger-100 text-danger-800 hover:bg-danger-200'
+                                            : 'bg-warning-100 text-warning-800 hover:bg-warning-200',
+                                    ]"
+                                >
+                                    {{ paymentStatusMap[expense.payment_status_id]?.label || "Sin estado" }}
+                                </button>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </template>
+
+                <!-- Paginación móvil -->
+                <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 mt-6">
+                    <button
+                        @click="previousPage"
+                        :disabled="currentPage === 1"
+                        class="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                        <ChevronLeft class="h-4 w-4" />
+                    </button>
+                    
+                    <div class="flex items-center gap-1">
+                        <span
+                            v-for="page in visiblePages"
+                            :key="page"
+                            @click="goToPage(page)"
+                            :class="[
+                                'px-3 py-1 rounded-lg text-sm font-medium cursor-pointer transition-colors duration-200',
+                                page === currentPage
+                                    ? 'bg-primary-600 text-white'
+                                    : 'text-gray-600 hover:bg-gray-100'
+                            ]"
+                        >
+                            {{ page }}
+                        </span>
+                    </div>
+                    
+                    <button
+                        @click="nextPage"
+                        :disabled="currentPage === totalPages"
+                        class="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                        <ChevronRight class="h-4 w-4" />
+                    </button>
+                </div>
+            </div>
+
+            <!-- Estado vacío -->
+            <div
+                v-if="filteredExpensesToShow.length === 0"
+                class="text-center py-12"
+            >
+                <Receipt class="mx-auto h-12 w-12 text-gray-400" />
+                <h3 class="mt-4 text-lg font-medium text-gray-900">
+                    No hay gastos
+                </h3>
+                <p class="mt-2 text-gray-600">
+                    Comienza agregando tu primer gasto
+                </p>
+                <button
+                    @click="showModal = true"
+                    class="mt-4 btn-primary flex items-center gap-2"
+                >
+                    <Plus class="h-4 w-4" />
+                    Agregar Gasto
+                </button>
             </div>
         </div>
 
@@ -550,7 +887,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, watchEffect } from "vue";
+import { ref, computed, onMounted, watch, watchEffect, onUnmounted } from "vue";
 import { useExpensesStore } from "@/stores/expenses";
 import { useCardsStore } from "@/stores/cards";
 import { useCategoriesStore } from "@/stores/categories";
@@ -566,6 +903,7 @@ import {
     CreditCard,
     ChevronLeft,
     ChevronRight,
+    MoreVertical,
 } from "lucide-vue-next";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -647,11 +985,27 @@ onMounted(async () => {
     if (filters.value && filters.value.year) {
         loadMonthlyData();
     }
+
+    // Cerrar menú de acciones cuando se hace clic fuera
+    document.addEventListener('click', handleClickOutside);
 });
 
+// Limpiar event listener al desmontar
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+});
 
+const handleClickOutside = (event) => {
+    if (!event.target.closest('.action-menu-container')) {
+        activeActionMenu.value = null;
+    }
+};
 
 const updateFilters = () => {
+    // Resetear paginación cuando cambian los filtros
+    currentPage.value = 1;
+    currentPageDesktop.value = 1;
+    
     // Actualizar filtros en el store
     expensesStore.updateFilters({
         card_id: filters.value.card_id || null,
@@ -1119,6 +1473,134 @@ function getStatusColor(item) {
     if (code === "pendiente") return "bg-warning-100 text-warning-800";
     return "bg-warning-100 text-warning-800";
 }
+
+// Paginación
+const itemsPerPage = 5; // Número de elementos por página
+const currentPage = ref(1);
+
+const paginatedExpenses = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filteredExpensesToShow.value.slice(start, end);
+});
+
+const paginatedDirectExpenses = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return directExpenses.value.slice(start, end);
+});
+
+const totalPages = computed(() => {
+    return Math.ceil(filteredExpensesToShow.value.length / itemsPerPage);
+});
+
+const visiblePages = computed(() => {
+    const pages = [];
+    const start = Math.max(1, currentPage.value - 2);
+    const end = Math.min(totalPages.value, currentPage.value + 2);
+
+    if (start > 1) {
+        pages.push(1);
+        if (start > 2) {
+            pages.push('...');
+        }
+    }
+    for (let i = start; i <= end; i++) {
+        pages.push(i);
+    }
+    if (end < totalPages.value) {
+        if (end < totalPages.value - 1) {
+            pages.push('...');
+        }
+        pages.push(totalPages.value);
+    }
+    return pages;
+});
+
+const previousPage = () => {
+    if (currentPage.value > 1) {
+        currentPage.value--;
+    }
+};
+
+const nextPage = () => {
+    if (currentPage.value < totalPages.value) {
+        currentPage.value++;
+    }
+};
+
+const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages.value) {
+        currentPage.value = page;
+    }
+};
+
+// Menú de acciones con tres puntitos
+const activeActionMenu = ref(null);
+const toggleActionMenu = (id) => {
+    activeActionMenu.value = activeActionMenu.value === id ? null : id;
+};
+
+// Paginación para la vista desktop
+const itemsPerPageDesktop = 10; // Número de elementos por página para la vista desktop
+const currentPageDesktop = ref(1);
+
+const paginatedExpensesDesktop = computed(() => {
+    const start = (currentPageDesktop.value - 1) * itemsPerPageDesktop;
+    const end = start + itemsPerPageDesktop;
+    return filteredExpensesToShow.value.slice(start, end);
+});
+
+const paginatedDirectExpensesDesktop = computed(() => {
+    const start = (currentPageDesktop.value - 1) * itemsPerPageDesktop;
+    const end = start + itemsPerPageDesktop;
+    return directExpenses.value.slice(start, end);
+});
+
+const totalPagesDesktop = computed(() => {
+    return Math.ceil(filteredExpensesToShow.value.length / itemsPerPageDesktop);
+});
+
+const visiblePagesDesktop = computed(() => {
+    const pages = [];
+    const start = Math.max(1, currentPageDesktop.value - 2);
+    const end = Math.min(totalPagesDesktop.value, currentPageDesktop.value + 2);
+
+    if (start > 1) {
+        pages.push(1);
+        if (start > 2) {
+            pages.push('...');
+        }
+    }
+    for (let i = start; i <= end; i++) {
+        pages.push(i);
+    }
+    if (end < totalPagesDesktop.value) {
+        if (end < totalPagesDesktop.value - 1) {
+            pages.push('...');
+        }
+        pages.push(totalPagesDesktop.value);
+    }
+    return pages;
+});
+
+const previousPageDesktop = () => {
+    if (currentPageDesktop.value > 1) {
+        currentPageDesktop.value--;
+    }
+};
+
+const nextPageDesktop = () => {
+    if (currentPageDesktop.value < totalPagesDesktop.value) {
+        currentPageDesktop.value++;
+    }
+};
+
+const goToPageDesktop = (page) => {
+    if (page >= 1 && page <= totalPagesDesktop.value) {
+        currentPageDesktop.value = page;
+    }
+};
 </script>
 
 <style scoped>

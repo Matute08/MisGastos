@@ -80,6 +80,7 @@
             v-model="form.category_id"
             required
             class="input-field mt-1"
+            @change="form.subcategory_id = ''"
           >
             <option value="">Seleccionar categoría</option>
             <option
@@ -88,6 +89,27 @@
               :value="category.id"
             >
               {{ category.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Subcategoría -->
+        <div v-if="form.category_id">
+          <label for="subcategory_id" class="block text-sm font-medium text-gray-700">
+            Subcategoría
+          </label>
+          <select
+            id="subcategory_id"
+            v-model="form.subcategory_id"
+            class="input-field mt-1"
+          >
+            <option value="">Seleccionar subcategoría (opcional)</option>
+            <option
+              v-for="subcategory in getSubcategoriesForCategory(form.category_id)"
+              :key="subcategory.id"
+              :value="subcategory.id"
+            >
+              {{ subcategory.name }}
             </option>
           </select>
         </div>
@@ -259,6 +281,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useCardsStore } from '@/stores/cards'
 import { useCategoriesStore } from '@/stores/categories'
+import { useSubcategoriesStore } from '@/stores/subcategories'
 import { X, AlertCircle } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -272,12 +295,14 @@ const emit = defineEmits(['close', 'save'])
 
 const cardsStore = useCardsStore()
 const categoriesStore = useCategoriesStore()
+const subcategoriesStore = useSubcategoriesStore()
 
 const form = ref({
   description: '',
   amount: null,
   card_id: '',
   category_id: '',
+  subcategory_id: '',
   purchase_date: '',
   payment_type: 'single',
   installments_count: 1,
@@ -298,6 +323,7 @@ const resetForm = () => {
     amount: null,
     card_id: '',
     category_id: '',
+    subcategory_id: '',
     purchase_date: new Date().toISOString().split('T')[0],
     payment_type: 'single',
     installments_count: 1,
@@ -338,6 +364,7 @@ watch(() => props.expense, (newExpense) => {
       amount: newExpense.amount,
       card_id: newExpense.card_id,
       category_id: newExpense.category_id,
+      subcategory_id: newExpense.subcategory_id || '',
       purchase_date: newExpense.purchase_date,
       payment_type: newExpense.installments_count > 1 ? 'installments' : 'single',
       installments_count: newExpense.installments_count || 1,
@@ -496,6 +523,7 @@ const handleSubmit = () => {
     amount: form.value.amount,
     card_id: form.value.card_id,
     category_id: form.value.category_id,
+    subcategory_id: form.value.subcategory_id || null,
     purchase_date: formatDateForAPI(form.value.purchase_date),
     installments_count: form.value.payment_type === 'installments' ? form.value.installments_count : 1,
     payment_status_id: form.value.payment_status_id
@@ -539,11 +567,17 @@ const lastInstallmentDatePreview = computed(() => {
   return formatDate(last)
 })
 
+// Obtener subcategorías para una categoría específica
+const getSubcategoriesForCategory = (categoryId) => {
+  return subcategoriesStore.subcategories.filter(subcategory => subcategory.category_id === categoryId)
+}
+
 onMounted(async () => {
   console.log('🔍 Debug - ExpenseModal montado');
   await Promise.all([
     cardsStore.loadCards(),
-    categoriesStore.loadCategories()
+    categoriesStore.loadCategories(),
+    subcategoriesStore.loadSubcategories()
   ])
 })
 </script> 

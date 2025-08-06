@@ -10,6 +10,7 @@ export class ExpensesService {
           *,
           cards(name, type),
           categories(name, color),
+          subcategories(name, color),
           payment_status(code, label)
         `)
         .eq('user_id', userId);
@@ -75,6 +76,7 @@ export class ExpensesService {
         purchase_date: expenseData.purchase_date,
         card_id: expenseData.card_id,
         category_id: expenseData.category_id,
+        subcategory_id: expenseData.subcategory_id || null,
         installments_count: expenseData.installments_count || 1,
         payment_status_id: paymentStatusId
       };
@@ -216,6 +218,7 @@ export class ExpensesService {
           *,
           cards(id, name, type),
           categories(id, name, color),
+          subcategories(id, name, color),
           payment_status(code, label)
         `)
         .eq('user_id', userId)
@@ -241,7 +244,7 @@ export class ExpensesService {
         .from('installments')
         .select(`
           *,
-          expenses!inner(description, user_id, installments_count, cards(id, name, type), categories(id, name, color)),
+          expenses!inner(description, user_id, installments_count, cards(id, name, type), categories(id, name, color), subcategories(id, name, color)),
           payment_status(code, label)
         `)
         .eq('expenses.user_id', userId)
@@ -268,18 +271,19 @@ export class ExpensesService {
         type: 'expense'
       }));
 
-      // Marcar cuotas
-      const markedInstallments = (installments || []).map(installment => ({
-        ...installment,
-        is_installment: true,
-        type: 'installment',
-        description: installment.expenses.description,
-        cards: installment.expenses.cards,
-        categories: installment.expenses.categories,
-        installment_amount: installment.amount,
-        installment_id: installment.id,
-        installments_count: installment.expenses.installments_count
-      }));
+              // Marcar cuotas
+        const markedInstallments = (installments || []).map(installment => ({
+          ...installment,
+          is_installment: true,
+          type: 'installment',
+          description: installment.expenses.description,
+          cards: installment.expenses.cards,
+          categories: installment.expenses.categories,
+          subcategories: installment.expenses.subcategories,
+          installment_amount: installment.amount,
+          installment_id: installment.id,
+          installments_count: installment.expenses.installments_count
+        }));
 
       // Combinar resultados
       const combinedResults = [
@@ -381,18 +385,18 @@ export class ExpensesService {
     }
   }
 
-  // Obtener cuotas de un gasto
-  static async getInstallments(expenseId) {
-    try {
-      const { data, error } = await supabase
-        .from('installments')
-        .select(`
-          *,
-          expenses!inner(description, installments_count, cards(name, type), categories(name, color)),
-          payment_status(code, label)
-        `)
-        .eq('expense_id', expenseId)
-        .order('installment_number', { ascending: true });
+        // Obtener cuotas de un gasto
+      static async getInstallments(expenseId) {
+        try {
+          const { data, error } = await supabase
+            .from('installments')
+            .select(`
+              *,
+              expenses!inner(description, installments_count, cards(name, type), categories(name, color), subcategories(name, color)),
+              payment_status(code, label)
+            `)
+            .eq('expense_id', expenseId)
+            .order('installment_number', { ascending: true });
 
       if (error) throw error;
 
@@ -454,38 +458,38 @@ export class ExpensesService {
     }
   }
 
-  // Obtener cuotas próximas a vencer
-  static async getUpcomingInstallments(userId, limit = 100) {
-    try {
-      // Obtener todos los gastos del usuario
-      const { data: expenses, error: expensesError } = await supabase
-        .from('expenses')
-        .select('id')
-        .eq('user_id', userId);
+        // Obtener cuotas próximas a vencer
+      static async getUpcomingInstallments(userId, limit = 100) {
+        try {
+          // Obtener todos los gastos del usuario
+          const { data: expenses, error: expensesError } = await supabase
+            .from('expenses')
+            .select('id')
+            .eq('user_id', userId);
 
-      if (expensesError) throw expensesError;
+          if (expensesError) throw expensesError;
 
-      if (!expenses || expenses.length === 0) {
-        return {
-          success: true,
-          data: []
-        };
-      }
+          if (!expenses || expenses.length === 0) {
+            return {
+              success: true,
+              data: []
+            };
+          }
 
-      const expenseIds = expenses.map(expense => expense.id);
+          const expenseIds = expenses.map(expense => expense.id);
 
-      // Obtener cuotas pendientes de esos gastos
-      const { data, error } = await supabase
-        .from('installments')
-        .select(`
-          *,
-          expenses!inner(description, user_id, cards(name, type), categories(name, color)),
-          payment_status(code, label)
-        `)
-        .in('expense_id', expenseIds)
-        .in('payment_status_id', [1, 2]) // 1: pendiente, 2: en deuda
-        .order('due_date', { ascending: true })
-        .limit(limit);
+          // Obtener cuotas pendientes de esos gastos
+          const { data, error } = await supabase
+            .from('installments')
+            .select(`
+              *,
+              expenses!inner(description, user_id, cards(name, type), categories(name, color), subcategories(name, color)),
+              payment_status(code, label)
+            `)
+            .in('expense_id', expenseIds)
+            .in('payment_status_id', [1, 2]) // 1: pendiente, 2: en deuda
+            .order('due_date', { ascending: true })
+            .limit(limit);
 
       if (error) throw error;
 

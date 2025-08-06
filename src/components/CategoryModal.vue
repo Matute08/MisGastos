@@ -62,6 +62,73 @@
           </span>
         </div>
 
+        <!-- Subcategorías (solo para nuevas categorías) -->
+        <div v-if="!category && form.name && form.color" class="border-t pt-4">
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-sm font-medium text-gray-700">Subcategorías (opcional)</h4>
+            <button
+              type="button"
+              @click="showSubcategoryInput = true"
+              class="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              + Agregar subcategoría
+            </button>
+          </div>
+          
+          <!-- Input para nueva subcategoría -->
+          <div v-if="showSubcategoryInput" class="mb-3 p-3 bg-gray-50 rounded-lg">
+            <div class="flex items-center space-x-2">
+              <input
+                v-model="newSubcategoryName"
+                type="text"
+                placeholder="Nombre de la subcategoría"
+                class="flex-1 input-field text-sm"
+                @keyup.enter="addSubcategory"
+              />
+              <button
+                type="button"
+                @click="addSubcategory"
+                :disabled="!newSubcategoryName.trim()"
+                class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Agregar
+              </button>
+              <button
+                type="button"
+                @click="cancelSubcategoryInput"
+                class="px-3 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+          
+          <div v-if="subcategories.length === 0" class="text-sm text-gray-500 italic">
+            Sin subcategorías
+          </div>
+          
+          <div v-else class="space-y-2">
+            <div
+              v-for="(subcategory, index) in subcategories"
+              :key="index"
+              class="flex items-center space-x-2 p-2 bg-gray-50 rounded"
+            >
+              <div
+                class="w-4 h-4 rounded-full border border-gray-300"
+                :style="{ backgroundColor: form.color }"
+              ></div>
+              <span class="text-sm flex-1">{{ subcategory.name }}</span>
+              <button
+                type="button"
+                @click="removeSubcategory(index)"
+                class="text-red-500 hover:text-red-700 text-sm"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Error -->
         <div v-if="error" class="bg-danger-50 border border-danger-200 rounded-md p-4">
           <div class="flex">
@@ -113,6 +180,9 @@ const form = ref({
   color: '#3B82F6'
 })
 
+const subcategories = ref([])
+const showSubcategoryInput = ref(false)
+const newSubcategoryName = ref('')
 const loading = ref(false)
 const error = ref('')
 
@@ -137,6 +207,9 @@ const resetForm = () => {
     name: '',
     color: '#3B82F6'
   }
+  subcategories.value = []
+  showSubcategoryInput.value = false
+  newSubcategoryName.value = ''
   error.value = ''
 }
 
@@ -147,10 +220,31 @@ watch(() => props.category, (newCategory) => {
       name: newCategory.name,
       color: newCategory.color
     }
+    subcategories.value = [] // No mostrar subcategorías al editar
   } else {
     resetForm()
   }
 }, { immediate: true })
+
+const addSubcategory = () => {
+  if (newSubcategoryName.value.trim()) {
+    subcategories.value.push({
+      name: newSubcategoryName.value.trim(),
+      color: form.value.color // Heredar el color de la categoría padre
+    })
+    newSubcategoryName.value = ''
+    showSubcategoryInput.value = false
+  }
+}
+
+const cancelSubcategoryInput = () => {
+  showSubcategoryInput.value = false
+  newSubcategoryName.value = ''
+}
+
+const removeSubcategory = (index) => {
+  subcategories.value.splice(index, 1)
+}
 
 const handleSubmit = async () => {
   loading.value = true
@@ -168,10 +262,18 @@ const handleSubmit = async () => {
       return
     }
 
-    emit('save', {
+    // Preparar el payload según si es edición o creación
+    const payload = {
       name: form.value.name.trim(),
       color: form.value.color
-    })
+    }
+
+    // Solo incluir subcategorías si es una nueva categoría
+    if (!props.category && subcategories.value.length > 0) {
+      payload.subcategories = subcategories.value
+    }
+
+    emit('save', payload)
   } catch (err) {
     error.value = err.message
   } finally {
