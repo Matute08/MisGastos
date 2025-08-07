@@ -143,6 +143,15 @@ const startServer = async () => {
     
     console.log('✅ Conexión a la base de datos establecida');
 
+    // Inicializar roles básicos
+    try {
+      const { initRoles } = await import('./scripts/init-roles.js');
+      await initRoles();
+      console.log('✅ Roles inicializados correctamente');
+    } catch (roleError) {
+      console.warn('⚠️ Error inicializando roles:', roleError.message);
+    }
+
     app.listen(PORT, () => {
       console.log(`🚀 Servidor iniciado en puerto ${PORT}`);
       console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);

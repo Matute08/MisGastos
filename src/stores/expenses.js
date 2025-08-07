@@ -310,12 +310,12 @@ export const useExpensesStore = defineStore('expenses', () => {
   }
 
   // Marcar gasto como pagado
-  const markAsPaid = async (id, isPaid) => {
+  const markAsPaid = async (id, payment_status_id) => {
     loading.value = true
     error.value = null
     
     try {
-      const { data, error: apiError } = await expensesApi.markAsPaid(id, isPaid)
+      const { data, error: apiError } = await expensesApi.markAsPaid(id, payment_status_id)
       
       if (apiError) {
         error.value = apiError.message

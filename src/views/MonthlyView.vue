@@ -389,11 +389,15 @@ const nextMonth = () => {
 }
 
 const togglePaidStatus = async (expense) => {
-  await expensesStore.markAsPaid(expense.id, expense.payment_status_code === 'pagada' ? 'pendiente' : 'pagada')
+  const currentStatus = expense.payment_status_code;
+  const newStatusId = currentStatus === 'pagada' ? 1 : 2; // 1 = pendiente, 2 = pagada
+  await expensesStore.markAsPaid(expense.id, newStatusId)
 }
 
 const toggleInstallmentPaid = async (installment) => {
-  await expensesStore.markInstallmentAsPaid(installment.id, installment.payment_status_code === 'pagada' ? 'pendiente' : 'pagada')
+  const currentStatus = installment.payment_status_code;
+  const newStatusCode = currentStatus === 'pagada' ? 'pendiente' : 'pagada';
+  await expensesStore.markInstallmentAsPaid(installment.id, newStatusCode)
 }
 
 // Cargar datos

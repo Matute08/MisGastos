@@ -104,13 +104,24 @@ export class AuthService {
         throw new Error(authError.message);
       }
 
-      // 2. Crear perfil en nuestra tabla personalizada
+      // 2. Obtener el UUID del rol "user"
+      const { data: role, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('nombre', 'user')
+        .single();
+
+      if (roleError || !role) {
+        throw new Error('No se pudo obtener el rol por defecto');
+      }
+
+      // 3. Crear perfil en nuestra tabla personalizada
       const { data: profile, error: profileError } = await supabase
         .from('usuarios_perfil')
         .insert({
           id: authData.user.id,
           nombre: userData.nombre_perfil || userData.email,
-          role_id: 1 // Rol por defecto (user)
+          role_id: role.id
         })
         .select()
         .single();
@@ -165,12 +176,23 @@ export class AuthService {
 
       if (profileError || !profile) {
         // Si no existe el perfil, crear uno por defecto
+        // Obtener el UUID del rol "user"
+        const { data: role, error: roleError } = await supabase
+          .from('roles')
+          .select('id')
+          .eq('nombre', 'user')
+          .single();
+
+        if (roleError || !role) {
+          throw new Error('No se pudo obtener el rol por defecto');
+        }
+
         const { data: newProfile, error: createError } = await supabase
           .from('usuarios_perfil')
           .insert({
             id: authData.user.id,
             nombre: email,
-            role_id: 1 // Rol por defecto
+            role_id: role.id
           })
           .select()
           .single();

@@ -19,8 +19,8 @@
         <span :class="['text-sm font-medium', isAnnual ? 'text-blue-600' : 'text-gray-500']">Anual</span>
       </div>
     </div>
-    <!-- Tarjetas de resumen -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-{{ 1 + creditCards.length }} gap-6">
+    <!-- Tarjetas de resumen (solo desktop) -->
+    <div class="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-{{ 1 + creditCards.length }} gap-6">
       <!-- Total gastos (mes o año) -->
       <div class="card">
         <div class="flex items-center">
@@ -55,8 +55,37 @@
       </div>
     </div>
 
-    <!-- Gráficos -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Diseño compacto para móviles -->
+    <div class="block md:hidden">
+      <div class="bg-white rounded-lg shadow p-4">
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">Resumen de Tarjetas</h3>
+        <div class="space-y-3">
+          <!-- Total compacto -->
+          <div class="flex items-center justify-between py-2 border-b border-gray-100">
+            <div class="flex items-center">
+              <div class="w-6 h-6 bg-primary-100 rounded-md flex items-center justify-center mr-3">
+                <DollarSign class="h-4 w-4 text-primary-600" />
+              </div>
+              <span class="text-sm font-medium text-gray-600">{{ isAnnual ? 'Total Año' : 'Total Mes' }}</span>
+            </div>
+            <span class="text-lg font-bold text-gray-900">{{ formatCurrency(totalExpensesView) }}</span>
+          </div>
+          <!-- Tarjetas compactas -->
+          <div v-for="card in creditCards" :key="card.id" class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+            <div class="flex items-center">
+              <div class="w-6 h-6 bg-blue-100 rounded-md flex items-center justify-center mr-3">
+                <CreditCard class="h-4 w-4 text-blue-600" />
+              </div>
+              <span class="text-sm font-medium text-gray-600">{{ card.name }}</span>
+            </div>
+            <span class="text-lg font-bold text-gray-900">{{ formatCurrency(cardTotal(card)) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos Desktop -->
+    <div class="hidden lg:grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Gráfico por categorías -->
       <div class="card">
         <div class="card-header">
@@ -109,8 +138,120 @@
         </div>
       </div>
     </div>
-    <!-- Próximos vencimientos -->
-    <div class="card">
+
+    <!-- Carrusel de gráficos para móviles -->
+    <div class="block lg:hidden">
+      <div class="relative">
+        <!-- Contenedor del carrusel -->
+        <div class="overflow-hidden">
+          <div 
+            class="flex transition-transform duration-300 ease-in-out"
+            :style="{ transform: `translateX(-${currentChartIndex * 100}%)` }"
+            @touchstart="handleTouchStart"
+            @touchend="handleTouchEnd"
+          >
+            <!-- Gráfico por categorías -->
+            <div class="w-full flex-shrink-0">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Gastos por Categoría</h3>
+                  <p class="card-subtitle">Distribución de gastos por categoría</p>
+                </div>
+                <div class="h-64">
+                  <Pie
+                    v-if="chartData.categories.labels.length > 0"
+                    :data="chartData.categories"
+                    :options="chartOptions"
+                  />
+                  <div v-else class="h-full flex items-center justify-center text-gray-500">
+                    No hay datos para mostrar
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Gráfico por tarjetas -->
+            <div class="w-full flex-shrink-0">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Gastos por Tarjeta</h3>
+                  <p class="card-subtitle">Distribución de gastos por tarjeta</p>
+                </div>
+                <div class="h-64">
+                  <Bar
+                    v-if="chartData.cards.labels.length > 0"
+                    :data="chartData.cards"
+                    :options="barChartOptions"
+                  />
+                  <div v-else class="h-full flex items-center justify-center text-gray-500">
+                    No hay datos para mostrar
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Gráfico de evolución mensual solo si es anual -->
+            <div v-if="isAnnual" class="w-full flex-shrink-0">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Evolución de Gastos Mensuales</h3>
+                  <p class="card-subtitle">Gastos totales por mes</p>
+                </div>
+                <div class="h-64">
+                  <Bar
+                    v-if="evolutionChartData.labels.length > 0"
+                    :data="evolutionChartData"
+                    :options="evolutionChartOptions"
+                  />
+                  <div v-else class="h-full flex items-center justify-center text-gray-500">
+                    No hay datos para mostrar
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Indicadores de navegación -->
+        <div class="flex justify-center mt-4 space-x-2">
+          <button
+            v-for="(chart, index) in availableCharts"
+            :key="index"
+            @click="currentChartIndex = index"
+            :class="[
+              'w-2 h-2 rounded-full transition-colors duration-200',
+              currentChartIndex === index ? 'bg-blue-600' : 'bg-gray-300'
+            ]"
+            :aria-label="`Ir al gráfico ${index + 1}`"
+          ></button>
+        </div>
+        
+        <!-- Botones de navegación (opcionales) -->
+        <button
+          v-if="currentChartIndex > 0"
+          @click="currentChartIndex--"
+          class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-2 shadow-lg border border-gray-200"
+          aria-label="Gráfico anterior"
+        >
+          <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+        
+        <button
+          v-if="currentChartIndex < availableCharts.length - 1"
+          @click="currentChartIndex++"
+          class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-2 shadow-lg border border-gray-200"
+          aria-label="Gráfico siguiente"
+        >
+          <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <!-- Próximos vencimientos Desktop -->
+    <div class="hidden lg:block card">
       <div class="card-header">
         <h3 class="card-title">Próximos Vencimientos</h3>
         <p class="card-subtitle">Pagos próximos a vencer</p>
@@ -136,11 +277,11 @@
                   {{ inst.expenses?.categories?.name || 'Sin categoría' }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${{ formatCurrency(inst.amount) }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ formatCurrency(inst.amount) }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ formatDate(inst.due_date) }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', inst.payment_status_id === 3 ? 'bg-success-100 text-success-800' : inst.payment_status_id === 2 ? 'bg-danger-100 text-danger-800' : 'bg-warning-100 text-warning-800']">
-                  {{ inst.payment_status_id === 3 ? 'Pagada' : inst.payment_status_id === 2 ? 'En deuda' : 'Pendiente' }}
+                <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', inst.payment_status_id === 3 ? 'bg-danger-100 text-danger-800' : 'bg-warning-100 text-warning-800']">
+                  {{ inst.payment_status_id === 3 ? 'En deuda' : 'Pendiente' }}
                 </span>
               </td>
             </tr>
@@ -149,7 +290,6 @@
       </div>
       <div v-if="totalVencimientosPages > 1" class="flex justify-center mt-4">
         <nav class="flex items-center space-x-2">
-          
           <button
             @click="setVencimientosPage(vencimientosPage - 1)"
             :disabled="vencimientosPage === 1"
@@ -167,15 +307,88 @@
           >
             Siguiente
           </button>
-         
         </nav>
+      </div>
+    </div>
+
+    <!-- Próximos vencimientos Móvil -->
+    <div class="block lg:hidden">
+      <div class="bg-white rounded-lg shadow">
+        <div class="px-4 py-3 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900">Próximos Vencimientos</h3>
+          <p class="text-sm text-gray-600">Pagos próximos a vencer</p>
+        </div>
+        
+        <div class="divide-y divide-gray-100">
+          <div v-for="inst in paginatedUpcomingInstallments" :key="inst.id" class="p-4">
+            <!-- Header con estado -->
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center space-x-2">
+                <div class="w-2 h-2 rounded-full" :class="inst.payment_status_id === 3 ? 'bg-red-500' : 'bg-yellow-500'"></div>
+                <span class="text-xs font-medium" :class="inst.payment_status_id === 3 ? 'text-red-600' : 'text-yellow-600'">
+                  {{ inst.payment_status_id === 3 ? 'En deuda' : 'Pendiente' }}
+                </span>
+              </div>
+              <span class="text-sm text-gray-500">{{ formatDate(inst.due_date) }}</span>
+            </div>
+            
+                         <!-- Información principal -->
+             <div class="mb-3">
+               <div class="flex items-center justify-between mb-1">
+                 <h4 class="font-medium text-gray-900 text-sm">
+                   {{ inst.expenses?.description || 'Cuota' }}
+                 </h4>
+                 <span class="text-lg font-bold text-gray-900">{{ formatCurrency(inst.amount) }}</span>
+               </div>
+               <div class="flex items-center space-x-2 text-xs text-gray-600">
+                 <span>{{ inst.expenses?.cards?.name || 'Sin tarjeta' }}</span>
+                 <span>•</span>
+                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" 
+                       :style="{ backgroundColor: (inst.expenses?.categories?.color || '#888') + '20', color: inst.expenses?.categories?.color || '#888' }">
+                   {{ inst.expenses?.categories?.name || 'Sin categoría' }}
+                 </span>
+               </div>
+             </div>
+          </div>
+        </div>
+        
+        <!-- Paginación móvil -->
+        <div v-if="totalVencimientosPages > 1" class="px-4 py-3 border-t border-gray-200">
+          <div class="flex items-center justify-between">
+            <button
+              @click="setVencimientosPage(vencimientosPage - 1)"
+              :disabled="vencimientosPage === 1"
+              class="flex items-center space-x-1 text-sm text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+              <span>Anterior</span>
+            </button>
+            
+            <span class="text-sm text-gray-600">
+              {{ vencimientosPage }} de {{ totalVencimientosPages }}
+            </span>
+            
+            <button
+              @click="setVencimientosPage(vencimientosPage + 1)"
+              :disabled="vencimientosPage === totalVencimientosPages"
+              class="flex items-center space-x-1 text-sm text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span>Siguiente</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useExpensesStore } from '@/stores/expenses'
 import { useCardsStore } from '@/stores/cards'
 import { useCategoriesStore } from '@/stores/categories'
@@ -217,13 +430,58 @@ const categoriesStore = useCategoriesStore()
 
 const isAnnual = ref(false)
 
+// Estado para el carrusel de gráficos móviles
+const currentChartIndex = ref(0)
+const touchStartX = ref(0)
+const touchEndX = ref(0)
+
+// Gráficos disponibles para el carrusel
+const availableCharts = computed(() => {
+  const charts = [
+    { name: 'Categorías', type: 'categories' },
+    { name: 'Tarjetas', type: 'cards' }
+  ]
+  
+  // Agregar gráfico de evolución solo si es vista anual
+  if (isAnnual.value) {
+    charts.push({ name: 'Evolución', type: 'evolution' })
+  }
+  
+  return charts
+})
+
+// Funciones para gestos táctiles
+const handleTouchStart = (event) => {
+  touchStartX.value = event.touches[0].clientX
+}
+
+const handleTouchEnd = (event) => {
+  touchEndX.value = event.changedTouches[0].clientX
+  handleSwipe()
+}
+
+const handleSwipe = () => {
+  const swipeThreshold = 50
+  const diff = touchStartX.value - touchEndX.value
+  
+  if (Math.abs(diff) > swipeThreshold) {
+    if (diff > 0 && currentChartIndex.value < availableCharts.value.length - 1) {
+      // Swipe izquierda - siguiente gráfico
+      currentChartIndex.value++
+    } else if (diff < 0 && currentChartIndex.value > 0) {
+      // Swipe derecha - gráfico anterior
+      currentChartIndex.value--
+    }
+  }
+}
+
 // Cargar próximos vencimientos al montar
 // Próximos vencimientos: solo cuotas pendientes/en deuda y con due_date >= hoy
 const upcomingInstallmentsList = computed(() => {
   const today = new Date()
   return expensesStore.upcomingInstallments.filter(inst => {
     const due = parseISO(inst.due_date)
-    return due >= today && (inst.payment_status_id === 1 || inst.payment_status_id === 2)
+    return due >= today && (inst.payment_status_id === 1 || inst.payment_status_id === 3)
   })
 })
 onMounted(async () => {
@@ -234,6 +492,11 @@ onMounted(async () => {
     categoriesStore.loadCategories()
   ])
   // upcomingInstallmentsList.value = expensesStore.filteredUpcomingInstallments // This line is no longer needed
+})
+
+// Resetear índice del carrusel cuando cambie la vista anual/mensual
+watch(isAnnual, () => {
+  currentChartIndex.value = 0
 })
 
 // Gastos del mes actual

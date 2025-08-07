@@ -31,6 +31,23 @@
           />
         </div>
 
+        <!-- Nombre (opcional) -->
+        <div>
+          <label for="nombre" class="block text-sm font-medium text-gray-700">
+            Nombre (opcional)
+          </label>
+          <input
+            id="nombre"
+            v-model="form.nombre"
+            type="text"
+            class="input-field mt-1"
+            placeholder="Tu nombre"
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            Si no lo proporcionas, usaremos tu email
+          </p>
+        </div>
+
         <!-- Contraseña -->
         <div>
           <label for="password" class="block text-sm font-medium text-gray-700">
@@ -137,6 +154,7 @@ const authStore = useAuthStore()
 
 const form = ref({
   email: '',
+  nombre: '',
   password: '',
   confirmPassword: ''
 })
@@ -148,6 +166,7 @@ const saveCredentials = () => {
   if (rememberMe.value) {
     localStorage.setItem('rememberedCredentials', JSON.stringify({
       email: form.value.email,
+      nombre: form.value.nombre,
       rememberMe: true
     }))
   } else {
@@ -161,6 +180,7 @@ const loadSavedCredentials = () => {
   if (saved) {
     const credentials = JSON.parse(saved)
     form.value.email = credentials.email
+    form.value.nombre = credentials.nombre || ''
     rememberMe.value = credentials.rememberMe
   }
 }
@@ -185,7 +205,7 @@ const handleRegister = async () => {
     return
   }
 
-  const { success } = await authStore.signUp(form.value.email, form.value.password)
+  const { success } = await authStore.signUp(form.value.email, form.value.password, form.value.nombre)
   
   if (success) {
     // Guardar credenciales si está marcado "Recordar mis datos"
