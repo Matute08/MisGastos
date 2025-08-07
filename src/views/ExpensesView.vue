@@ -8,17 +8,20 @@
                 <h1 class="text-2xl font-bold text-gray-900">Gastos</h1>
                 <p class="text-gray-600">Gestiona todos tus gastos y compras</p>
             </div>
-            <button
-                @click="openNewExpenseModal"
-                class="btn-primary flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 justify-center"
-            >
-                <Plus class="h-4 w-4" />
-                Nuevo Gasto
-            </button>
+            <div class="flex flex-col sm:flex-row gap-2">
+                <button
+                    @click="openNewExpenseModal"
+                    class="btn-primary flex items-center gap-1 px-3 py-2 text-sm w-full sm:w-auto mt-2 sm:mt-0 justify-center"
+                >
+                    <Plus class="h-4 w-4" />
+                    <span class="hidden sm:inline">Nuevo Gasto</span>
+                    <span class="sm:hidden">Nuevo</span>
+                </button>
+            </div>
         </div>
 
-        <!-- Filtros -->
-        <div class="card">
+        <!-- Filtros Desktop -->
+        <div class="hidden md:block card">
             <div
                 class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end"
             >
@@ -117,6 +120,108 @@
             </div>
         </div>
 
+        <!-- Filtros Móvil -->
+        <div class="block md:hidden">
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-medium text-gray-700">Filtros</h3>
+                    <button
+                        @click="clearFilters"
+                        class="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                    >
+                        <RotateCcw class="h-3 w-3" />
+                        Limpiar
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Filtro por tarjeta -->
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1"
+                            >Tarjeta</label
+                        >
+                        <select
+                            v-model="filters.card_id"
+                            @change="updateFilters"
+                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">Todas</option>
+                            <option
+                                v-for="card in cardsStore.cards"
+                                :key="card.id"
+                                :value="card.id"
+                            >
+                                {{ card.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Filtro por categoría -->
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1"
+                            >Categoría</label
+                        >
+                        <select
+                            v-model="filters.category_id"
+                            @change="updateFilters"
+                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">Todas</option>
+                            <option
+                                v-for="category in categoriesStore.categories"
+                                :key="category.id"
+                                :value="category.id"
+                            >
+                                {{ category.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Filtro por mes -->
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1"
+                            >Mes</label
+                        >
+                        <select
+                            v-model="filters.month"
+                            @change="updateFilters"
+                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option
+                                v-for="(name, idx) in monthNames"
+                                :key="idx"
+                                :value="idx + 1"
+                            >
+                                {{ name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Filtro por año -->
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1"
+                            >Año</label
+                        >
+                        <select
+                            v-model="filters.year"
+                            @change="updateFilters"
+                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option
+                                v-for="year in availableYears"
+                                :key="year"
+                                :value="year"
+                            >
+                                {{ year }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
         <!-- Error -->
         <div
             v-if="expensesStore.error"
@@ -147,8 +252,8 @@
                     {{ monthYearTitle }}
                 </h2>
             </div>
-            <!-- Resumen con cuotas y flechas de mes -->
-            <div class="card flex items-center justify-between">
+            <!-- Resumen con cuotas y flechas de mes - Desktop -->
+            <div class="hidden md:flex card items-center justify-between">
                 <button
                     @click="previousMonth"
                     class="btn-secondary px-2 py-1 flex items-center justify-center"
@@ -191,12 +296,123 @@
                 </button>
             </div>
 
+            <!-- Resumen con cuotas y flechas de mes - Mobile -->
+            <div class="block md:hidden card">
+                <div class="flex items-center justify-between mb-3">
+                    <button
+                        @click="previousMonth"
+                        class="btn-secondary px-2 py-1 flex items-center justify-center"
+                    >
+                        <ChevronLeft class="h-4 w-4" />
+                    </button>
+                    <button
+                        @click="nextMonth"
+                        class="btn-secondary px-2 py-1 flex items-center justify-center"
+                    >
+                        <ChevronRight class="h-4 w-4" />
+                    </button>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600 mb-2">Débito</p>
+                        <p class="text-sm font-bold text-blue-700 break-words leading-tight">
+                            {{ formatCurrency(totalDebitTransferExpenses) }}
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600 mb-2">Crédito</p>
+                        <p class="text-sm font-bold text-purple-600 break-words leading-tight">
+                            {{ formatCurrency(totalCreditExpenses) }}
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600 mb-2">Total</p>
+                        <p class="text-sm font-bold text-green-600 break-words leading-tight">
+                            {{ formatCurrency(totalExpenses) }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón Seleccionar y Barra de acciones múltiples -->
+            <div class="space-y-3">
+                <!-- Botón Seleccionar -->
+                <div class="flex justify-center">
+                    <button
+                        @click="toggleBulkMode"
+                        :class="[
+                            'flex items-center gap-1 px-3 py-2 text-sm transition-colors rounded-md',
+                            isBulkMode 
+                                ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                        ]"
+                    >
+                        <CheckCircle2 class="h-4 w-4" />
+                        <span>{{ isBulkMode ? 'Cancelar Selección' : 'Seleccionar Gastos' }}</span>
+                    </button>
+                </div>
+
+                <!-- Barra de acciones múltiples -->
+                <div v-if="isBulkMode" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    :checked="selectAllExpenses"
+                                    @change="toggleSelectAllExpenses"
+                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span class="text-sm font-medium text-gray-700">
+                                    Seleccionar todos ({{ selectedExpensesCount }} seleccionados)
+                                </span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-2">
+                            <button
+                                @click="bulkChangeStatus(2)"
+                                :disabled="selectedExpensesCount === 0"
+                                class="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Marcar como Pagado
+                            </button>
+                            <button
+                                @click="bulkChangeStatus(1)"
+                                :disabled="selectedExpensesCount === 0"
+                                class="px-3 py-1.5 text-xs font-medium bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Marcar como Pendiente
+                            </button>
+                            <button
+                                @click="bulkDeleteExpenses"
+                                :disabled="selectedExpensesCount === 0"
+                                class="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Eliminar Seleccionados
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Vista Desktop: Tabla de gastos -->
             <div class="hidden md:block card">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
+                                <th
+                                    v-if="isBulkMode"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        :checked="selectAllExpenses"
+                                        @change="toggleSelectAllExpenses"
+                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                </th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 >
@@ -250,6 +466,22 @@
                                             : `expense-${item.id}`
                                     "
                                 >
+                                    <td v-if="isBulkMode" class="px-6 py-4 whitespace-nowrap">
+                                        <input
+                                            type="checkbox"
+                                            :checked="selectedExpenses.has(
+                                                item.is_installment
+                                                    ? `installment-${item.installment_id}`
+                                                    : `expense-${item.id}`
+                                            )"
+                                            @change="toggleExpenseSelection(
+                                                item.is_installment
+                                                    ? `installment-${item.installment_id}`
+                                                    : `expense-${item.id}`
+                                            )"
+                                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
                                             <CreditCard
@@ -530,7 +762,7 @@
             </div>
 
             <!-- Vista Móvil: Lista de tarjetas de gastos -->
-            <div class="md:hidden space-y-3">
+            <div class="md:hidden space-y-2">
                 <template v-if="paginatedExpenses.length > 0">
                     <div
                         v-for="item in paginatedExpenses"
@@ -539,14 +771,32 @@
                                 ? `installment-${item.installment_id}`
                                 : `expense-${item.id}`
                         "
-                        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+                        class="bg-white rounded-lg shadow-sm border border-gray-200 p-3"
                     >
                         <!-- Header de la tarjeta -->
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="flex items-center gap-3">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <!-- Checkbox para selección múltiple -->
+                                <div v-if="isBulkMode" class="flex-shrink-0">
+                                    <input
+                                        type="checkbox"
+                                        :checked="selectedExpenses.has(
+                                            item.is_installment
+                                                ? item.installment_id
+                                                : item.id
+                                        )"
+                                        @change="toggleExpenseSelection(
+                                            item.is_installment
+                                                ? item.installment_id
+                                                : item.id
+                                        )"
+                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                </div>
+                                
                                 <!-- Icono del tipo de gasto -->
                                 <div
-                                    class="w-10 h-10 rounded-full flex items-center justify-center"
+                                    class="w-8 h-8 rounded-full flex items-center justify-center"
                                     :class="
                                         item.is_installment
                                             ? 'bg-blue-100'
@@ -555,22 +805,22 @@
                                 >
                                     <CreditCard
                                         v-if="item.is_installment"
-                                        class="h-5 w-5 text-blue-600"
+                                        class="h-4 w-4 text-blue-600"
                                     />
                                     <Receipt
                                         v-else
-                                        class="h-5 w-5 text-gray-600"
+                                        class="h-4 w-4 text-gray-600"
                                     />
                                 </div>
                                 
                                 <!-- Información principal -->
                                 <div class="flex-1">
-                                    <h3 class="font-semibold text-gray-900 text-base">
+                                    <h3 class="font-semibold text-gray-900 text-sm">
                                         {{ item.description }}
                                     </h3>
                                     <div class="flex items-center gap-2 mt-1">
                                         <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                                            class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium"
                                             :style="{
                                                 backgroundColor:
                                                     item.categories?.color +
@@ -597,7 +847,7 @@
                             <!-- Monto y menú de acciones -->
                             <div class="text-right relative">
                                 <!-- Menú de acciones con tres puntitos -->
-                                <div class="relative action-menu-container mb-2">
+                                <div class="relative action-menu-container mb-1">
                                     <button
                                         @click="toggleActionMenu(item.id)"
                                         class="p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
@@ -639,7 +889,7 @@
                                 </div>
                                 
                                 <div
-                                    class="text-lg font-bold"
+                                    class="text-base font-bold"
                                     :class="
                                         item.is_installment
                                             ? 'text-blue-600'
@@ -652,7 +902,7 @@
                                             : item.amount
                                     ) }}
                                 </div>
-                                <div class="text-xs text-gray-500 mt-1">
+                                <div class="text-xs text-gray-500 mt-0.5">
                                     {{ formatDate(
                                         item.is_installment
                                             ? item.due_date
@@ -663,29 +913,29 @@
                         </div>
 
                         <!-- Detalles adicionales -->
-                        <div class="space-y-2">
+                        <div class="space-y-1">
                             <!-- Información de cuota -->
                             <div
                                 v-if="item.is_installment"
-                                class="flex items-center justify-between text-sm"
+                                class="flex items-center justify-between text-xs"
                             >
                                 <span class="text-gray-600">Cuota {{ item.installment_number }} de {{ item.installments_count }}</span>
                                 <span class="text-blue-600 font-medium">Vence: {{ formatDate(item.due_date) }}</span>
                             </div>
 
                             <!-- Tarjeta -->
-                            <div class="flex items-center justify-between text-sm">
+                            <div class="flex items-center justify-between text-xs">
                                 <span class="text-gray-600">Tarjeta</span>
                                 <span class="text-gray-900 font-medium">{{ item.cards?.name || "Sin tarjeta" }}</span>
                             </div>
 
                             <!-- Estado -->
                             <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Estado</span>
+                                <span class="text-xs text-gray-600">Estado</span>
                                 <button
                                     @click="item.is_installment ? showInstallments(item.expense_id, item.installment_number) : togglePaidStatus(item)"
                                     :class="[
-                                        'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors duration-200',
+                                        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium transition-colors duration-200',
                                         getStatusColor(item)
                                     ]"
                                 >
@@ -703,24 +953,34 @@
                     <div
                         v-for="expense in paginatedDirectExpenses"
                         :key="expense.id"
-                        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+                        class="bg-white rounded-lg shadow-sm border border-gray-200 p-3"
                     >
                         <!-- Header de la tarjeta -->
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="flex items-center gap-3">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <!-- Checkbox para selección múltiple -->
+                                <div v-if="isBulkMode" class="flex-shrink-0">
+                                    <input
+                                        type="checkbox"
+                                        :checked="selectedExpenses.has(expense.id)"
+                                        @change="toggleExpenseSelection(expense.id)"
+                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                </div>
+                                
                                 <!-- Icono del tipo de gasto -->
-                                <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                                    <Receipt class="h-5 w-5 text-gray-600" />
+                                <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                    <Receipt class="h-4 w-4 text-gray-600" />
                                 </div>
                                 
                                 <!-- Información principal -->
                                 <div class="flex-1">
-                                    <h3 class="font-semibold text-gray-900 text-base">
+                                    <h3 class="font-semibold text-gray-900 text-sm">
                                         {{ expense.description }}
                                     </h3>
                                     <div class="flex items-center gap-2 mt-1">
                                         <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                                            class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium"
                                             :style="{
                                                 backgroundColor:
                                                     expense.categories?.color +
@@ -738,7 +998,7 @@
                             <!-- Monto y menú de acciones -->
                             <div class="text-right relative">
                                 <!-- Menú de acciones con tres puntitos -->
-                                <div class="relative action-menu-container mb-2">
+                                <div class="relative action-menu-container mb-1">
                                     <button
                                         @click="toggleActionMenu(expense.id)"
                                         class="p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
@@ -769,30 +1029,30 @@
                                     </div>
                                 </div>
                                 
-                                <div class="text-lg font-bold text-gray-900">
+                                <div class="text-base font-bold text-gray-900">
                                     {{ formatCurrency(expense.amount) }}
                                 </div>
-                                <div class="text-xs text-gray-500 mt-1">
+                                <div class="text-xs text-gray-500 mt-0.5">
                                     {{ formatDate(expense.purchase_date) }}
                                 </div>
                             </div>
                         </div>
 
                         <!-- Detalles adicionales -->
-                        <div class="space-y-2">
+                        <div class="space-y-1">
                             <!-- Tarjeta -->
-                            <div class="flex items-center justify-between text-sm">
+                            <div class="flex items-center justify-between text-xs">
                                 <span class="text-gray-600">Tarjeta</span>
                                 <span class="text-gray-900 font-medium">{{ expense.cards?.name || "Sin tarjeta" }}</span>
                             </div>
 
                             <!-- Estado -->
                             <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Estado</span>
+                                <span class="text-xs text-gray-600">Estado</span>
                                 <button
                                     @click="togglePaidStatus(expense)"
                                     :class="[
-                                        'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors duration-200',
+                                        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors duration-200',
                                         paymentStatusMap[expense.payment_status_id]?.code === 'pagada'
                                             ? 'bg-success-100 text-success-800 hover:bg-success-200'
                                             : paymentStatusMap[expense.payment_status_id]?.code === 'en_deuda'
@@ -904,6 +1164,7 @@ import {
     ChevronLeft,
     ChevronRight,
     MoreVertical,
+    CheckCircle2,
 } from "lucide-vue-next";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -931,6 +1192,158 @@ const filters = ref({
     month: now.getMonth() + 1, // Mes actual (getMonth() devuelve 0-11, por eso +1)
     year: now.getFullYear(), // Año actual
 });
+
+// Variables para selección múltiple
+const selectedExpenses = ref(new Set());
+const isBulkMode = ref(false);
+const selectAllExpenses = ref(false);
+
+// Computed para el conteo de seleccionados
+const selectedExpensesCount = computed(() => selectedExpenses.value.size);
+
+// Funciones para selección múltiple
+const toggleBulkMode = () => {
+    isBulkMode.value = !isBulkMode.value;
+    if (!isBulkMode.value) {
+        selectedExpenses.value.clear();
+        selectAllExpenses.value = false;
+    }
+};
+
+const toggleExpenseSelection = (expenseId) => {
+    if (selectedExpenses.value.has(expenseId)) {
+        selectedExpenses.value.delete(expenseId);
+    } else {
+        selectedExpenses.value.add(expenseId);
+    }
+};
+
+const toggleSelectAllExpenses = () => {
+    if (selectAllExpenses.value) {
+        selectedExpenses.value.clear();
+        selectAllExpenses.value = false;
+    } else {
+        const allExpenseIds = filteredExpensesToShow.value.map(item => 
+            item.is_installment ? item.installment_id : item.id
+        );
+        selectedExpenses.value = new Set(allExpenseIds);
+        selectAllExpenses.value = true;
+    }
+};
+
+const bulkDeleteExpenses = async () => {
+    if (selectedExpensesCount.value === 0) return;
+    
+    const { value: confirmed } = await Swal.fire({
+        title: "¿Estás seguro?",
+        text: `Se eliminarán ${selectedExpensesCount.value} gasto(s). Esta acción no se puede deshacer.`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#dc2626",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "Cancelar",
+    });
+
+    if (confirmed) {
+        try {
+            let successCount = 0;
+            let errorCount = 0;
+            
+            for (const expenseId of selectedExpenses.value) {
+                const result = await expensesStore.deleteExpense(expenseId);
+                if (result.success) {
+                    successCount++;
+                } else {
+                    errorCount++;
+                }
+            }
+            
+            // Recargar datos
+            if (filters.value && filters.value.year) {
+                await loadMonthlyData();
+            } else {
+                await expensesStore.loadExpenses();
+            }
+            
+            selectedExpenses.value.clear();
+            isBulkMode.value = false;
+            selectAllExpenses.value = false;
+            
+            await Swal.fire({
+                icon: successCount > 0 ? "success" : "error",
+                title: successCount > 0 ? "¡Gastos eliminados!" : "Error al eliminar",
+                text: successCount > 0 
+                    ? `Se eliminaron ${successCount} gasto(s) correctamente.${errorCount > 0 ? ` ${errorCount} gasto(s) no se pudieron eliminar.` : ''}`
+                    : "No se pudo eliminar ningún gasto.",
+            });
+        } catch (error) {
+            await Swal.fire({
+                icon: "error",
+                title: "Error inesperado",
+                text: error.message || "Ocurrió un error al eliminar los gastos.",
+            });
+        }
+    }
+};
+
+const bulkChangeStatus = async (newStatusId) => {
+    if (selectedExpensesCount.value === 0) return;
+    
+    const statusLabel = paymentStatusMap[newStatusId]?.label || "estado";
+    
+    const { value: confirmed } = await Swal.fire({
+        title: "¿Confirmar cambio?",
+        text: `Se cambiarán ${selectedExpensesCount.value} gasto(s) a estado "${statusLabel}".`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#3b82f6",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Sí, cambiar",
+        cancelButtonText: "Cancelar",
+    });
+
+    if (confirmed) {
+        try {
+            let successCount = 0;
+            let errorCount = 0;
+            
+            for (const expenseId of selectedExpenses.value) {
+                const result = await expensesStore.markAsPaid(expenseId, newStatusId);
+                if (result.success) {
+                    successCount++;
+                } else {
+                    errorCount++;
+                }
+            }
+            
+            // Recargar datos
+            if (filters.value && filters.value.year) {
+                await loadMonthlyData();
+            } else {
+                await expensesStore.loadExpenses();
+            }
+            
+            selectedExpenses.value.clear();
+            isBulkMode.value = false;
+            selectAllExpenses.value = false;
+            
+            await Swal.fire({
+                icon: successCount > 0 ? "success" : "error",
+                title: successCount > 0 ? "¡Estados actualizados!" : "Error al actualizar",
+                text: successCount > 0 
+                    ? `Se actualizaron ${successCount} gasto(s) correctamente.${errorCount > 0 ? ` ${errorCount} gasto(s) no se pudieron actualizar.` : ''}`
+                    : "No se pudo actualizar ningún gasto.",
+            });
+        } catch (error) {
+            await Swal.fire({
+                icon: "error",
+                title: "Error inesperado",
+                text: error.message || "Ocurrió un error al actualizar los estados.",
+            });
+        }
+    }
+};
 
 // Años disponibles: desde el año actual hasta el año máximo de las cuotas existentes
 const availableYears = computed(() => {
@@ -1208,9 +1621,11 @@ const saveExpense = async (expenseData) => {
 };
 
 const toggleInstallmentPaid = async (item) => {
+    const currentStatus = item.payment_status_code;
+    const newStatusCode = currentStatus === "pendiente" ? "pagada" : "pendiente";
     await expensesStore.markInstallmentAsPaid(
         item.installment_id,
-        item.payment_status_code === "pendiente"
+        newStatusCode
     );
     // Recargar datos si estamos en vista mensual
     if (filters.value.year) {
@@ -1398,11 +1813,11 @@ const filteredExpensesToShow = computed(() => {
         return [];
     }
 
-    // Ordenar por fecha
+    // Ordenar por fecha decreciente (más reciente primero)
     const sorted = allData.sort((a, b) => {
         const dateA = a.is_installment ? a.due_date : a.purchase_date;
         const dateB = b.is_installment ? b.due_date : b.purchase_date;
-        return new Date(dateA) - new Date(dateB);
+        return new Date(dateB) - new Date(dateA);
     });
 
     return sorted;

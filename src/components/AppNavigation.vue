@@ -43,7 +43,7 @@
             >
               <User class="h-5 w-5" />
               <div class="hidden md:block text-left">
-                <div class="text-sm font-medium">{{ userEmail }}</div>
+                <div class="text-sm font-medium">{{ userName }}</div>
                 <div class="text-xs text-gray-500">{{ userRoleDisplay }}</div>
               </div>
               <ChevronDown class="h-4 w-4" />
@@ -55,7 +55,7 @@
               class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
             >
               <div class="px-4 py-2 border-b border-gray-100">
-                <div class="text-sm font-medium text-gray-900">{{ userEmail }}</div>
+                <div class="text-sm font-medium text-gray-900">{{ userName }}</div>
                 <div class="text-xs text-gray-500">{{ userRoleDisplay }}</div>
               </div>
               <button
@@ -75,10 +75,10 @@
             </div>
           </div>
 
-          <!-- Menú móvil -->
+          <!-- Menú móvil - Oculto completamente en móviles -->
           <button
             @click="toggleMobileMenu"
-            class="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-200"
+            class="hidden lg:block p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-200"
             ref="mobileMenuButton"
           >
             <Menu class="h-5 w-5" />
@@ -86,10 +86,10 @@
         </div>
       </div>
 
-      <!-- Menú móvil -->
+      <!-- Menú móvil - Oculto completamente en móviles -->
       <div
         v-show="showMobileMenu"
-        class="md:hidden border-t border-gray-200 py-4 transition-all duration-300 ease-in-out"
+        class="hidden lg:block border-t border-gray-200 py-4 transition-all duration-300 ease-in-out"
         ref="mobileMenuRef"
       >
         <div class="space-y-2">
@@ -141,10 +141,9 @@ const userMenuRef = ref(null)
 const mobileMenuRef = ref(null)
 const mobileMenuButton = ref(null)
 
-const userEmail = computed(() => {
-  return authStore.user?.email || authStore.userProfile?.email || 'Usuario'
+const userName = computed(() => {
+  return authStore.userProfile?.nombre_perfil || authStore.user?.nombre_perfil || authStore.user?.email?.split('@')[0] || 'Usuario'
 })
-
 const userRoleDisplay = computed(() => {
   const role = authStore.userProfile?.role_nombre;
   if (role === 'admin') return 'Administrador';
