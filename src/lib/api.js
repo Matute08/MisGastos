@@ -268,7 +268,125 @@ export const auth = {
   }
 };
 
-// Funciones para tarjetas
+// Funciones para tarjetas disponibles (solo admin)
+export const availableCards = {
+  // Obtener todas las tarjetas disponibles
+  async getAllAvailableCards() {
+    try {
+      const response = await apiClient.get('/available-cards');
+      return response;
+    } catch (error) {
+      console.error('🔍 Debug API - Error en getAllAvailableCards:', error);
+      return { error: error.message };
+    }
+  },
+
+  // Crear nueva tarjeta disponible (solo admin)
+  async createAvailableCard(cardData) {
+    try {
+      const response = await apiClient.post('/available-cards', cardData);
+      return response;
+    } catch (error) {
+      console.error('🔍 Debug API - Error en createAvailableCard:', error);
+      return { error: error.message };
+    }
+  },
+
+  // Actualizar tarjeta disponible (solo admin)
+  async updateAvailableCard(id, updates) {
+    try {
+      const response = await apiClient.put(`/available-cards/${id}`, updates);
+      return response;
+    } catch (error) {
+      console.error('🔍 Debug API - Error en updateAvailableCard:', error);
+      return { error: error.message };
+    }
+  },
+
+  // Eliminar tarjeta disponible (solo admin)
+  async deleteAvailableCard(id) {
+    try {
+      const response = await apiClient.delete(`/available-cards/${id}`);
+      return response;
+    } catch (error) {
+      console.error('🔍 Debug API - Error en deleteAvailableCard:', error);
+      return { error: error.message };
+    }
+  },
+
+  // Obtener tarjeta disponible por ID
+  async getAvailableCardById(id) {
+    try {
+      const response = await apiClient.get(`/available-cards/${id}`);
+      return response;
+    } catch (error) {
+      console.error('🔍 Debug API - Error en getAvailableCardById:', error);
+      return { error: error.message };
+    }
+  }
+};
+
+// Funciones para tarjetas vinculadas por usuario
+export const userCards = {
+  // Obtener tarjetas vinculadas del usuario
+  async getUserCards() {
+    try {
+      const response = await apiClient.get('/user-cards');
+      return response;
+    } catch (error) {
+      console.error('🔍 Debug API - Error en getUserCards:', error);
+      return { error: error.message };
+    }
+  },
+
+  // Vincular tarjeta disponible al usuario
+  async linkCardToUser(availableCardId) {
+    try {
+      const response = await apiClient.post('/user-cards', {
+        available_card_id: availableCardId
+      });
+      return response;
+    } catch (error) {
+      console.error('🔍 Debug API - Error en linkCardToUser:', error);
+      return { error: error.message };
+    }
+  },
+
+  // Desvincular tarjeta del usuario
+  async unlinkCardFromUser(userCardId) {
+    try {
+      const response = await apiClient.delete(`/user-cards/${userCardId}`);
+      return response;
+    } catch (error) {
+      console.error('🔍 Debug API - Error en unlinkCardFromUser:', error);
+      return { error: error.message };
+    }
+  },
+
+  // Verificar si una tarjeta está vinculada al usuario
+  async isCardLinkedToUser(availableCardId) {
+    try {
+      const response = await apiClient.get(`/user-cards/check/${availableCardId}`);
+      return response;
+    } catch (error) {
+      console.error('🔍 Debug API - Error en isCardLinkedToUser:', error);
+      return { error: error.message };
+    }
+  },
+
+  // Obtener estadísticas de tarjetas del usuario
+  async getUserCardStats() {
+    try {
+      const response = await apiClient.get('/user-cards/stats');
+      return response;
+    } catch (error) {
+      console.error('🔍 Debug API - Error en getUserCardStats:', error);
+      return { error: error.message };
+    }
+  }
+};
+
+// Funciones para tarjetas (mantener compatibilidad)
 export const cards = {
   // Obtener todas las tarjetas del usuario
   async getCards() {

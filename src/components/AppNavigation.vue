@@ -65,6 +65,20 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 10c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z" /></svg>
                 Configuración
               </button>
+              
+              <!-- Botón Admin Tarjetas solo para administradores -->
+              <button
+                v-if="authStore.isAdmin"
+                @click="goToAdminCards"
+                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 flex items-center gap-2"
+              >
+                <CreditCard class="h-4 w-4" />
+                Admin Cuentas
+              </button>
+              
+              <!-- Separador -->
+              <div v-if="authStore.isAdmin" class="border-t border-gray-100 my-1"></div>
+              
               <button
                 @click="signOut"
                 class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
@@ -167,9 +181,9 @@ const navigationItems = computed(() => {
       icon: Receipt
     },
     {
-      name: 'cards',
-      label: 'Tarjetas',
-      path: '/cards',
+      name: 'cuentas',
+      label: 'Cuentas',
+      path: '/cuentas',
       icon: CardsIcon
     },
     {
@@ -193,6 +207,8 @@ const navigationItems = computed(() => {
       categoriesItem.label = 'Categorías'
     }
   }
+
+  // Admin Cuentas solo se muestra en el dropdown del usuario, no en el navbar principal
 
   return items
 })
@@ -238,6 +254,11 @@ const signOut = async () => {
 const goToSettings = () => {
   showUserMenu.value = false
   router.push('/notificaciones')
+}
+
+const goToAdminCards = () => {
+  showUserMenu.value = false
+  router.push('/admin/cuentas')
 }
 
 // Cerrar menús al hacer clic fuera

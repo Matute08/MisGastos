@@ -12,9 +12,26 @@ export const useAuthStore = defineStore('auth', () => {
 
   
   const isAuthenticated = computed(() => !!user.value)
-  const isAdmin = computed(() => userProfile.value?.role_nombre === 'admin')
-  const isModerator = computed(() => userProfile.value?.role_nombre === 'moderator')
-  const isUser = computed(() => userProfile.value?.role_nombre === 'user')
+  const isAdmin = computed(() => {
+    // Debug: mostrar qué valores tenemos
+    console.log('🔍 DEBUG isAdmin:', {
+      userProfile: userProfile.value,
+      user: user.value,
+      userProfileRole: userProfile.value?.role_nombre,
+      userRole: user.value?.role
+    })
+    
+    // Verificar tanto en userProfile como en user para compatibilidad
+    const isAdminResult = userProfile.value?.role_nombre === 'admin' || user.value?.role === 'admin'
+    console.log('🔍 Resultado isAdmin:', isAdminResult)
+    return isAdminResult
+  })
+  const isModerator = computed(() => {
+    return userProfile.value?.role_nombre === 'moderator' || user.value?.role === 'moderator'
+  })
+  const isUser = computed(() => {
+    return userProfile.value?.role_nombre === 'user' || user.value?.role === 'user'
+  })
   const hasModeratorAccess = computed(() => isAdmin.value || isModerator.value)
   
   // Inicializar el store con validación mejorada
@@ -112,14 +129,18 @@ export const useAuthStore = defineStore('auth', () => {
       return
     }
     try {
+      console.log('🔍 DEBUG loadUserProfile - user.value:', user.value)
+      
       // Crear perfil básico usando datos del backend
       userProfile.value = {
         id: user.value.id,
         email: user.value.email,
         nombre_perfil: user.value.nombre_perfil || user.value.email,
-        role_nombre: user.value.role_nombre || 'user',
+        role_nombre: user.value.role || user.value.role_nombre || 'user',
         role_descripcion: user.value.role_descripcion || 'Usuario regular'
       }
+      
+      console.log('🔍 DEBUG loadUserProfile - userProfile.value:', userProfile.value)
     } catch (err) {
       console.error('Error al cargar perfil del usuario:', err)
       userProfile.value = null
@@ -135,7 +156,7 @@ export const useAuthStore = defineStore('auth', () => {
         id: user.value.id,
         email: user.value.email,
         nombre_perfil: nombrePerfil,
-        role_nombre: 'user',
+        role_nombre: user.value.role || 'user',
         role_descripcion: 'Usuario regular'
       }
     } catch (err) {

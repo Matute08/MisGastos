@@ -19,7 +19,7 @@
         <span :class="['text-sm font-medium', isAnnual ? 'text-blue-600' : 'text-gray-500']">Anual</span>
       </div>
     </div>
-    <!-- Tarjetas de resumen (solo desktop) -->
+            <!-- Cuentas de resumen (solo desktop) -->
     <div class="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-{{ 1 + creditCards.length }} gap-6">
       <!-- Total gastos (mes o año) -->
       <div class="card">
@@ -58,7 +58,7 @@
     <!-- Diseño compacto para móviles -->
     <div class="block md:hidden">
       <div class="bg-white rounded-lg shadow p-4">
-        <h3 class="text-lg font-semibold text-gray-900 mb-3">Resumen de Tarjetas</h3>
+                  <h3 class="text-lg font-semibold text-gray-900 mb-3">Resumen de Cuentas</h3>
         <div class="space-y-3">
           <!-- Total compacto -->
           <div class="flex items-center justify-between py-2 border-b border-gray-100">
@@ -70,7 +70,7 @@
             </div>
             <span class="text-lg font-bold text-gray-900">{{ formatCurrency(totalExpensesView) }}</span>
           </div>
-          <!-- Tarjetas compactas -->
+          <!-- Cuentas compactas -->
           <div v-for="card in creditCards" :key="card.id" class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
             <div class="flex items-center">
               <div class="w-6 h-6 bg-blue-100 rounded-md flex items-center justify-center mr-3">
@@ -103,7 +103,7 @@
           </div>
         </div>
       </div>
-      <!-- Gráfico por tarjetas -->
+              <!-- Gráfico por cuentas -->
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">Gastos por Tarjeta</h3>
@@ -170,7 +170,7 @@
               </div>
             </div>
             
-            <!-- Gráfico por tarjetas -->
+            <!-- Gráfico por cuentas -->
             <div class="w-full flex-shrink-0">
               <div class="card">
                 <div class="card-header">
@@ -341,7 +341,7 @@
                  <span class="text-lg font-bold text-gray-900">{{ formatCurrency(inst.amount) }}</span>
                </div>
                <div class="flex items-center space-x-2 text-xs text-gray-600">
-                 <span>{{ inst.expenses?.cards?.name || 'Sin tarjeta' }}</span>
+                 <span>{{ inst.expenses?.cards?.name || 'Sin cuenta' }}</span>
                  <span>•</span>
                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" 
                        :style="{ backgroundColor: (inst.expenses?.categories?.color || '#888') + '20', color: inst.expenses?.categories?.color || '#888' }">
@@ -439,7 +439,7 @@ const touchEndX = ref(0)
 const availableCharts = computed(() => {
   const charts = [
     { name: 'Categorías', type: 'categories' },
-    { name: 'Tarjetas', type: 'cards' }
+          { name: 'Cuentas', type: 'cards' }
   ]
   
   // Agregar gráfico de evolución solo si es vista anual
@@ -567,11 +567,11 @@ const chartData = computed(() => {
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
   if (isAnnual.value) {
-    // Cuotas a pagar de cualquier tarjeta
+    // Cuotas a pagar de cualquier cuenta
     expensesStore.upcomingInstallments.forEach(inst => {
       const due = parseISO(inst.due_date)
       if (due.getFullYear() === currentYear && inst.payment_status_id !== 3 && inst.expenses && inst.expenses.cards) {
-        const card = inst.expenses.cards.name || 'Sin tarjeta'
+        const card = inst.expenses.cards.name || 'Sin cuenta'
         cards[card] = (cards[card] || 0) + inst.amount
       }
       if (due.getFullYear() === currentYear && inst.payment_status_id !== 3 && inst.expenses && inst.expenses.categories) {
@@ -579,7 +579,7 @@ const chartData = computed(() => {
         categories[cat] = (categories[cat] || 0) + inst.amount
       }
     })
-    // Gastos directos en efectivo/transferencia o cualquier tarjeta
+    // Gastos directos en efectivo/transferencia o cualquier cuenta
     expensesStore.expenses.forEach(expense => {
       const date = parseISO(expense.purchase_date)
       // Para ambos gráficos: cualquier gasto directo suma a la categoría
@@ -590,18 +590,18 @@ const chartData = computed(() => {
         const cat = expense.categories?.name || 'Sin categoría'
         categories[cat] = (categories[cat] || 0) + expense.amount
       }
-      // Para tarjetas, cualquier gasto directo con tarjeta
+      // Para cuentas, cualquier gasto directo con cuenta
       if (isPeriodo && (!expense.installments_count || expense.installments_count === 1) && expense.cards) {
-        const card = expense.cards.name || 'Sin tarjeta'
+        const card = expense.cards.name || 'Sin cuenta'
         cards[card] = (cards[card] || 0) + expense.amount
       }
     })
   } else {
-    // Mensual: cuotas a pagar de cualquier tarjeta en el mes
+    // Mensual: cuotas a pagar de cualquier cuenta en el mes
     expensesStore.upcomingInstallments.forEach(inst => {
       const due = parseISO(inst.due_date)
       if (due.getMonth() + 1 === currentMonth && due.getFullYear() === currentYear && inst.payment_status_id !== 3 && inst.expenses && inst.expenses.cards) {
-        const card = inst.expenses.cards.name || 'Sin tarjeta'
+        const card = inst.expenses.cards.name || 'Sin cuenta'
         cards[card] = (cards[card] || 0) + inst.amount
       }
       if (due.getMonth() + 1 === currentMonth && due.getFullYear() === currentYear && inst.payment_status_id !== 3 && inst.expenses && inst.expenses.categories) {
@@ -609,7 +609,7 @@ const chartData = computed(() => {
         categories[cat] = (categories[cat] || 0) + inst.amount
       }
     })
-    // Gastos directos en efectivo/transferencia o cualquier tarjeta
+    // Gastos directos en efectivo/transferencia o cualquier cuenta
     expensesStore.expenses.forEach(expense => {
       const date = parseISO(expense.purchase_date)
       // Para ambos gráficos: cualquier gasto directo suma a la categoría
@@ -620,14 +620,14 @@ const chartData = computed(() => {
         const cat = expense.categories?.name || 'Sin categoría'
         categories[cat] = (categories[cat] || 0) + expense.amount
       }
-      // Para tarjetas, cualquier gasto directo con tarjeta
+      // Para cuentas, cualquier gasto directo con cuenta
       if (isPeriodo && (!expense.installments_count || expense.installments_count === 1) && expense.cards) {
-        const card = expense.cards.name || 'Sin tarjeta'
+        const card = expense.cards.name || 'Sin cuenta'
         cards[card] = (cards[card] || 0) + expense.amount
       }
     })
   }
-  // Filtrar solo categorías y tarjetas con gasto > 0
+  // Filtrar solo categorías y cuentas con gasto > 0
   categories = Object.fromEntries(Object.entries(categories).filter(([_, v]) => v > 0))
   cards = Object.fromEntries(Object.entries(cards).filter(([_, v]) => v > 0))
   return {

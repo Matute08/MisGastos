@@ -1,3 +1,4 @@
+// server.js
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -12,6 +13,8 @@ import expensesRoutes from './routes/expenses.js';
 import cardsRoutes from './routes/cards.js';
 import categoriesRoutes from './routes/categories.js';
 import subcategoriesRoutes from './routes/subcategories.js';
+import availableCardsRoutes from './routes/availableCards.js';
+import userCardsRoutes from './routes/userCards.js';
 
 // Configurar variables de entorno
 dotenv.config();
@@ -90,7 +93,9 @@ app.get('/', (req, res) => {
       expenses: '/api/expenses',
       cards: '/api/cards',
       categories: '/api/categories',
-      subcategories: '/api/subcategories'
+      subcategories: '/api/subcategories',
+      availableCards: '/api/available-cards',
+      userCards: '/api/user-cards'
     }
   });
 });
@@ -101,6 +106,8 @@ app.use('/api/expenses', expensesRoutes);
 app.use('/api/cards', cardsRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/subcategories', subcategoriesRoutes);
+app.use('/api/available-cards', availableCardsRoutes);
+app.use('/api/user-cards', userCardsRoutes);
 
 // Middleware de manejo de errores
 app.use((err, req, res, next) => {
@@ -130,18 +137,15 @@ const startServer = async () => {
     // Verificar conexión a Supabase
     const { supabase } = await import('./config/database.js');
     
-    // Hacer una consulta simple para verificar la conexión
-    const { data, error } = await supabase
-      .from('expenses')
-      .select('id')
-      .limit(1);
-    
-    if (error) {
-      console.error('❌ Error conectando a Supabase:', error);
+    try {
+      const { error } = await supabase.from('expenses').select('id').limit(1);
+      if (error) throw error;
+      console.log('✅ Conexión OK');
+    } catch (e) {
+      console.error('❌ Supabase:', e);
+      console.error('🔎 cause:', e?.cause); // <- acá dirá ECONNRESET / ETIMEDOUT / CERT / ENOTFOUNI
       process.exit(1);
     }
-    
-    console.log('✅ Conexión a la base de datos establecida');
 
     // Inicializar roles básicos
     try {
@@ -157,6 +161,7 @@ const startServer = async () => {
       console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🔗 URL: http://localhost:${PORT}`);
       console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+      console.log(`🔐 Auth endpoint: http://localhost:${PORT}/api/auth/login`);
     });
   } catch (error) {
     console.error('❌ Error iniciando el servidor:', error);
@@ -187,4 +192,4 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Iniciar servidor
-startServer(); 
+startServer();

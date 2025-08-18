@@ -6,6 +6,7 @@ import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import CardsView from '@/views/CardsView.vue'
+import AdminCardsView from '@/views/AdminCardsView.vue'
 import ExpensesView from '@/views/ExpensesView.vue'
 import CategoriesView from '@/views/CategoriesView.vue'
 import MonthlyView from '@/views/MonthlyView.vue'
@@ -35,10 +36,16 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/cards',
-    name: 'cards',
+    path: '/cuentas',
+    name: 'cuentas',
     component: CardsView,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/cuentas',
+    name: 'admin-cuentas',
+    component: AdminCardsView,
+    meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
     path: '/expenses',
@@ -121,6 +128,28 @@ router.beforeEach(async (to, from) => {
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
     console.log('Redirigiendo a dashboard: usuario ya autenticado');
     return { path: '/dashboard' };
+  }
+
+  // Rutas que requieren ser administrador
+  if (to.meta.requiresAdmin) {
+    console.log('🔍 DEBUG Router - Verificando admin para ruta:', to.path);
+    console.log('🔍 DEBUG Router - authStore.isAuthReady:', authStore.isAuthReady);
+    console.log('🔍 DEBUG Router - authStore.isInitializing:', authStore.isInitializing);
+    console.log('🔍 DEBUG Router - authStore.isAdmin:', authStore.isAdmin);
+    
+    // Esperar a que la autenticación esté completamente lista
+    if (!authStore.isAuthReady || authStore.isInitializing) {
+      console.log('⏳ Esperando a que la autenticación esté lista...');
+      return false; // Esperar
+    }
+    
+    // Verificar si el usuario es administrador usando el computed del store
+    if (!authStore.isAdmin) {
+      console.log('❌ Redirigiendo a dashboard: usuario no es administrador');
+      return { path: '/dashboard' };
+    }
+    
+    console.log('✅ Usuario es administrador, permitiendo acceso a:', to.path);
   }
 
   return true;

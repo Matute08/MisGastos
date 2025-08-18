@@ -72,14 +72,14 @@ onMounted(async () => {
           <span class="text-xs font-medium">Gastos</span>
         </router-link>
 
-        <!-- Botón Tarjetas -->
+        <!-- Botón Cuentas -->
         <router-link 
-          to="/cards" 
+          to="/cuentas" 
           class="flex flex-col items-center gap-1 text-gray-600 hover:text-blue-600 transition-colors"
-          :class="{ 'text-blue-600': $route.path === '/cards' }"
+          :class="{ 'text-blue-600': $route.path === '/cuentas' }"
         >
           <CreditCard class="h-6 w-6" />
-          <span class="text-xs font-medium">Tarjetas</span>
+          <span class="text-xs font-medium">Cuentas</span>
         </router-link>
 
         <!-- Botón Categorías -->

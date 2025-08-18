@@ -528,7 +528,7 @@
                                     <td
                                         class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
                                     >
-                                        {{ item.cards?.name || "Sin tarjeta" }}
+                                        {{ item.cards?.name || "Sin cuenta" }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span
@@ -645,7 +645,7 @@
                                         class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
                                     >
                                         {{
-                                            expense.cards?.name || "Sin tarjeta"
+                                            expense.cards?.name || "Sin cuenta"
                                         }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -926,7 +926,7 @@
                             <!-- Tarjeta -->
                             <div class="flex items-center justify-between text-xs">
                                 <span class="text-gray-600">Tarjeta</span>
-                                <span class="text-gray-900 font-medium">{{ item.cards?.name || "Sin tarjeta" }}</span>
+                                <span class="text-gray-900 font-medium">{{ item.cards?.name || "Sin cuenta" }}</span>
                             </div>
 
                             <!-- Estado -->
@@ -1043,7 +1043,7 @@
                             <!-- Tarjeta -->
                             <div class="flex items-center justify-between text-xs">
                                 <span class="text-gray-600">Tarjeta</span>
-                                <span class="text-gray-900 font-medium">{{ expense.cards?.name || "Sin tarjeta" }}</span>
+                                <span class="text-gray-900 font-medium">{{ expense.cards?.name || "Sin cuenta" }}</span>
                             </div>
 
                             <!-- Estado -->
