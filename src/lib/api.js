@@ -1,4 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+import { config } from '../config/environment.js'
+
+const API_BASE_URL = config.API_BASE_URL;
 
 class ApiClient {
   constructor() {

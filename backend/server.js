@@ -47,7 +47,7 @@ app.use(compression());
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://mis-gastos-phi.vercel.app/'] 
+    ? [process.env.CORS_ORIGIN || 'https://mis-gastos-phi.vercel.app'] 
     : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

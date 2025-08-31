@@ -44,7 +44,7 @@ onMounted(() => {
 
   // Escuchar el evento beforeinstallprompt
   window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault()
+    // NO llamar preventDefault() aquí - solo guardar el evento
     deferredPrompt.value = e
     showInstallPrompt.value = true
   })
