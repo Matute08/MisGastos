@@ -51,10 +51,10 @@ app.use(compression());
 // app.use(morgan('combined'));
 
 app.use(cors({
-  origin: config.CORS_ORIGIN,
+  origin: ['https://mis-gastos-phi.vercel.app', 'http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept']
 }));
 
 app.use(limiter);
@@ -74,6 +74,16 @@ app.get('/health', (req, res) => {
     message: 'Servidor funcionando correctamente',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Endpoint de prueba para CORS
+app.get('/api/test-cors', (req, res) => {
+  res.json({
+    success: true,
+    message: 'CORS funcionando correctamente',
+    origin: req.headers.origin,
+    timestamp: new Date().toISOString()
   });
 });
 
