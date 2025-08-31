@@ -28,11 +28,11 @@ const urlsToCache = [
 
 // Instalación del Service Worker
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Instalando...');
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Service Worker: Cache abierto');
+
         return cache.addAll(urlsToCache);
       })
       .catch((error) => {
@@ -44,13 +44,13 @@ self.addEventListener('install', (event) => {
 
 // Activación del Service Worker
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activando...');
+  
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('Service Worker: Eliminando cache antiguo:', cacheName);
+  
             return caches.delete(cacheName);
           }
         })

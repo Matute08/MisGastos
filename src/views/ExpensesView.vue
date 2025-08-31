@@ -1558,10 +1558,7 @@ const togglePaidStatus = async (expense) => {
 };
 
 const openNewExpenseModal = async () => {
-    console.log('=== DEBUG openNewExpenseModal ===');
-    console.log('userCardsStore.cards:', userCardsStore.cards);
-    console.log('userCardsStore.cards.length:', userCardsStore.cards?.length);
-    console.log('userCardsStore.cards type:', typeof userCardsStore.cards);
+
     
     // Verificar si el usuario tiene tarjetas asociadas
     const userCards = userCardsStore.cards;

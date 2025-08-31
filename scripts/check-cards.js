@@ -47,11 +47,11 @@ function makeRequest(url, options = {}) {
 }
 
 async function checkCards() {
-  console.log('🔍 Verificando tarjetas existentes...\n');
+  
 
   try {
     // 1. Login
-    console.log('1. Obteniendo token...');
+
     const loginData = await makeRequest(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       body: {
@@ -61,27 +61,23 @@ async function checkCards() {
     });
 
     if (!loginData.success) {
-      console.log('❌ Error en login:', loginData.error);
       return;
     }
 
     const token = loginData.token;
-    console.log('✅ Login exitoso\n');
 
     // 2. Obtener tarjetas
-    console.log('2. Obteniendo tarjetas...');
     const cardsData = await makeRequest(`${API_BASE_URL}/cards`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
     if (!cardsData.success) {
-      console.log('❌ Error obteniendo tarjetas:', cardsData.error);
       return;
     }
 
-    console.log('✅ Tarjetas encontradas:');
+    // Tarjetas encontradas
     cardsData.data.forEach((card, index) => {
-      console.log(`${index + 1}. ID: ${card.id} | Nombre: "${card.name}" | Tipo: ${card.type}`);
+      // Procesar tarjeta
     });
 
   } catch (error) {

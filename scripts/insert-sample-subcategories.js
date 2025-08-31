@@ -5,7 +5,7 @@ import { supabase } from '../backend/config/database.js';
 
 async function insertSampleSubcategories() {
   try {
-    console.log('🔍 Iniciando inserción de subcategorías de ejemplo...');
+    
 
     // Primero, obtener las categorías existentes
     const { data: categories, error: categoriesError } = await supabase
@@ -18,7 +18,7 @@ async function insertSampleSubcategories() {
       return;
     }
 
-    console.log('📋 Categorías encontradas:', categories);
+
 
     // Definir subcategorías de ejemplo
     const sampleSubcategories = [
@@ -102,11 +102,8 @@ async function insertSampleSubcategories() {
       const category = categories.find(c => c.name.toLowerCase() === categoryGroup.category_name.toLowerCase());
       
       if (!category) {
-        console.log(`⚠️ Categoría "${categoryGroup.category_name}" no encontrada, saltando...`);
         continue;
       }
-
-      console.log(`📝 Insertando subcategorías para "${category.name}"...`);
 
       for (const subcategory of categoryGroup.subcategories) {
         const { data, error } = await supabase
@@ -119,9 +116,9 @@ async function insertSampleSubcategories() {
           .select();
 
         if (error) {
-          console.error(`❌ Error insertando subcategoría "${subcategory.name}":`, error);
+          // Error insertando subcategoría
         } else {
-          console.log(`✅ Subcategoría "${subcategory.name}" insertada correctamente`);
+          // Subcategoría insertada correctamente
         }
       }
     }

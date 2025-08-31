@@ -48,11 +48,10 @@ function makeRequest(url, options = {}) {
 }
 
 async function createTestExpense() {
-  console.log('🔧 Creando gasto de prueba en agosto...\n');
+  
 
   try {
     // 1. Login para obtener token
-    console.log('1. Obteniendo token...');
     const loginData = await makeRequest(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       body: {
@@ -62,16 +61,13 @@ async function createTestExpense() {
     });
 
     if (!loginData.success) {
-      console.log('❌ Error en login:', loginData.error);
       return;
     }
 
     const token = loginData.token;
     const userId = loginData.user.id;
-    console.log('✅ Token obtenido para usuario:', userId);
 
     // 2. Obtener tarjetas para usar una de ellas
-    console.log('\n2. Obteniendo tarjetas...');
     const cardsData = await makeRequest(`${API_BASE_URL}/cards`, {
       method: 'GET',
       headers: {
@@ -80,15 +76,12 @@ async function createTestExpense() {
     });
 
     if (!cardsData.success || !cardsData.data.length) {
-      console.log('❌ No se pudieron obtener tarjetas');
       return;
     }
 
     const testCard = cardsData.data[0]; // Usar la primera tarjeta
-    console.log('✅ Usando tarjeta:', testCard.name);
 
     // 3. Obtener categorías
-    console.log('\n3. Obteniendo categorías...');
     const categoriesData = await makeRequest(`${API_BASE_URL}/categories`, {
       method: 'GET',
       headers: {
@@ -97,15 +90,12 @@ async function createTestExpense() {
     });
 
     if (!categoriesData.success || !categoriesData.data.length) {
-      console.log('❌ No se pudieron obtener categorías');
       return;
     }
 
     const testCategory = categoriesData.data[0]; // Usar la primera categoría
-    console.log('✅ Usando categoría:', testCategory.name);
 
     // 4. Crear gasto de prueba en agosto
-    console.log('\n4. Creando gasto de prueba...');
     const testExpense = {
       description: 'Gasto de prueba agosto',
       amount: 50000,
@@ -125,10 +115,9 @@ async function createTestExpense() {
     });
 
     if (createResponse.success) {
-      console.log('✅ Gasto creado exitosamente:', createResponse.data);
-      console.log('\n🎉 Ahora puedes verificar el dashboard - debería mostrar $50,000 para la tarjeta', testCard.name);
+      // Gasto creado exitosamente
     } else {
-      console.log('❌ Error creando gasto:', createResponse.error);
+      // Error creando gasto
     }
 
   } catch (error) {
