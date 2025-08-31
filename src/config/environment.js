@@ -1,8 +1,7 @@
 // Configuración de variables de entorno para MisGastos
 export const config = {
   // URL de la API - Backend desplegado en Koyeb
-  API_BASE_URL: import.meta.env.VITE_API_URL || 'https://fascinating-bridie-misgastos-e524faff.koyeb.app/api',
-  //API_BASE_URL: 'http://localhost:3001/api',
+  API_BASE_URL: 'https://fascinating-bridie-misgastos-e524faff.koyeb.app/api',
   
   // URL del frontend - Desplegado en Vercel
   FRONTEND_URL: 'https://mis-gastos-phi.vercel.app',

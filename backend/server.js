@@ -5,6 +5,7 @@ import compression from 'compression';
 // import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import { getConfig } from './config/production.js';
 
 import authRoutes from './routes/auth.js';
 import expensesRoutes from './routes/expenses.js';
@@ -17,12 +18,14 @@ import webauthnRoutes from './routes/webauthn.js';
 
 dotenv.config();
 
+const config = getConfig();
+
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT = config.PORT || 8000;
 
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100000,
+  windowMs: config.RATE_LIMIT_WINDOW_MS,
+  max: config.RATE_LIMIT_MAX_REQUESTS,
   message: {
     success: false,
     error: 'Demasiadas solicitudes desde esta IP, intenta de nuevo más tarde.'
@@ -48,9 +51,7 @@ app.use(compression());
 // app.use(morgan('combined'));
 
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.CORS_ORIGIN || 'https://mis-gastos-phi.vercel.app'] 
-    : ['http://localhost:3000', 'http://localhost:8000'],
+  origin: config.CORS_ORIGIN,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
