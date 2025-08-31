@@ -10,6 +10,7 @@
     "generate-icons": "node scripts/generate-icons.js"
   },
   "dependencies": {
+    "@simplewebauthn/server": "^13.1.2",
     "@supabase/supabase-js": "^2.39.0",
     "chart.js": "^4.4.0",
     "date-fns": "^2.30.0",

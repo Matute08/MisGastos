@@ -14,6 +14,30 @@
         </p>
       </div>
 
+      <!-- Botón de autenticación biométrica -->
+      <div v-if="biometricSupported" class="text-center">
+        <button
+          @click="showBiometricAuth"
+          class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+        >
+          <svg class="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          {{ biometricType === 'face' ? 'Usar Face ID' : 'Usar Touch ID' }}
+        </button>
+        
+        <div class="mt-4">
+          <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-300"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="px-2 bg-white text-gray-500">o</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Formulario -->
       <form @submit.prevent="handleLogin" class="mt-8 space-y-6">
         <!-- Email -->
@@ -92,6 +116,14 @@
         </div>
       </form>
     </div>
+    
+    <!-- Componente de autenticación biométrica -->
+    <BiometricAuth
+      ref="biometricAuthRef"
+      @authenticated="handleBiometricSuccess"
+      @cancelled="handleBiometricCancelled"
+      @usePassword="handleUsePassword"
+    />
   </div>
 </template>
 
@@ -100,6 +132,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { CreditCard, AlertCircle } from 'lucide-vue-next'
+import BiometricAuth from '@/components/BiometricAuth.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -111,6 +144,35 @@ const form = ref({
 })
 
 const rememberMe = ref(false)
+
+// Referencias para autenticación biométrica
+const biometricAuthRef = ref(null)
+const biometricSupported = ref(false)
+const biometricType = ref('face')
+
+// Verificar soporte de autenticación biométrica
+const checkBiometricSupport = async () => {
+  try {
+    if (!window.PublicKeyCredential) {
+      return
+    }
+
+    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+    
+    if (available) {
+      biometricSupported.value = true
+      
+      // Detectar tipo de autenticación
+      if (window.navigator.userAgent.includes('iPhone') || window.navigator.userAgent.includes('iPad')) {
+        biometricType.value = 'face'
+      } else {
+        biometricType.value = 'fingerprint'
+      }
+    }
+  } catch (error) {
+    console.error('Error verificando soporte biométrico:', error)
+  }
+}
 
 // Función para guardar credenciales
 const saveCredentials = () => {
@@ -152,6 +214,73 @@ const handleLogin = async () => {
   }
 }
 
+// Funciones para autenticación biométrica
+const showBiometricAuth = () => {
+  if (biometricAuthRef.value) {
+    biometricAuthRef.value.showBiometric()
+  }
+}
+
+const handleBiometricSuccess = async (assertion) => {
+  try {
+    // Obtener credenciales guardadas para el userId
+    const savedCredentials = localStorage.getItem('rememberedCredentials')
+    if (!savedCredentials) {
+      console.log('No hay credenciales guardadas para autenticación biométrica')
+      handleUsePassword()
+      return
+    }
+
+    const credentials = JSON.parse(savedCredentials)
+    
+    // Enviar la assertion al backend para verificación
+    const response = await fetch('/api/webauthn/verify-authentication', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: credentials.userId || '1', // Necesitarás obtener el userId real
+        credential: {
+          id: assertion.id,
+          rawId: Array.from(new Uint8Array(assertion.rawId)),
+          response: {
+            authenticatorData: Array.from(new Uint8Array(assertion.response.authenticatorData)),
+            clientDataJSON: Array.from(new Uint8Array(assertion.response.clientDataJSON)),
+            signature: Array.from(new Uint8Array(assertion.response.signature))
+          },
+          type: assertion.type
+        }
+      })
+    })
+
+    const result = await response.json()
+    
+    if (result.success) {
+      // Autenticación exitosa, usar el token JWT
+      authStore.setToken(result.token)
+      const redirectTo = route.query.redirect || '/dashboard'
+      router.push(redirectTo)
+    } else {
+      console.error('Error en verificación biométrica:', result.error)
+      handleUsePassword()
+    }
+  } catch (error) {
+    console.error('Error en autenticación biométrica:', error)
+    handleUsePassword()
+  }
+}
+
+const handleBiometricCancelled = () => {
+  // Usuario canceló la autenticación biométrica
+  console.log('Autenticación biométrica cancelada')
+}
+
+const handleUsePassword = () => {
+  // Mostrar formulario de contraseña
+  console.log('Usando autenticación por contraseña')
+}
+
 // Watcher para limpiar credenciales si se desmarca "Recordar mis datos"
 watch(rememberMe, (newValue) => {
   if (!newValue) {
@@ -159,8 +288,11 @@ watch(rememberMe, (newValue) => {
   }
 })
 
-onMounted(() => {
+onMounted(async () => {
   authStore.clearError()
+  
+  // Verificar soporte de autenticación biométrica
+  await checkBiometricSupport()
   
   // Cargar credenciales guardadas
   loadSavedCredentials()

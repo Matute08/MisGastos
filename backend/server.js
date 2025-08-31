@@ -13,11 +13,12 @@ import categoriesRoutes from './routes/categories.js';
 import subcategoriesRoutes from './routes/subcategories.js';
 import availableCardsRoutes from './routes/availableCards.js';
 import userCardsRoutes from './routes/userCards.js';
+import webauthnRoutes from './routes/webauthn.js';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8000;
 
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
@@ -29,6 +30,7 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+app.set('trust proxy', 1);
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -48,7 +50,7 @@ app.use(compression());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? [process.env.CORS_ORIGIN || 'https://mis-gastos-phi.vercel.app'] 
-    : ['http://localhost:3000', 'http://localhost:5173'],
+    : ['http://localhost:3000', 'http://localhost:8000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -98,6 +100,7 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/subcategories', subcategoriesRoutes);
 app.use('/api/available-cards', availableCardsRoutes);
 app.use('/api/user-cards', userCardsRoutes);
+app.use('/api/webauthn', webauthnRoutes);
 
 app.use((err, req, res, next) => {
   console.error('Error no manejado:', err);

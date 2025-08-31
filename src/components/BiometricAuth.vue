@@ -1,0 +1,140 @@
+<template>
+  <div class="biometric-auth">
+    <div v-if="showBiometricPrompt" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+        <div class="text-center">
+          <div class="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">
+            {{ biometricType === 'face' ? 'Face ID' : 'Touch ID' }}
+          </h3>
+          
+          <p class="text-sm text-gray-600 mb-4">
+            {{ biometricType === 'face' ? 'Coloca tu rostro frente al sensor' : 'Coloca tu dedo en el sensor' }}
+          </p>
+          
+          <div class="flex space-x-3">
+            <button @click="authenticate" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors duration-200" :disabled="isAuthenticating">
+              <span v-if="isAuthenticating">Autenticando...</span>
+              <span v-else>Autenticar</span>
+            </button>
+            
+            <button @click="cancelBiometric" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-400 transition-colors duration-200">
+              Cancelar
+            </button>
+          </div>
+          
+          <button @click="usePassword" class="mt-3 text-sm text-blue-600 hover:text-blue-800 underline">
+            Usar contraseña
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useAuthStore } from '../stores/auth'
+
+const authStore = useAuthStore()
+const showBiometricPrompt = ref(false)
+const isAuthenticating = ref(false)
+const biometricType = ref('face')
+const isSupported = ref(false)
+
+const emit = defineEmits(['authenticated', 'cancelled', 'usePassword'])
+
+onMounted(async () => {
+  await checkBiometricSupport()
+})
+
+const checkBiometricSupport = async () => {
+  try {
+    if (!window.PublicKeyCredential) {
+      console.log('WebAuthn no soportado')
+      return
+    }
+
+    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+    
+    if (available) {
+      isSupported.value = true
+      
+      if (window.navigator.userAgent.includes('iPhone') || window.navigator.userAgent.includes('iPad')) {
+        biometricType.value = 'face'
+      } else {
+        biometricType.value = 'fingerprint'
+      }
+    }
+  } catch (error) {
+    console.error('Error verificando soporte biométrico:', error)
+  }
+}
+
+const showBiometric = () => {
+  if (isSupported.value) {
+    showBiometricPrompt.value = true
+  } else {
+    emit('usePassword')
+  }
+}
+
+const authenticate = async () => {
+  if (!isSupported.value) {
+    emit('usePassword')
+    return
+  }
+
+  isAuthenticating.value = true
+
+  try {
+    const challenge = new Uint8Array(32)
+    crypto.getRandomValues(challenge)
+
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: challenge,
+        rpId: window.location.hostname,
+        userVerification: 'required',
+        timeout: 60000
+      }
+    })
+
+    if (assertion) {
+      showBiometricPrompt.value = false
+      emit('authenticated', assertion)
+      localStorage.setItem('biometricEnabled', 'true')
+    }
+  } catch (error) {
+    console.error('Error en autenticación biométrica:', error)
+    
+    if (error.name === 'NotAllowedError') {
+      emit('cancelled')
+    } else {
+      emit('usePassword')
+    }
+  } finally {
+    isAuthenticating.value = false
+  }
+}
+
+const cancelBiometric = () => {
+  showBiometricPrompt.value = false
+  emit('cancelled')
+}
+
+const usePassword = () => {
+  showBiometricPrompt.value = false
+  emit('usePassword')
+}
+
+defineExpose({
+  showBiometric,
+  isSupported
+})
+</script>

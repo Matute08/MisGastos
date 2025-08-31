@@ -251,6 +251,11 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
   }
 
+  const setToken = (token) => {
+    localStorage.setItem('token', token)
+    // También puedes agregar lógica adicional aquí si es necesario
+  }
+
   return {
     user,
     userProfile,
@@ -273,6 +278,7 @@ export const useAuthStore = defineStore('auth', () => {
     setupAuthListener,
     clearError,
     loadUserProfile,
-    setupAutoRefresh
+    setupAutoRefresh,
+    setToken
   }
 }) 

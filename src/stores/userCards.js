@@ -37,11 +37,9 @@ export const useUserCardsStore = defineStore('userCards', {
       
       try {
         const response = await apiClient.get('/user-cards')
-        console.log('Respuesta del backend al cargar tarjetas:', response)
         
         if (response.success) {
           this.cards = response.data || []
-          console.log('Tarjetas cargadas en el store:', this.cards)
         } else {
           this.error = response.error || 'Error al cargar tarjetas'
         }
@@ -67,12 +65,10 @@ export const useUserCardsStore = defineStore('userCards', {
           available_card_id: availableCardId
         })
         
-        console.log('Respuesta del backend al vincular:', response)
         
         if (response.success) {
           // Recargar las tarjetas del usuario
           await this.loadUserCards()
-          console.log('Tarjetas recargadas:', this.cards)
           return { success: true }
         } else {
           return { success: false, error: response.error || 'Error al vincular tarjeta' }

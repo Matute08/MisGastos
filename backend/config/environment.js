@@ -1,7 +1,7 @@
 // Configuración del backend basada en variables de entorno
 export const backendConfig = {
   // Configuración del servidor
-  PORT: process.env.PORT || 3001,
+  PORT: process.env.PORT || 8000,
   NODE_ENV: process.env.NODE_ENV || 'development',
   
   // Configuración de CORS
