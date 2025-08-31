@@ -48,7 +48,7 @@ export const useCategoriesStore = defineStore('categories', () => {
       
       // Si hay subcategorías, mostrar mensaje de éxito
       if (categoryData.subcategories && categoryData.subcategories.length > 0) {
-        console.log(`Categoría "${newCategory.name}" creada con ${categoryData.subcategories.length} subcategorías`)
+        // Categoría creada con subcategorías
       }
       
       return { success: true, data: newCategory }

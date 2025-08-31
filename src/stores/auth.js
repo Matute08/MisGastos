@@ -10,21 +10,9 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthReady = ref(false)
   const isInitializing = ref(true)
 
-  
   const isAuthenticated = computed(() => !!user.value)
   const isAdmin = computed(() => {
-    // Debug: mostrar qué valores tenemos
-    console.log('🔍 DEBUG isAdmin:', {
-      userProfile: userProfile.value,
-      user: user.value,
-      userProfileRole: userProfile.value?.role_nombre,
-      userRole: user.value?.role
-    })
-    
-    // Verificar tanto en userProfile como en user para compatibilidad
-    const isAdminResult = userProfile.value?.role_nombre === 'admin' || user.value?.role === 'admin'
-    console.log('🔍 Resultado isAdmin:', isAdminResult)
-    return isAdminResult
+    return userProfile.value?.role_nombre === 'admin' || user.value?.role === 'admin'
   })
   const isModerator = computed(() => {
     return userProfile.value?.role_nombre === 'moderator' || user.value?.role === 'moderator'
@@ -34,28 +22,21 @@ export const useAuthStore = defineStore('auth', () => {
   })
   const hasModeratorAccess = computed(() => isAdmin.value || isModerator.value)
   
-  // Inicializar el store con validación mejorada
   const init = async () => {
     loading.value = true
     isAuthReady.value = false
     isInitializing.value = true
     
     try {
-      // Verificar si hay un token almacenado
       const token = localStorage.getItem('token')
       if (!token) {
-        console.log('No hay token almacenado')
         user.value = null
         userProfile.value = null
         return
       }
       
-      console.log('Token encontrado, intentando restaurar sesión...')
-      
-      // Validar el token antes de intentar obtener el perfil
       const isValid = await auth.validateToken()
       if (!isValid) {
-        console.log('Token inválido, limpiando sesión')
         user.value = null
         userProfile.value = null
         localStorage.removeItem('token')
@@ -63,21 +44,16 @@ export const useAuthStore = defineStore('auth', () => {
         return
       }
       
-      // Intentar obtener el perfil del usuario
       try {
         const currentUser = await auth.getUser()
         if (currentUser) {
           user.value = currentUser
           await loadUserProfile()
-          console.log('Sesión restaurada exitosamente')
-          
-          // Configurar renovación automática
           setupAutoRefresh()
         } else {
           throw new Error('No se pudo obtener el usuario')
         }
       } catch (profileError) {
-        console.log('Error obteniendo perfil, limpiando sesión:', profileError.message)
         user.value = null
         userProfile.value = null
         localStorage.removeItem('token')
@@ -96,42 +72,31 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Configurar renovación automática de token
   const setupAutoRefresh = () => {
-    // Verificar cada 10 minutos si el token necesita renovación
     setInterval(async () => {
       if (user.value && auth.isTokenExpiringSoon()) {
-        console.log('Renovando token automáticamente...')
         try {
           const refreshed = await auth.refreshToken()
           if (refreshed) {
-            console.log('Token renovado exitosamente')
-            // Actualizar el usuario si es necesario
             const currentUser = await auth.getUser()
             if (currentUser) {
               user.value = currentUser
               await loadUserProfile()
             }
-          } else {
-            console.log('No se pudo renovar el token')
           }
         } catch (error) {
           console.error('Error al renovar token automáticamente:', error)
         }
       }
-    }, 10 * 60 * 1000) // 10 minutos
+    }, 10 * 60 * 1000)
   }
 
-  // Cargar perfil del usuario
   const loadUserProfile = async () => {
     if (!user.value) {
       userProfile.value = null
       return
     }
     try {
-      console.log('🔍 DEBUG loadUserProfile - user.value:', user.value)
-      
-      // Crear perfil básico usando datos del backend
       userProfile.value = {
         id: user.value.id,
         email: user.value.email,
@@ -139,15 +104,12 @@ export const useAuthStore = defineStore('auth', () => {
         role_nombre: user.value.role || user.value.role_nombre || 'user',
         role_descripcion: user.value.role_descripcion || 'Usuario regular'
       }
-      
-      console.log('🔍 DEBUG loadUserProfile - userProfile.value:', userProfile.value)
     } catch (err) {
       console.error('Error al cargar perfil del usuario:', err)
       userProfile.value = null
     }
   }
 
-  // Crear perfil de usuario si no existe (simplificado)
   const createUserProfile = async (nombre = null) => {
     if (!user.value) return
     try {
@@ -165,7 +127,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Registro
   const signUp = async (email, password, nombre = null) => {
     loading.value = true
     error.value = null
@@ -176,11 +137,8 @@ export const useAuthStore = defineStore('auth', () => {
         return { success: false, error: response.error || 'Error en el registro' }
       }
       
-      // Establecer el usuario en el store
       user.value = response.user
       await loadUserProfile()
-      
-      // Configurar renovación automática
       setupAutoRefresh()
       
       return { success: true, data: response }
@@ -192,7 +150,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Inicio de sesión
   const signIn = async (email, password) => {
     loading.value = true
     error.value = null
@@ -203,11 +160,8 @@ export const useAuthStore = defineStore('auth', () => {
         return { success: false, error: response.error || 'Error al iniciar sesión' }
       }
       
-      // Establecer el usuario en el store
       user.value = response.user
       await loadUserProfile()
-      
-      // Configurar renovación automática
       setupAutoRefresh()
       
       return { success: true, data: response }
@@ -219,7 +173,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Cerrar sesión
   const signOut = async () => {
     loading.value = true
     error.value = null
@@ -229,8 +182,6 @@ export const useAuthStore = defineStore('auth', () => {
       
       user.value = null
       userProfile.value = null
-      
-      // Limpiar credenciales guardadas al cerrar sesión
       localStorage.removeItem('rememberedCredentials')
       
       return { success: true }
@@ -242,12 +193,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Actualizar perfil del usuario (simplificado)
   const updateProfile = async (updates) => {
     if (!user.value) return { success: false, error: 'Usuario no autenticado' }
     
     try {
-      // Actualizar el perfil en el store
       userProfile.value = {
         ...userProfile.value,
         ...updates
@@ -260,14 +209,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Cambiar rol de usuario (solo admins) - simplificado
   const changeUserRole = async (userId, newRole) => {
     if (!isAdmin.value) {
       return { success: false, error: 'No tienes permisos para cambiar roles' }
     }
 
     try {
-      // Por ahora, solo retornar éxito
       return { success: true, data: { user_id: userId, new_role: newRole } }
     } catch (err) {
       console.error('Error al cambiar rol:', err)
@@ -275,7 +222,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Obtener perfil completo del usuario actual (simplificado)
   const getCurrentUserProfile = async () => {
     if (!user.value) return null
 
@@ -287,7 +233,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Escuchar cambios de autenticación
   const setupAuthListener = () => {
     auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN') {
@@ -302,7 +247,6 @@ export const useAuthStore = defineStore('auth', () => {
     })
   }
 
-  // Limpiar error
   const clearError = () => {
     error.value = null
   }

@@ -50,6 +50,7 @@
                      :class="{
                        'bg-green-100 text-green-800': card.type === 'Crédito',
                        'bg-blue-100 text-blue-800': card.type === 'Débito',
+                       'bg-purple-100 text-purple-800': card.type === 'Transferencia',
                        'bg-gray-100 text-gray-800': card.type === 'Ninguna'
                      }">
                  {{ card.type }}
@@ -164,31 +165,20 @@ const showModal = ref(false)
 const editingCard = ref(null)
 const activeCardMenu = ref(null)
 
-// Verificar si el usuario es administrador
 const isAdmin = computed(() => authStore.isAdmin)
 
   onMounted(async () => {
-    // Esperar a que la autenticación esté completamente lista
     if (!authStore.isAuthReady || authStore.isInitializing) {
-      console.log('⏳ Esperando a que la autenticación esté lista...')
       return
     }
     
-    // Verificar si el usuario es administrador
     if (isAdmin.value) {
-      console.log('✅ Usuario es admin, cargando cuentas disponibles...')
       await availableCardsStore.loadAvailableCards()
-    } else {
-      console.log('❌ Usuario no es admin')
     }
   })
 
-  // Watcher para reaccionar a cambios en el estado de autenticación
   watch([() => authStore.isAuthReady, () => authStore.isInitializing, () => isAdmin.value], async ([isReady, isInitializing, isAdminUser]) => {
-    console.log('🔍 Watcher - Estado cambiado:', { isReady, isInitializing, isAdminUser })
-    
     if (isReady && !isInitializing && isAdminUser) {
-      console.log('✅ Condiciones cumplidas, cargando cuentas...')
       await availableCardsStore.loadAvailableCards()
     }
   }, { immediate: true })
@@ -278,12 +268,10 @@ const saveCard = async (cardData) => {
   }
 }
 
-// Función para formatear números
 const formatNumber = (number) => {
   return new Intl.NumberFormat('es-AR').format(number)
 }
 
-// Función para formatear fechas
 const formatDate = (dateString) => {
   const date = new Date(dateString)
   return date.toLocaleDateString('es-AR', { 
@@ -293,7 +281,6 @@ const formatDate = (dateString) => {
   })
 }
 
-// Cerrar menús al hacer clic fuera
 onMounted(() => {
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.relative')) {

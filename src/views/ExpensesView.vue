@@ -8,20 +8,102 @@
                 <h1 class="text-2xl font-bold text-gray-900">Gastos</h1>
                 <p class="text-gray-600">Gestiona todos tus gastos y compras</p>
             </div>
-            <div class="flex flex-col sm:flex-row gap-2">
+        </div>
+
+        <!-- Resumen del mes actual - Movido arriba -->
+        <div class="space-y-4">
+            <!-- Título del mes actual -->
+            <div class="text-center mb-2">
+                <h2 class="text-xl font-semibold text-gray-800">
+                    {{ monthYearTitle }}
+                </h2>
+            </div>
+            
+            <!-- Resumen con cuotas y flechas de mes - Solo Desktop -->
+            <div class="hidden lg:flex card items-center justify-between">
                 <button
-                    @click="openNewExpenseModal"
-                    class="btn-primary flex items-center gap-1 px-3 py-2 text-sm w-full sm:w-auto mt-2 sm:mt-0 justify-center"
+                    @click="previousMonth"
+                    class="btn-secondary px-2 py-1 flex items-center justify-center"
                 >
-                    <Plus class="h-4 w-4" />
-                    <span class="hidden sm:inline">Nuevo Gasto</span>
-                    <span class="sm:hidden">Nuevo</span>
+                    <ChevronLeft class="h-4 w-4" />
                 </button>
+                <div class="flex-1">
+                    <div
+                        class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center"
+                    >
+                        <div>
+                            <p class="text-sm text-gray-600">
+                                Total Débito
+                            </p>
+                            <p class="text-2xl font-bold text-blue-700">
+                                {{ formatCurrency(totalDebitTransferExpenses) }}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">
+                                Total Crédito
+                            </p>
+                            <p class="text-2xl font-bold text-purple-600">
+                                {{ formatCurrency(totalCreditExpenses) }}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Gastos Totales</p>
+                            <p class="text-2xl font-bold text-green-600">
+                                {{ formatCurrency(totalExpenses) }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <button
+                    @click="nextMonth"
+                    class="btn-secondary px-2 py-1 flex items-center justify-center"
+                >
+                    <ChevronRight class="h-4 w-4" />
+                </button>
+            </div>
+
+            <!-- Resumen con cuotas y flechas de mes - Mobile y Tablet -->
+            <div class="block lg:hidden card">
+                <div class="flex items-center justify-between mb-3">
+                    <button
+                        @click="previousMonth"
+                        class="btn-secondary px-2 py-1 flex items-center justify-center"
+                    >
+                        <ChevronLeft class="h-4 w-4" />
+                    </button>
+                    <button
+                        @click="nextMonth"
+                        class="btn-secondary px-2 py-1 flex items-center justify-center"
+                    >
+                        <ChevronRight class="h-4 w-4" />
+                    </button>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600 mb-2">Débito</p>
+                        <p class="text-sm font-bold text-blue-700 break-words leading-tight">
+                            {{ formatCurrency(totalDebitTransferExpenses) }}
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600 mb-2">Crédito</p>
+                        <p class="text-sm font-bold text-purple-600 break-words leading-tight">
+                            {{ formatCurrency(totalCreditExpenses) }}
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600 mb-2">Total</p>
+                        <p class="text-sm font-bold text-green-600 break-words leading-tight">
+                            {{ formatCurrency(totalExpenses) }}
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Filtros Desktop -->
-        <div class="hidden md:block card">
+        <div class="hidden lg:block card">
             <div
                 class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end"
             >
@@ -37,7 +119,7 @@
                     >
                         <option value="">Todas las tarjetas</option>
                         <option
-                            v-for="card in cardsStore.cards"
+                            v-for="card in userCardsStore.cards"
                             :key="card.id"
                             :value="card.id"
                         >
@@ -58,7 +140,7 @@
                     >
                         <option value="">Todas las categorías</option>
                         <option
-                            v-for="category in categoriesStore.categories"
+                            v-for="category in userCategoriesStore.categories"
                             :key="category.id"
                             :value="category.id"
                         >
@@ -121,7 +203,7 @@
         </div>
 
         <!-- Filtros Móvil -->
-        <div class="block md:hidden">
+        <div class="block lg:hidden">
             <div class="bg-white rounded-lg shadow p-4">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="text-sm font-medium text-gray-700">Filtros</h3>
@@ -147,7 +229,7 @@
                         >
                             <option value="">Todas</option>
                             <option
-                                v-for="card in cardsStore.cards"
+                                v-for="card in userCardsStore.cards"
                                 :key="card.id"
                                 :value="card.id"
                             >
@@ -168,7 +250,7 @@
                         >
                             <option value="">Todas</option>
                             <option
-                                v-for="category in categoriesStore.categories"
+                                v-for="category in userCategoriesStore.categories"
                                 :key="category.id"
                                 :value="category.id"
                             >
@@ -246,93 +328,6 @@
 
         <!-- Lista de gastos -->
         <div v-else class="space-y-4">
-            <!-- Título del mes actual -->
-            <div class="text-center mb-2">
-                <h2 class="text-xl font-semibold text-gray-800">
-                    {{ monthYearTitle }}
-                </h2>
-            </div>
-            <!-- Resumen con cuotas y flechas de mes - Desktop -->
-            <div class="hidden md:flex card items-center justify-between">
-                <button
-                    @click="previousMonth"
-                    class="btn-secondary px-2 py-1 flex items-center justify-center"
-                >
-                    <ChevronLeft class="h-4 w-4" />
-                </button>
-                <div class="flex-1">
-                    <div
-                        class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center"
-                    >
-                        <div>
-                            <p class="text-sm text-gray-600">
-                                Total Débito
-                            </p>
-                            <p class="text-2xl font-bold text-blue-700">
-                                {{ formatCurrency(totalDebitTransferExpenses) }}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">
-                                Total Crédito
-                            </p>
-                            <p class="text-2xl font-bold text-purple-600">
-                                {{ formatCurrency(totalCreditExpenses) }}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Gastos Totales</p>
-                            <p class="text-2xl font-bold text-green-600">
-                                {{ formatCurrency(totalExpenses) }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <button
-                    @click="nextMonth"
-                    class="btn-secondary px-2 py-1 flex items-center justify-center"
-                >
-                    <ChevronRight class="h-4 w-4" />
-                </button>
-            </div>
-
-            <!-- Resumen con cuotas y flechas de mes - Mobile -->
-            <div class="block md:hidden card">
-                <div class="flex items-center justify-between mb-3">
-                    <button
-                        @click="previousMonth"
-                        class="btn-secondary px-2 py-1 flex items-center justify-center"
-                    >
-                        <ChevronLeft class="h-4 w-4" />
-                    </button>
-                    <button
-                        @click="nextMonth"
-                        class="btn-secondary px-2 py-1 flex items-center justify-center"
-                    >
-                        <ChevronRight class="h-4 w-4" />
-                    </button>
-                </div>
-                <div class="grid grid-cols-3 gap-3">
-                    <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-2">Débito</p>
-                        <p class="text-sm font-bold text-blue-700 break-words leading-tight">
-                            {{ formatCurrency(totalDebitTransferExpenses) }}
-                        </p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-2">Crédito</p>
-                        <p class="text-sm font-bold text-purple-600 break-words leading-tight">
-                            {{ formatCurrency(totalCreditExpenses) }}
-                        </p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-2">Total</p>
-                        <p class="text-sm font-bold text-green-600 break-words leading-tight">
-                            {{ formatCurrency(totalExpenses) }}
-                        </p>
-                    </div>
-                </div>
-            </div>
 
             <!-- Botón Seleccionar y Barra de acciones múltiples -->
             <div class="space-y-3">
@@ -375,14 +370,14 @@
                                 :disabled="selectedExpensesCount === 0"
                                 class="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Marcar como Pagado
+                                Pagado
                             </button>
                             <button
                                 @click="bulkChangeStatus(1)"
                                 :disabled="selectedExpensesCount === 0"
                                 class="px-3 py-1.5 text-xs font-medium bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Marcar como Pendiente
+                                 Pendiente
                             </button>
                             <button
                                 @click="bulkDeleteExpenses"
@@ -397,7 +392,7 @@
             </div>
 
             <!-- Vista Desktop: Tabla de gastos -->
-            <div class="hidden md:block card">
+            <div class="hidden lg:block card">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -902,13 +897,7 @@
                                             : item.amount
                                     ) }}
                                 </div>
-                                <div class="text-xs text-gray-500 mt-0.5">
-                                    {{ formatDate(
-                                        item.is_installment
-                                            ? item.due_date
-                                            : item.purchase_date
-                                    ) }}
-                                </div>
+                               
                             </div>
                         </div>
 
@@ -1074,12 +1063,12 @@
                     <button
                         @click="previousPage"
                         :disabled="currentPage === 1"
-                        class="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        class="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 mt-6"
                     >
                         <ChevronLeft class="h-4 w-4" />
                     </button>
                     
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-center gap-1 mt-6">
                         <span
                             v-for="page in visiblePages"
                             :key="page"
@@ -1098,7 +1087,7 @@
                     <button
                         @click="nextPage"
                         :disabled="currentPage === totalPages"
-                        class="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        class="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 mt-6"
                     >
                         <ChevronRight class="h-4 w-4" />
                     </button>
@@ -1117,40 +1106,47 @@
                 <p class="mt-2 text-gray-600">
                     Comienza agregando tu primer gasto
                 </p>
-                <button
-                    @click="showModal = true"
-                    class="mt-4 btn-primary flex items-center gap-2"
-                >
-                    <Plus class="h-4 w-4" />
-                    Agregar Gasto
-                </button>
+
             </div>
         </div>
 
-        <!-- Modal para agregar/editar gasto -->
-        <ExpenseModal
-            v-if="showModal"
-            :expense="editingExpense"
-            @close="closeModal"
-            @save="saveExpense"
-        />
-
-        <!-- Modal para ver cuotas -->
-        <InstallmentsList
-            v-if="showInstallmentsModal && selectedExpenseId"
-            :expense-id="selectedExpenseId"
-            @close="closeInstallmentsModal"
-        />
-
-
     </div>
+
+    <!-- Modal para agregar/editar gasto -->
+    <ExpenseModal
+        v-if="showModal"
+        :expense="editingExpense"
+        @close="closeModal"
+        @save="saveExpense"
+    />
+
+    <!-- Modal para ver cuotas -->
+    <InstallmentsList
+        v-if="showInstallmentsModal && selectedExpenseId"
+        :expense-id="selectedExpenseId"
+        @close="closeInstallmentsModal"
+    />
+
+    <!-- Botón flotante para nuevo gasto -->
+    <button 
+        @click="openNewExpenseModal"
+        :class="[
+            'fixed bottom-24 lg:bottom-6 right-6 z-50 flex items-center justify-center gap-2 px-6 py-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-400 focus:ring-offset-2 transform hover:scale-105 active:scale-95',
+            (showModal || showInstallmentsModal) ? 'hidden' : ''
+        ]"
+        title="Agregar nuevo gasto"
+    >
+        <Plus class="h-6 w-6" />
+        <span class="hidden lg:inline">Nuevo Gasto</span>
+    </button>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch, watchEffect, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
 import { useExpensesStore } from "@/stores/expenses";
-import { useCardsStore } from "@/stores/cards";
-import { useCategoriesStore } from "@/stores/categories";
+import { useUserCardsStore } from "@/stores/userCards";
+import { useUserCategoriesStore } from "@/stores/userCategories";
 import ExpenseModal from "@/components/ExpenseModal.vue";
 import InstallmentsList from "@/components/InstallmentsList.vue";
 import {
@@ -1179,11 +1175,13 @@ const paymentStatusMap = {
     3: { code: "en_deuda", label: "En deuda" },
 };
 
+const router = useRouter();
 const expensesStore = useExpensesStore();
-const cardsStore = useCardsStore();
-const categoriesStore = useCategoriesStore();
+const userCardsStore = useUserCardsStore();
+const userCategoriesStore = useUserCategoriesStore();
 
 const showModal = ref(false);
+const showNoCardsAlert = ref(false);
 const editingExpense = ref(null);
 const now = new Date();
 const filters = ref({
@@ -1382,8 +1380,8 @@ const directExpenses = computed(() =>
 onMounted(async () => {
     await Promise.all([
         expensesStore.loadExpenses(),
-        cardsStore.loadCards(),
-        categoriesStore.loadCategories(),
+        userCardsStore.loadUserCards(),
+        userCategoriesStore.loadUserCategories(),
     ]);
     
     // Actualizar filtros iniciales en el store
@@ -1559,7 +1557,48 @@ const togglePaidStatus = async (expense) => {
     await expensesStore.markAsPaid(expense.id, newStatusId);
 };
 
-const openNewExpenseModal = () => {
+const openNewExpenseModal = async () => {
+    console.log('=== DEBUG openNewExpenseModal ===');
+    console.log('userCardsStore.cards:', userCardsStore.cards);
+    console.log('userCardsStore.cards.length:', userCardsStore.cards?.length);
+    console.log('userCardsStore.cards type:', typeof userCardsStore.cards);
+    
+    // Verificar si el usuario tiene tarjetas asociadas
+    const userCards = userCardsStore.cards;
+    
+    if (!userCards || userCards.length === 0) {
+        // Mostrar alerta para asociar tarjeta primero
+        showNoCardsAlert.value = true;
+        const result = await Swal.fire({
+            icon: 'warning',
+            title: 'Sin tarjetas asociadas',
+            html: `
+                <div style="text-align: center; padding: 20px 0;">
+                    
+                    <p style="color: #374151; margin-bottom: 16px; font-size: 16px;">
+                        Para poder agregar gastos, primero necesitas asociar una cuenta.
+                    </p>
+                    <p style="color: #6b7280; font-size: 14px;">
+                        Ve a la sección de <strong>Cuentas</strong> para vincular tu primer cuenta.
+                    </p>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Ir a Cuentas',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#3b82f6',
+            cancelButtonColor: '#6b7280',
+            reverseButtons: true
+        });
+        
+        if (result.isConfirmed) {
+            // Redirigir a la vista de cuentas
+            router.push('/cuentas');
+        }
+        return;
+    }
+    
+    // Si tiene tarjetas, abrir el modal normalmente
     editingExpense.value = null;
     showModal.value = true;
 };
@@ -2268,5 +2307,30 @@ const goToPageDesktop = (page) => {
     .expenses-table td {
         padding: 12px 8px;
     }
+}
+
+/* Estilos para el botón flotante */
+@media (max-width: 1024px) {
+  .fixed.bottom-24.right-6 {
+    bottom: 6rem; /* Evitar que se superponga con la navegación móvil/tablet */
+    right: 1rem;
+  }
+}
+
+/* Animación de pulso para llamar la atención */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+}
+
+/* Aplicar animación solo en desktop */
+@media (min-width: 1025px) {
+  .fixed.bottom-6.right-6 {
+    animation: pulse-glow 2s infinite;
+  }
 }
 </style>

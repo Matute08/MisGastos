@@ -9,7 +9,7 @@ class NotificationService {
   // Verificar si las notificaciones están soportadas
   async checkSupport() {
     if (!this.isSupported) {
-      console.warn('Notificaciones push no soportadas en este navegador')
+      // Notificaciones push no soportadas en este navegador
       return false
     }
     return true
@@ -78,7 +78,7 @@ class NotificationService {
       //   return false
       //   }
 
-      console.log('Suscripción push registrada exitosamente')
+      // Suscripción push registrada exitosamente
       return true
 
     } catch (error) {
@@ -109,7 +109,7 @@ class NotificationService {
         console.error('Error eliminando suscripción:', error)
       }
 
-      console.log('Suscripción push cancelada')
+      // Suscripción push cancelada
       return true
 
     } catch (error) {

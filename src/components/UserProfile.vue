@@ -219,7 +219,6 @@ const saveProfile = async () => {
     
     if (success) {
       // El store se actualiza automáticamente
-      console.log('Perfil actualizado correctamente')
     } else {
       error.value = updateError
     }

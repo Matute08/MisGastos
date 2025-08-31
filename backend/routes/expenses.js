@@ -2,6 +2,7 @@ import express from 'express';
 import { ExpensesService } from '../services/expensesService.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { body, validationResult } from 'express-validator';
+import { supabase } from '../config/database.js';
 
 const router = express.Router();
 
@@ -61,15 +62,10 @@ router.get('/monthly', authenticateToken, async (req, res) => {
       });
     }
 
-    console.log('🔍 Backend Route - Parámetros recibidos:', { month, year, card_id, category_id });
-
-    // Preparar filtros
     const filters = {
       card_id: card_id && card_id !== 'null' ? card_id : null,
       category_id: category_id && category_id !== 'null' ? category_id : null
     };
-
-    console.log('🔍 Backend Route - Filtros preparados:', filters);
 
     const result = await ExpensesService.getMonthlyExpensesWithInstallments(
       req.user.id,
@@ -77,11 +73,6 @@ router.get('/monthly', authenticateToken, async (req, res) => {
       parseInt(year),
       filters
     );
-
-    console.log('🔍 Backend Route - Resultado final:', {
-      success: result.success,
-      dataLength: result.data?.length || 0
-    });
 
     res.json(result);
   } catch (error) {
@@ -356,6 +347,131 @@ router.post('/installments', authenticateToken, async (req, res) => {
     res.status(400).json({
       success: false,
       error: error.message
+    });
+  }
+});
+
+// Ruta para obtener categorías del usuario (solo las que tiene gastos)
+router.get('/user-categories', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Primero obtener las categorías que el usuario tiene gastos
+    const { data: expenseCategories, error: expenseError } = await supabase
+      .from('expenses')
+      .select('category_id')
+      .eq('user_id', userId);
+    
+    if (expenseError) {
+      throw expenseError;
+    }
+    
+    // Si no hay gastos, retornar array vacío
+    if (!expenseCategories || expenseCategories.length === 0) {
+      return res.json({
+        success: true,
+        categories: []
+      });
+    }
+    
+    // Extraer los IDs únicos de categorías
+    const categoryIds = [...new Set(expenseCategories.map(exp => exp.category_id))];
+    
+    // Obtener las categorías
+    const { data: categories, error: categoriesError } = await supabase
+      .from('categories')
+      .select(`
+        id,
+        name,
+        color
+      `)
+      .in('id', categoryIds)
+      .order('name');
+    
+    if (categoriesError) {
+      throw categoriesError;
+    }
+    
+    res.json({
+      success: true,
+      categories: categories || []
+    });
+  } catch (error) {
+    console.error('Error obteniendo categorías del usuario:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+});
+
+// Ruta para obtener tarjetas del usuario (solo las que tiene gastos asociados)
+router.get('/user-cards', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Obtener todas las tarjetas del usuario que tienen gastos
+    const { data: userCards, error: userCardsError } = await supabase
+      .from('user_cards')
+      .select(`
+        available_card_id,
+        available_cards(
+          id,
+          name,
+          type,
+          bank,
+          payment_day,
+          credit_limit
+        )
+      `)
+      .eq('user_id', userId);
+    
+    if (userCardsError) {
+      throw userCardsError;
+    }
+    
+    // Si no hay tarjetas, retornar array vacío
+    if (!userCards || userCards.length === 0) {
+      return res.json({
+        success: true,
+        cards: []
+      });
+    }
+    
+    // Extraer las tarjetas disponibles y filtrar solo las que tienen gastos
+    const cardsWithExpenses = [];
+    
+    for (const userCard of userCards) {
+      if (userCard.available_cards) {
+        // Verificar si esta tarjeta tiene gastos
+        const { data: expenses, error: expensesError } = await supabase
+          .from('expenses')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('card_id', userCard.available_card_id)
+          .limit(1);
+        
+        if (expensesError) {
+          console.error('Error verificando gastos para tarjeta:', expensesError);
+          continue;
+        }
+        
+        // Si hay gastos, agregar la tarjeta a la lista
+        if (expenses && expenses.length > 0) {
+          cardsWithExpenses.push(userCard.available_cards);
+        }
+      }
+    }
+    
+    res.json({
+      success: true,
+      cards: cardsWithExpenses
+    });
+  } catch (error) {
+    console.error('Error obteniendo tarjetas del usuario:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
     });
   }
 });

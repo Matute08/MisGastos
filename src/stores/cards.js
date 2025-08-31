@@ -26,10 +26,7 @@ export const useCardsStore = defineStore('cards', () => {
     error.value = null
     
     try {
-      console.log('🔍 Debug - Cargando tarjetas para usuario:', authStore.user.id)
-      
       const response = await cardsApi.getCards()
-      console.log('🔍 Debug - Respuesta de getCards:', response)
       
       if (response.error) {
         error.value = response.error
@@ -37,7 +34,6 @@ export const useCardsStore = defineStore('cards', () => {
       }
       
       cards.value = response.data || []
-      console.log('🔍 Debug - Tarjetas cargadas:', cards.value)
       return { success: true, data: response.data }
     } catch (err) {
       console.error('🔍 Debug - Error en loadCards:', err)
@@ -61,10 +57,7 @@ export const useCardsStore = defineStore('cards', () => {
         user_id: authStore.user.id
       }
       
-      console.log('🔍 Debug - Creando tarjeta con datos:', cardWithUserId)
-      
       const response = await cardsApi.createCard(cardWithUserId)
-      console.log('🔍 Debug - Respuesta del API:', response)
       
       if (response.error) {
         error.value = response.error

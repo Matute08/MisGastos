@@ -41,183 +41,144 @@
       <div class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary-600"></div>
     </div>
 
-    <!-- Lista de categorías compacta -->
-    <div v-else class="space-y-3 sm:space-y-4">
+    <!-- Grid de categorías compacto en cuadrados -->
+    <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
       <div
         v-for="category in categoriesStore.categories"
         :key="category.id"
-        class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200"
+        class="group bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200 cursor-pointer overflow-hidden aspect-square"
+        @click="toggleCategory(category)"
       >
-        <!-- Header de la categoría compacto -->
+        <!-- Color de fondo de la categoría -->
         <div 
-          class="flex items-center justify-between p-3 sm:p-4 cursor-pointer"
-          @click="toggleCategory(category.id)"
-        >
-          <div class="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-            <div
-              class="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0"
-              :style="{ backgroundColor: category.color }"
-            ></div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center space-x-1 sm:space-x-2">
-                <h3 class="text-sm sm:text-lg font-semibold text-gray-900 truncate">{{ category.name }}</h3>
-                <!-- Indicador de categoría del sistema -->
-                <span 
-                  v-if="!authStore.isAdmin && category.user_id !== authStore.user?.id"
-                  class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 flex-shrink-0"
-                >
-                  Sistema
-                </span>
-              </div>
-              <div class="text-xs text-gray-600 mt-0.5 sm:mt-1 flex flex-wrap gap-1 sm:gap-2">
-                <span class="truncate">Total: {{ formatCurrency(getCategoryTotal(category.id)) }}</span>
-                <span class="hidden sm:inline">•</span>
-                <span>{{ getCategoryCount(category.id) }} gastos</span>
-                <span class="hidden sm:inline">•</span>
-                <span>{{ getSubcategoriesForCategory(category.id).length }} subcategorías</span>
-              </div>
-            </div>
+          class="h-1/6 w-full"
+          :style="{ backgroundColor: category.color }"
+        ></div>
+        
+        <!-- Contenido de la categoría -->
+        <div class="p-2 sm:p-3 h-2/3 flex flex-col justify-between">
+          <!-- Nombre de la categoría -->
+          <div class="text-center">
+            <h3 class="text-xs sm:text-sm font-semibold text-gray-900 truncate leading-tight">{{ category.name }}</h3>
+            
+            <!-- Indicador de categoría del sistema -->
+            <span 
+              v-if="!authStore.isAdmin && category.user_id !== authStore.user?.id"
+              class="inline-block mt-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+            >
+              Sistema
+            </span>
           </div>
           
-          <!-- Botones de acción -->
-          <div class="flex items-center space-x-1 sm:space-x-2">
-            <!-- Botón expandir/colapsar -->
-            <button
-              @click.stop="toggleCategory(category.id)"
-              class="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
-            >
-              <ChevronDown 
-                v-if="!expandedCategories.includes(category.id)"
-                class="h-4 w-4 sm:h-5 sm:w-5 transform transition-transform duration-200" 
-              />
-              <ChevronUp 
-                v-else
-                class="h-4 w-4 sm:h-5 sm:w-5 transform transition-transform duration-200" 
-              />
-            </button>
-            
-            <!-- Menú de acciones -->
-            <div v-if="categoriesStore.canEditCategory() || categoriesStore.canDeleteCategory()" class="relative" data-category-menu>
-              <button
-                @click.stop="toggleCategoryMenu(category.id)"
-                class="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
-              >
-                <MoreVertical class="h-3 w-3 sm:h-4 sm:w-4" />
-              </button>
-
-              <!-- Menú desplegable -->
-              <div
-                v-if="activeCategoryMenu === category.id"
-                class="absolute right-0 w-28 sm:w-32 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
-                style="top: calc(100% + 8px);"
-              >
-                <button
-                  v-if="categoriesStore.canEditCategory()"
-                  @click="editCategory(category)"
-                  class="block w-full text-left px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
-                >
-                  <Edit class="h-3 w-3 sm:h-4 sm:w-4 inline mr-1.5 sm:mr-2" />
-                  Editar
-                </button>
-                <button
-                  v-if="categoriesStore.canDeleteCategory()"
-                  @click="deleteCategory(category.id)"
-                  class="block w-full text-left px-3 sm:px-4 py-2 text-xs sm:text-sm text-danger-700 hover:bg-danger-50 transition-colors duration-200"
-                >
-                  <Trash2 class="h-3 w-3 sm:h-4 sm:w-4 inline mr-1.5 sm:mr-2" />
-                  Eliminar
-                </button>
-              </div>
-            </div>
+          <!-- Estadísticas compactas -->
+          <div class="text-center space-y-1">
+            <div class="text-xs font-medium text-gray-700">{{ formatCurrency(getCategoryTotal(category.id)) }}</div>
+            <div class="text-xs text-gray-500">{{ getCategoryCount(category.id) }} gastos</div>
+            <div class="text-xs text-gray-400">{{ getSubcategoriesForCategory(category.id).length }} subcat.</div>
           </div>
         </div>
 
-        <!-- Contenido expandible compacto -->
-        <div 
-          v-if="expandedCategories.includes(category.id)"
-          class="border-t border-gray-100 bg-gray-50 transition-all duration-300 ease-in-out"
-        >
-          <!-- Subcategorías -->
-          <div class="p-3 sm:p-4">
-            <div class="flex items-center justify-between mb-2 sm:mb-3">
-              <h4 class="text-xs sm:text-sm font-medium text-gray-700">Subcategorías</h4>
-              <button
-                v-if="subcategoriesStore.canCreateSubcategory()"
-                @click="addSubcategory(category)"
-                class="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 px-2 py-1 rounded-md hover:bg-blue-50 transition-colors duration-200"
-              >
-                <FolderPlus class="h-3 w-3" />
-                Agregar
-              </button>
-            </div>
-            
-            <div class="space-y-1.5 sm:space-y-2">
-              <div
-                v-for="subcategory in getSubcategoriesForCategory(category.id)"
-                :key="subcategory.id"
-                class="flex items-center justify-between p-2 sm:p-3 bg-white rounded-md border border-gray-200 hover:border-gray-300 transition-colors duration-200"
-              >
-                <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                  <div
-                    class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0"
-                    :style="{ backgroundColor: subcategory.color }"
-                  ></div>
-                  <span class="text-xs sm:text-sm text-gray-700 font-medium truncate">{{ subcategory.name }}</span>
-                </div>
-                
-                <!-- Menú de acciones para subcategorías -->
-                <div v-if="subcategoriesStore.canEditSubcategory() || subcategoriesStore.canDeleteSubcategory()" class="relative flex-shrink-0" data-subcategory-menu>
-                  <button
-                    @click="toggleSubcategoryMenu(subcategory.id)"
-                    class="p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                  >
-                    <MoreVertical class="h-3 w-3" />
-                  </button>
+        <!-- Botón de acciones -->
+        <div class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div v-if="categoriesStore.canEditCategory() || categoriesStore.canDeleteCategory()" class="relative" data-category-menu>
+            <button
+              @click.stop="toggleCategoryMenu(category.id)"
+              class="p-1 bg-white/90 rounded-full text-gray-600 hover:text-gray-800 hover:bg-white transition-all duration-200 shadow-sm"
+            >
+              <MoreVertical class="h-3 w-3" />
+            </button>
 
-                  <!-- Menú desplegable para subcategorías -->
-                  <div
-                    v-if="activeSubcategoryMenu === subcategory.id"
-                    class="absolute right-0 w-20 sm:w-24 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
-                    style="top: calc(100% + 4px);"
-                  >
-                    <button
-                      v-if="subcategoriesStore.canEditSubcategory()"
-                      @click="editSubcategory(subcategory)"
-                      class="block w-full text-left px-2 sm:px-3 py-1 text-xs text-gray-700 hover:bg-gray-100 transition-colors duration-200"
-                    >
-                      <Edit class="h-3 w-3 inline mr-1" />
-                      Editar
-                    </button>
-                    <button
-                      v-if="subcategoriesStore.canDeleteSubcategory()"
-                      @click="deleteSubcategory(subcategory.id)"
-                      class="block w-full text-left px-2 sm:px-3 py-1 text-xs text-danger-700 hover:bg-danger-50 transition-colors duration-200"
-                    >
-                      <Trash2 class="h-3 w-3 inline mr-1" />
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              <div
-                v-if="getSubcategoriesForCategory(category.id).length === 0"
-                class="text-center py-4 sm:py-6 text-gray-500"
+            <!-- Menú desplegable -->
+            <div
+              v-if="activeCategoryMenu === category.id"
+              class="absolute right-0 w-24 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
+              style="top: calc(100% + 4px);"
+            >
+              <button
+                v-if="categoriesStore.canEditCategory()"
+                @click="editCategory(category)"
+                class="block w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 transition-colors duration-200"
               >
-                <Folder class="mx-auto h-6 w-6 sm:h-8 sm:w-8 text-gray-300 mb-2" />
-                <p class="text-xs sm:text-sm">Sin subcategorías</p>
-                <button
-                  v-if="subcategoriesStore.canCreateSubcategory()"
-                  @click="addSubcategory(category)"
-                  class="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  + Agregar primera subcategoría
-                </button>
-              </div>
+                <Edit class="h-3 w-3 inline mr-1.5" />
+                Editar
+              </button>
+              <button
+                v-if="categoriesStore.canDeleteCategory()"
+                @click="deleteCategory(category.id)"
+                class="block w-full text-left px-3 py-1.5 text-xs text-danger-700 hover:bg-danger-50 transition-colors duration-200"
+              >
+                <Trash2 class="h-3 w-3 inline mr-1.5" />
+                Eliminar
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+    <!-- Modal para mostrar subcategorías -->
+    <div
+      v-if="showSubcategoriesModal"
+      class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 px-4"
+    >
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[75vh] overflow-y-auto">
+        <div class="flex justify-between items-center p-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900">Subcategorías de {{ selectedCategoryForSubcategory?.name }}</h3>
+          <button @click="showSubcategoriesModal = false" class="text-gray-400 hover:text-gray-600">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+        
+        <div class="p-4 space-y-3">
+          <div
+            v-for="subcategory in getSubcategoriesForCategory(selectedCategoryForSubcategory?.id)"
+            :key="subcategory.id"
+            class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+          >
+            <div class="flex items-center space-x-3">
+              <div
+                class="w-3 h-3 rounded-full"
+                :style="{ backgroundColor: subcategory.color }"
+              ></div>
+              <span class="text-sm font-medium text-gray-700">{{ subcategory.name }}</span>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+              <button
+                v-if="subcategoriesStore.canEditSubcategory()"
+                @click="editSubcategory(subcategory)"
+                class="p-1 text-gray-400 hover:text-gray-600"
+              >
+                <Edit class="h-4 w-4" />
+              </button>
+              <button
+                v-if="subcategoriesStore.canDeleteSubcategory()"
+                @click="deleteSubcategory(subcategory.id)"
+                class="p-1 text-red-400 hover:text-red-600"
+              >
+                <Trash2 class="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          
+          <div
+            v-if="getSubcategoriesForCategory(selectedCategoryForSubcategory?.id).length === 0"
+            class="text-center py-6 text-gray-500"
+          >
+            <Folder class="mx-auto h-8 w-8 text-gray-300 mb-2" />
+            <p class="text-sm">Sin subcategorías</p>
+          </div>
+          
+          <button
+            v-if="subcategoriesStore.canCreateSubcategory()"
+            @click="addSubcategory(selectedCategoryForSubcategory)"
+            class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+          >
+            <FolderPlus class="h-4 w-4" />
+            Agregar Subcategoría
+          </button>
+        </div>
+      </div>
+    </div>
 
       <!-- Estado vacío -->
       <div
@@ -281,7 +242,8 @@ import {
   FolderPlus,
   ChevronDown,
   ChevronUp,
-  Folder
+  Folder,
+  X
 } from 'lucide-vue-next'
 
 const categoriesStore = useCategoriesStore()
@@ -291,6 +253,7 @@ const authStore = useAuthStore()
 
 const showModal = ref(false)
 const showSubcategoryModal = ref(false)
+const showSubcategoriesModal = ref(false)
 const editingCategory = ref(null)
 const editingSubcategory = ref(null)
 const activeCategoryMenu = ref(null)
@@ -299,15 +262,11 @@ const selectedCategoryForSubcategory = ref(null)
 const expandedCategories = ref([])
 
 onMounted(async () => {
-  console.log('Llamando a loadCategories...')
   await Promise.all([
     categoriesStore.loadCategories(),
     subcategoriesStore.loadCategoriesWithSubcategories(),
     expensesStore.loadExpenses()
   ])
-  
-  // Ya no expandimos automáticamente las categorías con subcategorías
-  // expandCategoriesWithSubcategories()
 })
 
 // Función para expandir automáticamente categorías con subcategorías (comentada)
@@ -320,13 +279,9 @@ onMounted(async () => {
 //   })
 // }
 
-const toggleCategory = (categoryId) => {
-  const index = expandedCategories.value.indexOf(categoryId)
-  if (index > -1) {
-    expandedCategories.value.splice(index, 1)
-  } else {
-    expandedCategories.value.push(categoryId)
-  }
+const toggleCategory = (category) => {
+  selectedCategoryForSubcategory.value = category
+  showSubcategoriesModal.value = true
 }
 
 const toggleCategoryMenu = (categoryId) => {

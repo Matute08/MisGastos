@@ -18,16 +18,32 @@ export const useAvailableCardsStore = defineStore('availableCards', () => {
     availableCards.value.filter(card => card.type === 'Débito')
   )
 
+  // Nuevo: Obtener tarjetas disponibles ordenadas por banco
+  const sortedAvailableCardsByBank = computed(() => {
+    return [...availableCards.value].sort((a, b) => {
+      const bankA = a.bank || 'ZZZ' // 'ZZZ' para que 'Sin banco' vaya al final
+      const bankB = b.bank || 'ZZZ'
+      return bankA.localeCompare(bankB)
+    })
+  })
+
+  // Nuevo: Obtener lista única de bancos ordenados
+  const uniqueBanks = computed(() => {
+    const banks = [...new Set(availableCards.value.map(card => card.bank || 'Sin banco'))]
+    return banks.sort((a, b) => {
+      if (a === 'Sin banco') return 1
+      if (b === 'Sin banco') return -1
+      return a.localeCompare(b)
+    })
+  })
+
   // Cargar todas las tarjetas disponibles
   const loadAvailableCards = async () => {
     loading.value = true
     error.value = null
     
     try {
-      console.log('🔍 Debug - Cargando tarjetas disponibles')
-      
       const response = await availableCardsApi.getAllAvailableCards()
-      console.log('🔍 Debug - Respuesta de getAllAvailableCards:', response)
       
       if (response.error) {
         error.value = response.error
@@ -35,7 +51,6 @@ export const useAvailableCardsStore = defineStore('availableCards', () => {
       }
       
       availableCards.value = response.data || []
-      console.log('🔍 Debug - Tarjetas disponibles cargadas:', availableCards.value)
       return { success: true, data: response.data }
     } catch (err) {
       console.error('🔍 Debug - Error en loadAvailableCards:', err)
@@ -56,10 +71,7 @@ export const useAvailableCardsStore = defineStore('availableCards', () => {
     error.value = null
     
     try {
-      console.log('🔍 Debug - Creando tarjeta disponible con datos:', cardData)
-      
       const response = await availableCardsApi.createAvailableCard(cardData)
-      console.log('🔍 Debug - Respuesta del API:', response)
       
       if (response.error) {
         error.value = response.error
@@ -156,6 +168,8 @@ export const useAvailableCardsStore = defineStore('availableCards', () => {
     error,
     creditCards,
     debitCards,
+    sortedAvailableCardsByBank,
+    uniqueBanks,
     loadAvailableCards,
     createAvailableCard,
     updateAvailableCard,

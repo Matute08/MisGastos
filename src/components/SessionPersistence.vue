@@ -22,25 +22,20 @@ const setupAutoRefresh = () => {
   // Verificar cada 10 minutos si el token necesita renovación
   refreshInterval = setInterval(async () => {
     if (authStore.isAuthenticated && auth.isTokenExpiringSoon()) {
-      console.log('Renovando token automáticamente...')
       try {
         const refreshed = await auth.refreshToken()
         if (refreshed) {
-          console.log('Token renovado exitosamente')
-          // Actualizar el usuario si es necesario
           const currentUser = await auth.getUser()
           if (currentUser) {
             authStore.user = currentUser
             await authStore.loadUserProfile()
           }
-        } else {
-          console.log('No se pudo renovar el token')
         }
       } catch (error) {
         console.error('Error al renovar token automáticamente:', error)
       }
     }
-  }, 10 * 60 * 1000) // 10 minutos
+  }, 10 * 60 * 1000)
 }
 
 // Escuchar cambios en el estado de autenticación
@@ -59,7 +54,6 @@ const handleAuthStateChange = () => {
 const checkTokenOnLoad = async () => {
   const token = localStorage.getItem('token')
   if (token && !authStore.isAuthenticated) {
-    console.log('Verificando token al cargar la página...')
     try {
       const isValid = await auth.validateToken()
       if (isValid) {

@@ -120,36 +120,22 @@ router.beforeEach(async (to, from) => {
 
   // Rutas que requieren autenticación
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    console.log('Redirigiendo a login: usuario no autenticado');
     return { path: '/login', query: { redirect: to.fullPath } };
   }
 
   // Rutas que requieren ser invitado (no autenticado)
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    console.log('Redirigiendo a dashboard: usuario ya autenticado');
     return { path: '/dashboard' };
   }
 
   // Rutas que requieren ser administrador
   if (to.meta.requiresAdmin) {
-    console.log('🔍 DEBUG Router - Verificando admin para ruta:', to.path);
-    console.log('🔍 DEBUG Router - authStore.isAuthReady:', authStore.isAuthReady);
-    console.log('🔍 DEBUG Router - authStore.isInitializing:', authStore.isInitializing);
-    console.log('🔍 DEBUG Router - authStore.isAdmin:', authStore.isAdmin);
-    
-    // Esperar a que la autenticación esté completamente lista
     if (!authStore.isAuthReady || authStore.isInitializing) {
-      console.log('⏳ Esperando a que la autenticación esté lista...');
-      return false; // Esperar
+      return false;
     }
-    
-    // Verificar si el usuario es administrador usando el computed del store
     if (!authStore.isAdmin) {
-      console.log('❌ Redirigiendo a dashboard: usuario no es administrador');
       return { path: '/dashboard' };
     }
-    
-    console.log('✅ Usuario es administrador, permitiendo acceso a:', to.path);
   }
 
   return true;

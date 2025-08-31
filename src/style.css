@@ -118,3 +118,137 @@ input[type="checkbox"]:focus {
   border-radius: 8px !important;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
 }
+
+/* Estilos específicos para tablet */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Mejoras de espaciado para tablet */
+  .space-y-6 > * + * {
+    margin-top: 1.75rem;
+  }
+  
+  .space-y-4 > * + * {
+    margin-top: 1.25rem;
+  }
+  
+  /* Mejoras de tipografía para tablet */
+  h1 {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+  
+  /* Mejoras de cards para tablet */
+  .card {
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  /* Mejoras de botones para tablet */
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    border-radius: 0.75rem;
+  }
+  
+  /* Mejoras de inputs para tablet */
+  .input-field {
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Mejoras de navegación inferior para tablet */
+  .fixed.bottom-0 {
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  /* Mejoras de modales para tablet */
+  .fixed.inset-0 > div {
+    border-radius: 1rem;
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+  
+  /* Mejoras de paginación para tablet */
+  .flex.justify-center.items-center.gap-2 {
+    gap: 0.75rem;
+  }
+  
+  .flex.justify-center.items-center.gap-2 button {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Mejoras de filtros para tablet */
+  .grid.grid-cols-2.gap-3 {
+    gap: 1rem;
+  }
+  
+  /* Mejoras de iconos para tablet */
+  .h-4.w-4 {
+    height: 1.25rem;
+    width: 1.25rem;
+  }
+  
+  .h-5.w-5 {
+    height: 1.5rem;
+    width: 1.5rem;
+  }
+  
+  /* Mejoras de espaciado general para tablet */
+  .p-4 {
+    padding: 1.5rem;
+  }
+  
+  .p-6 {
+    padding: 2rem;
+  }
+  
+  .py-4 {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+  
+  .px-4 {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+  
+  /* Mejoras de sombras para tablet */
+  .shadow-sm {
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+  }
+  
+  .shadow {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  .shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* Animaciones suaves para tablet */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+  
+  .hover\:shadow-md:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  .hover\:scale-105:hover {
+    transform: scale(1.02);
+  }
+}

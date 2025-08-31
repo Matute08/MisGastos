@@ -164,7 +164,7 @@ const handleSubmit = async () => {
     }
     
     // Banco solo es obligatorio si no es "Ninguna"
-    if (form.value.type !== 'Ninguna' && !form.value.bank) {
+    if (form.value.type !== 'Ninguna' && (!form.value.bank || form.value.bank.trim() === '')) {
       throw new Error('Por favor especifica el banco')
     }
 
@@ -174,7 +174,7 @@ const handleSubmit = async () => {
     const cardData = {
       name: form.value.name.trim(),
       type: form.value.type,
-      bank: form.value.type === 'Ninguna' ? 'N/A' : form.value.bank.trim()
+      bank: form.value.type === 'Ninguna' ? null : form.value.bank.trim()
     }
 
     // Emitir evento con los datos

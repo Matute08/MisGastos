@@ -3,17 +3,17 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Configuración de Supabase
+// Configuración de Supabase - Nuevas claves de API
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('❌ Error: SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY son requeridos');
+if (!supabaseUrl || !supabaseSecretKey) {
+  console.error('❌ Error: SUPABASE_URL y SUPABASE_SECRET_KEY son requeridos');
   process.exit(1);
 }
 
-// Crear cliente de Supabase con service role para acceso completo
-export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+// Crear cliente de Supabase con secret key para acceso completo
+export const supabase = createClient(supabaseUrl, supabaseSecretKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
@@ -21,6 +21,5 @@ export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 // Verificar conexión
-console.log('✅ Conectado a Supabase');
 
 export default supabase; 

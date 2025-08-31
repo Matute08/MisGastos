@@ -97,7 +97,6 @@ export const cards = {
 export const expenses = {
   // Obtener todos los gastos del usuario
   async getExpenses(userId, filters = {}) {
-    console.log('getExpenses:', { userId, filters })
     
     let query = supabase
       .from('expenses')
@@ -115,20 +114,17 @@ export const expenses = {
     if (filters.year) query = query.eq('year', filters.year)
     
     const { data, error } = await query.order('created_at', { ascending: false })
-    console.log('getExpenses result:', { data, error })
     return { data, error }
   },
 
   // Crear nuevo gasto
   async createExpense(expenseData) {
-    console.log('Supabase: Creando gasto con datos:', expenseData)
     
     const { data, error } = await supabase
       .from('expenses')
       .insert([expenseData])
       .select()
     
-    console.log('Supabase: Respuesta de creación:', { data, error })
     
     return { data, error }
   },
@@ -231,13 +227,11 @@ export const installments = {
 
   // Marcar cuota como pagada (nuevo: por estado)
   async updateInstallmentStatus(id, payment_status_id) {
-    console.log('[updateInstallmentStatus] id:', id, 'payment_status_id:', payment_status_id)
     const { data, error } = await supabase
       .from('installments')
       .update({ payment_status_id })
       .eq('id', String(id))
       .select('*')
-    console.log('[updateInstallmentStatus] response:', { data, error })
     if (error) {
       console.error('[updateInstallmentStatus] Supabase error:', error)
     }
@@ -268,7 +262,6 @@ export const installments = {
 
   // Obtener gastos y cuotas activas por mes
   async getMonthlyExpensesWithInstallments(userId, month, year) {
-    console.log('getMonthlyExpensesWithInstallments:', { userId, month, year })
     
     // Por ahora, obtener solo los gastos del mes
     const { data, error } = await supabase
@@ -284,13 +277,11 @@ export const installments = {
       .eq('year', year)
       .order('created_at', { ascending: false })
     
-    console.log('getMonthlyExpensesWithInstallments result:', { data, error })
     return { data, error }
   },
 
   // Obtener total mensual con cuotas
   async getMonthlyTotalWithInstallments(userId, month, year) {
-    console.log('getMonthlyTotalWithInstallments:', { userId, month, year })
     
     // Calcular totales en el frontend por ahora
     const { data: expenses, error } = await supabase
@@ -300,7 +291,6 @@ export const installments = {
       .eq('month', month)
       .eq('year', year)
     
-    console.log('getMonthlyTotalWithInstallments expenses:', { expenses, error })
     
     if (error) {
       return { data: null, error }
@@ -317,8 +307,6 @@ export const installments = {
       total_installments: totalInstallments,
       total_combined: totalExpenses + totalInstallments
     }]
-    
-    console.log('getMonthlyTotalWithInstallments result:', result)
     return { data: result, error: null }
   },
 

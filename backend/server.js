@@ -1,13 +1,11 @@
-// server.js
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import morgan from 'morgan';
+// import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 
-// Importar rutas
 import authRoutes from './routes/auth.js';
 import expensesRoutes from './routes/expenses.js';
 import cardsRoutes from './routes/cards.js';
@@ -16,16 +14,14 @@ import subcategoriesRoutes from './routes/subcategories.js';
 import availableCardsRoutes from './routes/availableCards.js';
 import userCardsRoutes from './routes/userCards.js';
 
-// Configurar variables de entorno
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Configurar rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutos
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100000, // límite por IP
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100000,
   message: {
     success: false,
     error: 'Demasiadas solicitudes desde esta IP, intenta de nuevo más tarde.'
@@ -34,7 +30,6 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Middleware de seguridad y optimización
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -47,9 +42,9 @@ app.use(helmet({
 }));
 
 app.use(compression());
-app.use(morgan('combined'));
+// Silenciar logs HTTP en producción/desarrollo
+// app.use(morgan('combined'));
 
-// Configurar CORS
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://tu-dominio.com'] 
@@ -59,20 +54,17 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Aplicar rate limiting a todas las rutas
 app.use(limiter);
 
-// Parsear JSON
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Middleware de logging personalizado
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
+// Middleware de log manual deshabilitado para evitar ruido en consola
+// app.use((req, res, next) => {
+//   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+//   next();
+// });
 
-// Ruta de salud
 app.get('/health', (req, res) => {
   res.json({
     success: true,
@@ -82,7 +74,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Ruta raíz
 app.get('/', (req, res) => {
   res.json({
     success: true,
@@ -100,7 +91,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Configurar rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expensesRoutes);
 app.use('/api/cards', cardsRoutes);
@@ -109,7 +99,6 @@ app.use('/api/subcategories', subcategoriesRoutes);
 app.use('/api/available-cards', availableCardsRoutes);
 app.use('/api/user-cards', userCardsRoutes);
 
-// Middleware de manejo de errores
 app.use((err, req, res, next) => {
   console.error('Error no manejado:', err);
   
@@ -122,7 +111,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Middleware para rutas no encontradas
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
@@ -131,56 +119,39 @@ app.use('*', (req, res) => {
   });
 });
 
-// Función para iniciar el servidor
 const startServer = async () => {
   try {
-    // Verificar conexión a Supabase
     const { supabase } = await import('./config/database.js');
     
     try {
       const { error } = await supabase.from('expenses').select('id').limit(1);
       if (error) throw error;
-      console.log('✅ Conexión OK');
+      // Conexión verificada
     } catch (e) {
       console.error('❌ Supabase:', e);
-      console.error('🔎 cause:', e?.cause); // <- acá dirá ECONNRESET / ETIMEDOUT / CERT / ENOTFOUNI
+      console.error('🔎 cause:', e?.cause);
       process.exit(1);
     }
 
-    // Inicializar roles básicos
     try {
       const { initRoles } = await import('./scripts/init-roles.js');
       await initRoles();
-      console.log('✅ Roles inicializados correctamente');
+      // Roles inicializados correctamente
     } catch (roleError) {
-      console.warn('⚠️ Error inicializando roles:', roleError.message);
+      // Silenciado: error inicializando roles
     }
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor iniciado en puerto ${PORT}`);
-      console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🔗 URL: http://localhost:${PORT}`);
-      console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-      console.log(`🔐 Auth endpoint: http://localhost:${PORT}/api/auth/login`);
-    });
+    app.listen(PORT, () => {});
   } catch (error) {
     console.error('❌ Error iniciando el servidor:', error);
     process.exit(1);
   }
 };
 
-// Manejar señales de terminación
-process.on('SIGTERM', () => {
-  console.log('🛑 Señal SIGTERM recibida, cerrando servidor...');
-  process.exit(0);
-});
+process.on('SIGTERM', () => { process.exit(0); });
 
-process.on('SIGINT', () => {
-  console.log('🛑 Señal SIGINT recibida, cerrando servidor...');
-  process.exit(0);
-});
+process.on('SIGINT', () => { process.exit(0); });
 
-// Manejar errores no capturados
 process.on('uncaughtException', (err) => {
   console.error('❌ Error no capturado:', err);
   process.exit(1);
@@ -191,5 +162,4 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// Iniciar servidor
 startServer();

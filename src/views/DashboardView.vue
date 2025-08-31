@@ -19,8 +19,8 @@
         <span :class="['text-sm font-medium', isAnnual ? 'text-blue-600' : 'text-gray-500']">Anual</span>
       </div>
     </div>
-            <!-- Cuentas de resumen (solo desktop) -->
-    <div class="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-{{ 1 + creditCards.length }} gap-6">
+                         <!-- Cuentas de resumen (solo desktop) -->
+     <div class="hidden lg:grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-{{ 1 + creditCards.length }} gap-6">
       <!-- Total gastos (mes o año) -->
       <div class="card">
         <div class="flex items-center">
@@ -55,8 +55,8 @@
       </div>
     </div>
 
-    <!-- Diseño compacto para móviles -->
-    <div class="block md:hidden">
+    <!-- Diseño compacto para móviles y tablet -->
+    <div class="block lg:hidden">
       <div class="bg-white rounded-lg shadow p-4">
                   <h3 class="text-lg font-semibold text-gray-900 mb-3">Resumen de Cuentas</h3>
         <div class="space-y-3">
@@ -80,12 +80,13 @@
             </div>
             <span class="text-lg font-bold text-gray-900">{{ formatCurrency(cardTotal(card)) }}</span>
           </div>
+
         </div>
       </div>
     </div>
 
-    <!-- Gráficos Desktop -->
-    <div class="hidden lg:grid grid-cols-1 lg:grid-cols-3 gap-6">
+         <!-- Gráficos Desktop -->
+     <div class="hidden lg:grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
       <!-- Gráfico por categorías -->
       <div class="card">
         <div class="card-header">
@@ -139,7 +140,7 @@
       </div>
     </div>
 
-    <!-- Carrusel de gráficos para móviles -->
+    <!-- Carrusel de gráficos para móviles y tablet -->
     <div class="block lg:hidden">
       <div class="relative">
         <!-- Contenedor del carrusel -->
@@ -332,23 +333,23 @@
               <span class="text-sm text-gray-500">{{ formatDate(inst.due_date) }}</span>
             </div>
             
-                         <!-- Información principal -->
-             <div class="mb-3">
-               <div class="flex items-center justify-between mb-1">
-                 <h4 class="font-medium text-gray-900 text-sm">
-                   {{ inst.expenses?.description || 'Cuota' }}
-                 </h4>
-                 <span class="text-lg font-bold text-gray-900">{{ formatCurrency(inst.amount) }}</span>
-               </div>
-               <div class="flex items-center space-x-2 text-xs text-gray-600">
-                 <span>{{ inst.expenses?.cards?.name || 'Sin cuenta' }}</span>
-                 <span>•</span>
-                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" 
-                       :style="{ backgroundColor: (inst.expenses?.categories?.color || '#888') + '20', color: inst.expenses?.categories?.color || '#888' }">
-                   {{ inst.expenses?.categories?.name || 'Sin categoría' }}
-                 </span>
-               </div>
-             </div>
+            <!-- Información principal -->
+            <div class="mb-3">
+              <div class="flex items-center justify-between mb-1">
+                <h4 class="font-medium text-gray-900 text-sm">
+                  {{ inst.expenses?.description || 'Cuota' }}
+                </h4>
+                <span class="text-lg font-bold text-gray-900">{{ formatCurrency(inst.amount) }}</span>
+              </div>
+              <div class="flex items-center space-x-2 text-xs text-gray-600">
+                <span>{{ inst.expenses?.cards?.name || 'Sin cuenta' }}</span>
+                <span>•</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" 
+                      :style="{ backgroundColor: (inst.expenses?.categories?.color || '#888') + '20', color: inst.expenses?.categories?.color || '#888' }">
+                  {{ inst.expenses?.categories?.name || 'Sin categoría' }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -408,7 +409,8 @@ import {
   Calendar,
   CreditCard,
   Tag,
-  Plus
+  Plus,
+  BarChart3
 } from 'lucide-vue-next'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -526,14 +528,13 @@ function isDirectCashOrTransfer(expense) {
   return isDirect && isCashOrTransfer
 }
 
-// Total del mes/año: cuotas a pagar + todos los gastos
+
 const totalExpensesView = computed(() => {
   const now = new Date()
   const currentMonth = now.getMonth() + 1
   const currentYear = now.getFullYear()
   
   if (isAnnual.value) {
-    // Vista anual: solo todos los gastos del año (ya incluyen las cuotas)
     const annualExpenses = expensesStore.expenses.filter(expense => {
       const date = parseISO(expense.purchase_date)
       return date.getFullYear() === currentYear
@@ -542,14 +543,12 @@ const totalExpensesView = computed(() => {
     
     return annualTotal
   } else {
-    // Vista mensual: gastos del mes + cuotas que vencen en el mes
     const monthlyExpenses = expensesStore.expenses.filter(expense => {
       const date = parseISO(expense.purchase_date)
       return date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear
     })
     const monthlyTotal = monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0)
     
-    // Cuotas que vencen en el mes actual (incluyendo las ya pagadas)
     const monthlyInstallments = expensesStore.upcomingInstallments.filter(inst => {
       const due = parseISO(inst.due_date)
       return due.getMonth() + 1 === currentMonth && due.getFullYear() === currentYear
@@ -560,14 +559,13 @@ const totalExpensesView = computed(() => {
   }
 })
 
-// Datos para los gráficos (anual o mensual)
+
 const chartData = computed(() => {
   let categories = {}
   let cards = {}
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
   if (isAnnual.value) {
-    // Cuotas a pagar de cualquier cuenta
     expensesStore.upcomingInstallments.forEach(inst => {
       const due = parseISO(inst.due_date)
       if (due.getFullYear() === currentYear && inst.payment_status_id !== 3 && inst.expenses && inst.expenses.cards) {
@@ -597,7 +595,7 @@ const chartData = computed(() => {
       }
     })
   } else {
-    // Mensual: cuotas a pagar de cualquier cuenta en el mes
+
     expensesStore.upcomingInstallments.forEach(inst => {
       const due = parseISO(inst.due_date)
       if (due.getMonth() + 1 === currentMonth && due.getFullYear() === currentYear && inst.payment_status_id !== 3 && inst.expenses && inst.expenses.cards) {
@@ -627,7 +625,7 @@ const chartData = computed(() => {
       }
     })
   }
-  // Filtrar solo categorías y cuentas con gasto > 0
+
   categories = Object.fromEntries(Object.entries(categories).filter(([_, v]) => v > 0))
   cards = Object.fromEntries(Object.entries(cards).filter(([_, v]) => v > 0))
   return {
@@ -652,11 +650,10 @@ const chartData = computed(() => {
   }
 })
 
-// Gráfico de evolución de gastos mensuales
+
 const evolutionChartData = computed(() => {
   const currentYear = new Date().getFullYear()
   const months = Array.from({ length: 12 }, (_, i) => i)
-  // Sumar cuotas a pagar de cada mes
   const monthlyInstallments = months.map(m => {
     return expensesStore.upcomingInstallments
       .filter(inst => {
@@ -665,7 +662,6 @@ const evolutionChartData = computed(() => {
       })
       .reduce((total, inst) => total + inst.amount, 0)
   })
-  // Sumar gastos directos de cada mes
   const monthlyDirect = months.map(m => {
     return expensesStore.expenses
       .filter(e => {
@@ -674,7 +670,6 @@ const evolutionChartData = computed(() => {
       })
       .reduce((total, e) => total + e.amount, 0)
   })
-  // Sumar ambos para el total mensual
   const monthlyTotals = months.map((m, i) => monthlyInstallments[i] + monthlyDirect[i])
   return {
     labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
@@ -695,7 +690,7 @@ const evolutionChartOptions = {
   scales: { y: { beginAtZero: true } }
 }
 
-// Opciones para el gráfico de pie
+
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,

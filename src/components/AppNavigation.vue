@@ -10,8 +10,8 @@
           </div>
         </div>
 
-        <!-- Navegación principal -->
-        <div class="hidden md:flex items-center space-x-8">
+        <!-- Navegación principal - Solo visible en desktop (lg+) -->
+        <div class="hidden lg:flex items-center space-x-8">
           <router-link
             v-for="item in navigationItems"
             :key="item.name"
@@ -28,13 +28,10 @@
           </router-link>
         </div>
 
+       
+
         <!-- Menú de usuario -->
         <div class="flex items-center space-x-4">
-          <!-- Notificaciones -->
-          <!-- <button class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-200">
-            <Bell class="h-5 w-5" />
-          </button> -->
-
           <!-- Menú desplegable del usuario -->
           <div class="relative" ref="userMenuRef">
             <button
@@ -42,7 +39,7 @@
               class="flex items-center space-x-2 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-200"
             >
               <User class="h-5 w-5" />
-              <div class="hidden md:block text-left">
+              <div class="hidden lg:block text-left">
                 <div class="text-sm font-medium">{{ userName }}</div>
                 <div class="text-xs text-gray-500">{{ userRoleDisplay }}</div>
               </div>
@@ -88,22 +85,13 @@
               </button>
             </div>
           </div>
-
-          <!-- Menú móvil - Oculto completamente en móviles -->
-          <button
-            @click="toggleMobileMenu"
-            class="hidden lg:block p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-200"
-            ref="mobileMenuButton"
-          >
-            <Menu class="h-5 w-5" />
-          </button>
         </div>
       </div>
 
-      <!-- Menú móvil - Oculto completamente en móviles -->
+      <!-- Menú móvil - Visible en móvil y tablet -->
       <div
         v-show="showMobileMenu"
-        class="hidden lg:block border-t border-gray-200 py-4 transition-all duration-300 ease-in-out"
+        class="lg:hidden border-t border-gray-200 py-4 transition-all duration-300 ease-in-out"
         ref="mobileMenuRef"
       >
         <div class="space-y-2">
@@ -126,6 +114,26 @@
       </div>
     </div>
   </nav>
+
+  <!-- Navegación inferior - Solo visible en móvil y tablet -->
+  <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+    <div class="flex justify-around items-center py-2">
+      <router-link
+        v-for="item in navigationItems"
+        :key="item.name"
+        :to="item.path"
+        :class="[
+          'flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-colors duration-200 min-w-0 flex-1',
+          $route.name === item.name
+            ? 'text-primary-600 bg-primary-50'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+        ]"
+      >
+        <component :is="item.icon" class="h-5 w-5 mb-1" />
+        <span class="text-xs font-medium text-center">{{ item.label }}</span>
+      </router-link>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -158,6 +166,7 @@ const mobileMenuButton = ref(null)
 const userName = computed(() => {
   return authStore.userProfile?.nombre_perfil || authStore.user?.nombre_perfil || authStore.user?.email?.split('@')[0] || 'Usuario'
 })
+
 const userRoleDisplay = computed(() => {
   const role = authStore.userProfile?.role_nombre;
   if (role === 'admin') return 'Administrador';
@@ -191,13 +200,7 @@ const navigationItems = computed(() => {
       label: 'Categorías',
       path: '/categories',
       icon: Tag
-    },
-    // {
-    //   name: 'monthly',
-    //   label: 'Mensual',
-    //   path: '/monthly',
-    //   icon: Calendar
-    // }
+    }
   ]
 
   // Si el usuario no es admin, mostrar mensaje especial en categorías
@@ -207,8 +210,6 @@ const navigationItems = computed(() => {
       categoriesItem.label = 'Categorías'
     }
   }
-
-  // Admin Cuentas solo se muestra en el dropdown del usuario, no en el navbar principal
 
   return items
 })
