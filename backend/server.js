@@ -23,6 +23,40 @@ const config = getConfig();
 const app = express();
 const PORT = config.PORT || 8000;
 
+// Configuración de CORS - DEBE ir ANTES que otros middlewares
+const corsOrigins = [
+  'https://mis-gastos-phi.vercel.app',
+  'http://localhost:3000', 
+  'http://localhost:5173'
+];
+
+// Agregar CORS_ORIGIN de configuración si existe y es un string
+if (config.CORS_ORIGIN && typeof config.CORS_ORIGIN === 'string' && !corsOrigins.includes(config.CORS_ORIGIN)) {
+  corsOrigins.push(config.CORS_ORIGIN);
+}
+
+console.log('🚀 CORS Origins permitidos:', corsOrigins);
+
+app.use(cors({
+  origin: corsOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
+
+// Manejar preflight OPTIONS explícitamente
+app.options('*', cors());
+
+// Middleware de logging para debuggear CORS
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - Origin: ${req.headers.origin}`);
+  next();
+});
+
+app.set('trust proxy', 1);
+
 const limiter = rateLimit({
   windowMs: config.RATE_LIMIT_WINDOW_MS,
   max: config.RATE_LIMIT_MAX_REQUESTS,
@@ -33,7 +67,6 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.set('trust proxy', 1);
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -49,13 +82,6 @@ app.use(helmet({
 app.use(compression());
 // Silenciar logs HTTP en producción/desarrollo
 // app.use(morgan('combined'));
-
-app.use(cors({
-  origin: ['https://mis-gastos-phi.vercel.app', 'http://localhost:3000', 'http://localhost:5173'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept']
-}));
 
 app.use(limiter);
 
@@ -83,7 +109,20 @@ app.get('/api/test-cors', (req, res) => {
     success: true,
     message: 'CORS funcionando correctamente',
     origin: req.headers.origin,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    cors: 'OK'
+  });
+});
+
+// Endpoint de prueba POST para CORS
+app.post('/api/test-cors', (req, res) => {
+  res.json({
+    success: true,
+    message: 'CORS POST funcionando correctamente',
+    origin: req.headers.origin,
+    body: req.body,
+    timestamp: new Date().toISOString(),
+    cors: 'OK'
   });
 });
 
