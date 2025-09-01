@@ -40,7 +40,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
-import { authenticateWithNativeBiometric } from '../services/webauthn'
+import { 
+  authenticateWithFaceIDSimple,
+  authenticateWithFaceIDMultipleAttempts,
+  checkFaceIDSupportSimple
+} from '../services/faceIdSimple'
 
 const authStore = useAuthStore()
 const showBiometricPrompt = ref(false)
@@ -56,24 +60,20 @@ onMounted(async () => {
 
 const checkBiometricSupport = async () => {
   try {
-    if (!window.PublicKeyCredential) {
-      console.log('WebAuthn no soportado')
-      return
-    }
-
-    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+    // Verificar soporte de Face ID
+    const support = await checkFaceIDSupportSimple()
     
-    if (available) {
+    if (support.supported) {
       isSupported.value = true
-      
-      if (window.navigator.userAgent.includes('iPhone') || window.navigator.userAgent.includes('iPad')) {
-        biometricType.value = 'face'
-      } else {
-        biometricType.value = 'fingerprint'
-      }
+      biometricType.value = 'face'
+      console.log('Face ID disponible:', support.reason)
+    } else {
+      console.log('Face ID no disponible:', support.reason)
+      isSupported.value = false
     }
   } catch (error) {
-    console.error('Error verificando soporte biométrico:', error)
+    console.error('Error verificando soporte de Face ID:', error)
+    isSupported.value = false
   }
 }
 
@@ -94,24 +94,35 @@ const authenticate = async () => {
   isAuthenticating.value = true
 
   try {
-    // Usar la función de autenticación biométrica nativa
-    const result = await authenticateWithNativeBiometric()
+    console.log('Iniciando autenticación Face ID simple...')
     
-    if (result.success && result.assertion) {
+    // Intentar primero con la configuración simple
+    let result = await authenticateWithFaceIDSimple()
+    
+    // Si falla, intentar con múltiples configuraciones
+    if (!result.success && result.code !== 'CANCELLED') {
+      console.log('Intentando con múltiples configuraciones...')
+      result = await authenticateWithFaceIDMultipleAttempts()
+    }
+    
+    if (result.success && result.credential) {
+      console.log('Autenticación Face ID exitosa')
       showBiometricPrompt.value = false
-      emit('authenticated', result.assertion)
+      emit('authenticated', result.credential)
       localStorage.setItem('biometricEnabled', 'true')
     } else {
-      throw new Error(result.error || 'Error en autenticación biométrica')
+      console.error('Error en autenticación Face ID:', result.error)
+      
+      // Manejar diferentes tipos de errores
+      if (result.code === 'CANCELLED') {
+        emit('cancelled')
+      } else {
+        emit('usePassword')
+      }
     }
   } catch (error) {
-    console.error('Error en autenticación biométrica:', error)
-    
-    if (error.name === 'NotAllowedError') {
-      emit('cancelled')
-    } else {
-      emit('usePassword')
-    }
+    console.error('Error en autenticación Face ID:', error)
+    emit('usePassword')
   } finally {
     isAuthenticating.value = false
   }
