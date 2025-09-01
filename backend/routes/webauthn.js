@@ -46,10 +46,11 @@ router.post('/generate-registration-options', async (req, res) => {
       userID: userId.toString(),
       userName: email,
       userDisplayName: email,
-      attestationType: 'direct',
+      attestationType: 'none', // Cambiado a 'none' para mejor compatibilidad con Face ID
       authenticatorSelection: {
         authenticatorAttachment: 'platform',
         userVerification: 'required',
+        residentKey: 'preferred', // Mejor compatibilidad con Face ID
       },
     });
 
@@ -176,6 +177,8 @@ router.post('/generate-authentication-options', async (req, res) => {
         type: 'public-key'
       })),
       userVerification: 'required',
+      // Configuración optimizada para Face ID
+      timeout: 60000,
     });
 
     challenges.set(userId, {

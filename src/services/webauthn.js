@@ -70,9 +70,18 @@ export const authenticateWithBiometric = async (userId) => {
       throw new Error('Error obteniendo opciones de autenticación')
     }
 
-    // 2. Obtener credencial del navegador
+    // 2. Obtener credencial del navegador con configuración optimizada para Face ID
     const assertion = await navigator.credentials.get({
-      publicKey: options
+      publicKey: {
+        ...options,
+        // Configuración específica para Face ID nativo
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required'
+        },
+        // Forzar el uso del autenticador de plataforma
+        allowCredentials: options.allowCredentials || []
+      }
     })
 
     // 3. Verificar assertion en el servidor
@@ -122,5 +131,52 @@ export const hasBiometricCredentials = async (userId) => {
   } catch (error) {
     console.error('Error verificando credenciales biométricas:', error)
     return false
+  }
+}
+
+// Autenticación biométrica simple sin WebAuthn (para Face ID nativo)
+export const authenticateWithNativeBiometric = async () => {
+  try {
+    if (!window.PublicKeyCredential) {
+      throw new Error('WebAuthn no soportado')
+    }
+
+    // Verificar si hay autenticador de plataforma disponible
+    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+    if (!available) {
+      throw new Error('Autenticador biométrico no disponible')
+    }
+
+    // Crear un challenge simple
+    const challenge = new Uint8Array(32)
+    crypto.getRandomValues(challenge)
+
+    // Solicitar autenticación biométrica nativa
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: challenge,
+        rpId: window.location.hostname,
+        userVerification: 'required',
+        timeout: 60000,
+        // Configuración específica para Face ID nativo
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required'
+        },
+        // No especificar credenciales para permitir Face ID nativo
+        allowCredentials: []
+      }
+    })
+
+    return {
+      success: true,
+      assertion: assertion
+    }
+  } catch (error) {
+    console.error('Error en autenticación biométrica nativa:', error)
+    return {
+      success: false,
+      error: error.message
+    }
   }
 }

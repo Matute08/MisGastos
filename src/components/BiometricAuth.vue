@@ -40,6 +40,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { authenticateWithNativeBiometric } from '../services/webauthn'
 
 const authStore = useAuthStore()
 const showBiometricPrompt = ref(false)
@@ -93,22 +94,15 @@ const authenticate = async () => {
   isAuthenticating.value = true
 
   try {
-    const challenge = new Uint8Array(32)
-    crypto.getRandomValues(challenge)
-
-    const assertion = await navigator.credentials.get({
-      publicKey: {
-        challenge: challenge,
-        rpId: window.location.hostname,
-        userVerification: 'required',
-        timeout: 60000
-      }
-    })
-
-    if (assertion) {
+    // Usar la función de autenticación biométrica nativa
+    const result = await authenticateWithNativeBiometric()
+    
+    if (result.success && result.assertion) {
       showBiometricPrompt.value = false
-      emit('authenticated', assertion)
+      emit('authenticated', result.assertion)
       localStorage.setItem('biometricEnabled', 'true')
+    } else {
+      throw new Error(result.error || 'Error en autenticación biométrica')
     }
   } catch (error) {
     console.error('Error en autenticación biométrica:', error)
