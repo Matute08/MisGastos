@@ -1,0 +1,33 @@
+name: misgastos-backend
+service:
+  name: misgastos-backend
+  type: web
+  env: node
+  git:
+    repository: Matute08/MisGastos
+    branch: main
+    buildCommand: cd backend && npm install
+    runCommand: cd backend && npm start
+  ports:
+    - port: 8000
+      protocol: http
+  healthChecks:
+    - path: /health
+      port: 8000
+      protocol: http
+      initialDelaySeconds: 30
+      intervalSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 3
+  env:
+    - name: NODE_ENV
+      value: production
+    - name: PORT
+      value: 8000
+  scaling:
+    min: 0
+    max: 1
+  resources:
+    cpu: 0.1
+    memory: 512Mi

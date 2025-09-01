@@ -94,13 +94,31 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 //   next();
 // });
 
+// Health check endpoint para Koyeb
 app.get('/health', (req, res) => {
-  res.json({
+  res.status(200).json({
     success: true,
     message: 'Servidor funcionando correctamente',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    status: 'healthy'
   });
+});
+
+// Health check alternativo para compatibilidad
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'API funcionando correctamente',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    status: 'healthy'
+  });
+});
+
+// Health check simple para Koyeb
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
 });
 
 // Endpoint de prueba para CORS
@@ -174,6 +192,10 @@ app.use('*', (req, res) => {
 
 const startServer = async () => {
   try {
+    console.log('🚀 Iniciando servidor MisGastos...');
+    console.log('📊 Puerto:', PORT);
+    console.log('🌍 Entorno:', process.env.NODE_ENV || 'development');
+    
     const { supabase } = await import('./config/database.js');
     
     try {
@@ -194,7 +216,11 @@ const startServer = async () => {
       // Silenciado: error inicializando roles
     }
 
-    app.listen(PORT, () => {});
+    app.listen(PORT, () => {
+      console.log('✅ Servidor iniciado correctamente en puerto:', PORT);
+      console.log('🔗 Health check disponible en: http://localhost:' + PORT + '/health');
+      console.log('🔗 API disponible en: http://localhost:' + PORT);
+    });
   } catch (error) {
     console.error('❌ Error iniciando el servidor:', error);
     process.exit(1);
