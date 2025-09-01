@@ -62,6 +62,17 @@ router.get('/monthly', authenticateToken, async (req, res) => {
       });
     }
 
+    // Validar que month y year sean números válidos
+    const monthNum = parseInt(month);
+    const yearNum = parseInt(year);
+    
+    if (isNaN(monthNum) || isNaN(yearNum) || monthNum < 1 || monthNum > 12) {
+      return res.status(400).json({
+        success: false,
+        error: 'Mes y año deben ser números válidos (mes: 1-12)'
+      });
+    }
+
     const filters = {
       card_id: card_id && card_id !== 'null' ? card_id : null,
       category_id: category_id && category_id !== 'null' ? category_id : null
@@ -69,8 +80,8 @@ router.get('/monthly', authenticateToken, async (req, res) => {
 
     const result = await ExpensesService.getMonthlyExpensesWithInstallments(
       req.user.id,
-      parseInt(month),
-      parseInt(year),
+      monthNum,
+      yearNum,
       filters
     );
 
@@ -96,10 +107,21 @@ router.get('/monthly-total', authenticateToken, async (req, res) => {
       });
     }
 
+    // Validar que month y year sean números válidos
+    const monthNum = parseInt(month);
+    const yearNum = parseInt(year);
+    
+    if (isNaN(monthNum) || isNaN(yearNum) || monthNum < 1 || monthNum > 12) {
+      return res.status(400).json({
+        success: false,
+        error: 'Mes y año deben ser números válidos (mes: 1-12)'
+      });
+    }
+
     const result = await ExpensesService.getMonthlyTotalWithInstallments(
       req.user.id,
-      parseInt(month),
-      parseInt(year)
+      monthNum,
+      yearNum
     );
 
     res.json(result);

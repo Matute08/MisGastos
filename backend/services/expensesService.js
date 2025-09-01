@@ -24,10 +24,17 @@ export class ExpensesService {
         query = query.eq('category_id', filters.category_id);
       }
 
-      if (filters.month && filters.year && filters.month !== 'null' && filters.year !== 'null') {
-        const startDate = `${filters.year}-${filters.month.toString().padStart(2, '0')}-01`;
-        const endDate = `${filters.year}-${filters.month.toString().padStart(2, '0')}-31`;
-        query = query.gte('purchase_date', startDate).lte('purchase_date', endDate);
+      if (filters.month && filters.year && filters.month !== 'null' && filters.year !== 'null' && 
+          !isNaN(parseInt(filters.month)) && !isNaN(parseInt(filters.year))) {
+        const month = parseInt(filters.month);
+        const year = parseInt(filters.year);
+        
+        // Validar que el mes esté en el rango correcto
+        if (month >= 1 && month <= 12) {
+          const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+          const endDate = `${year}-${month.toString().padStart(2, '0')}-31`;
+          query = query.gte('purchase_date', startDate).lte('purchase_date', endDate);
+        }
       }
 
       const { data, error } = await query.order('purchase_date', { ascending: false });
@@ -199,17 +206,17 @@ export class ExpensesService {
   static async getMonthlyExpensesWithInstallments(userId, month, year, filters = {}) {
     try {
 
-      // Calcular fechas de inicio y fin del mes
-      const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
-      const endDate = `${year}-${(month + 1).toString().padStart(2, '0')}-01`;
-      
       // Validar que month y year sean números válidos
-      if (!month || !year || month < 1 || month > 12) {
+      if (!month || !year || month < 1 || month > 12 || isNaN(month) || isNaN(year)) {
         return {
           success: true,
           data: []
         };
       }
+      
+      // Calcular fechas de inicio y fin del mes
+      const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+      const endDate = `${year}-${(month + 1).toString().padStart(2, '0')}-01`;
 
       // Consulta SQL directa para obtener SOLO gastos directos (sin cuotas) del mes
       let directQuery = supabase
@@ -318,6 +325,20 @@ export class ExpensesService {
   static async getMonthlyTotalWithInstallments(userId, month, year) {
     try {
 
+      // Validar que month y year sean números válidos
+      if (!month || !year || month < 1 || month > 12 || isNaN(month) || isNaN(year)) {
+        return {
+          success: true,
+          data: [{
+            total_debit_transfer: 0,
+            total_credit: 0,
+            total_expenses: 0,
+            expenses_count: 0,
+            installments_count: 0
+          }]
+        };
+      }
+      
       // Calcular fechas de inicio y fin del mes
       const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
       const endDate = `${year}-${(month + 1).toString().padStart(2, '0')}-01`;
