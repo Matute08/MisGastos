@@ -25,6 +25,14 @@ service:
       value: production
     - name: PORT
       value: 8000
+    - name: CORS_ORIGIN
+      value: https://mis-gastos-phi.vercel.app
+    - name: JWT_SECRET
+      value: "tu-jwt-secret-super-seguro-aqui"
+    - name: SUPABASE_URL
+      value: "tu-supabase-url-aqui"
+    - name: SUPABASE_SERVICE_ROLE_KEY
+      value: "tu-service-role-key-aqui"
   scaling:
     min: 0
     max: 1
