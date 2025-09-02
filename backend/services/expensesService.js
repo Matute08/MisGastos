@@ -8,7 +8,7 @@ export class ExpensesService {
         .from('expenses')
         .select(`
           *,
-          cards(name, type),
+          available_cards(name, type),
           categories(name, color),
           subcategories(name, color),
           payment_status(code, label)
@@ -260,7 +260,7 @@ export class ExpensesService {
         .from('expenses')
         .select(`
           *,
-          cards(id, name, type),
+          available_cards(id, name, type),
           categories(id, name, color),
           subcategories(id, name, color),
           payment_status(code, label)
@@ -288,7 +288,7 @@ export class ExpensesService {
         .from('installments')
         .select(`
           *,
-          expenses!inner(description, user_id, installments_count, cards(id, name, type), categories(id, name, color), subcategories(id, name, color)),
+          expenses!inner(description, user_id, installments_count, available_cards(id, name, type), categories(id, name, color), subcategories(id, name, color)),
           payment_status(code, label)
         `)
         .eq('expenses.user_id', userId)
@@ -387,7 +387,7 @@ export class ExpensesService {
         .select(`
           amount, 
           payment_status(code),
-          cards(name, type)
+          available_cards(name, type)
         `)
         .eq('user_id', userId)
         .eq('installments_count', 1) // Solo gastos directos
@@ -450,7 +450,7 @@ export class ExpensesService {
             .from('installments')
             .select(`
               *,
-              expenses!inner(description, installments_count, cards(name, type), categories(name, color), subcategories(name, color)),
+              expenses!inner(description, installments_count, available_cards(name, type), categories(name, color), subcategories(name, color)),
               payment_status(code, label)
             `)
             .eq('expense_id', expenseId)
@@ -541,7 +541,7 @@ export class ExpensesService {
             .from('installments')
             .select(`
               *,
-              expenses!inner(description, user_id, cards(name, type), categories(name, color), subcategories(name, color)),
+              expenses!inner(description, user_id, available_cards(name, type), categories(name, color), subcategories(name, color)),
               payment_status(code, label)
             `)
             .in('expense_id', expenseIds)
