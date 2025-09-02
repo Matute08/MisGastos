@@ -15,9 +15,11 @@ const validateExpense = [
   body('purchase_date').matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('Fecha de compra inválida (formato: YYYY-MM-DD)'),
   body('installments_count').optional().isInt({ min: 1 }).withMessage('El número de cuotas debe ser mayor a 0'),
   body('first_installment_date').optional().matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('Fecha de primera cuota inválida (formato: YYYY-MM-DD)'),
+  body('payment_status_id').optional().isInt({ min: 1 }).withMessage('ID de estado de pago inválido'),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('🔍 Backend - Errores de validación:', errors.array());
       return res.status(400).json({
         success: false,
         error: 'Datos de entrada inválidos',
@@ -137,12 +139,15 @@ router.get('/monthly-total', authenticateToken, async (req, res) => {
 // POST /api/expenses - Crear nuevo gasto
 router.post('/', authenticateToken, validateExpense, async (req, res) => {
   try {
+    console.log('🔍 Backend - Datos recibidos:', JSON.stringify(req.body, null, 2));
+    console.log('🔍 Backend - Usuario autenticado:', req.user);
     
     const expenseData = {
       ...req.body,
       user_id: req.user.id
     };
 
+    console.log('🔍 Backend - Datos procesados:', JSON.stringify(expenseData, null, 2));
 
     const result = await ExpensesService.createExpense(expenseData);
 

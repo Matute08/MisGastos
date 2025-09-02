@@ -305,7 +305,8 @@ const resetForm = () => {
 }
 
 const selectedCard = computed(() => {
-  return userCardsStore.cards.find(card => card.id === form.value.card_id)
+  const userCard = userCardsStore.cards.find(card => card.id === form.value.card_id)
+  return userCard ? userCard.available_card : null
 })
 
 watch(selectedCard, (card) => {
@@ -454,10 +455,19 @@ const handleSubmit = () => {
     }
   }
   
+  // Obtener el card_id real de la tarjeta seleccionada
+  const selectedUserCard = userCardsStore.cards.find(card => card.id === form.value.card_id)
+  console.log('🔍 Frontend - selectedUserCard:', selectedUserCard);
+  console.log('🔍 Frontend - form.value.card_id:', form.value.card_id);
+  console.log('🔍 Frontend - userCardsStore.cards:', userCardsStore.cards);
+  
+  const realCardId = selectedUserCard ? selectedUserCard.available_card_id : form.value.card_id
+  console.log('🔍 Frontend - realCardId:', realCardId);
+
   const expenseData = {
     description: form.value.description,
     amount: form.value.amount,
-    card_id: form.value.card_id,
+    card_id: realCardId,
     category_id: form.value.category_id,
     subcategory_id: form.value.subcategory_id || null,
     purchase_date: formatDateForAPI(form.value.purchase_date),
@@ -468,6 +478,8 @@ const handleSubmit = () => {
   if (firstInstallmentDate) {
     expenseData.first_installment_date = firstInstallmentDate;
   }
+  
+  console.log('🔍 Frontend - Datos a enviar:', JSON.stringify(expenseData, null, 2));
   
   emit('save', expenseData)
 }

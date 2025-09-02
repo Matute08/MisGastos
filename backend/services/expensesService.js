@@ -54,17 +54,54 @@ export class ExpensesService {
   // Crear nuevo gasto
   static async createExpense(expenseData) {
     try {
+      console.log('🔍 Backend - expenseData recibido:', expenseData);
       
-      // 1. Obtener información de la tarjeta para determinar el estado de pago
-      const { data: card, error: cardError } = await supabase
-        .from('cards')
-        .select('*')
-        .eq('id', expenseData.card_id)
+      // Validar datos requeridos
+      if (!expenseData.user_id) {
+        throw new Error('user_id es requerido');
+      }
+      if (!expenseData.card_id) {
+        throw new Error('card_id es requerido');
+      }
+      
+      // 1. Verificar que la tarjeta pertenece al usuario y obtener información
+      console.log('🔍 Backend - Buscando tarjeta con:', {
+        user_id: expenseData.user_id,
+        card_id: expenseData.card_id
+      });
+
+      const { data: userCard, error: userCardError } = await supabase
+        .from('user_cards')
+        .select(`
+          *,
+          available_card:cards(*)
+        `)
+        .eq('user_id', expenseData.user_id)
+        .eq('available_card_id', expenseData.card_id)
         .single();
 
-      if (cardError || !card) {
-        throw new Error('Tarjeta no encontrada');
+      console.log('🔍 Backend - Resultado de la consulta:', {
+        userCard,
+        userCardError,
+        hasAvailableCard: userCard ? !!userCard.available_card : false
+      });
+
+      if (userCardError) {
+        console.log('🔍 Backend - Error en la consulta:', userCardError);
+        throw new Error(`Error en la consulta: ${userCardError.message}`);
       }
+
+      if (!userCard) {
+        console.log('🔍 Backend - No se encontró userCard');
+        throw new Error('Tarjeta no encontrada o no pertenece al usuario');
+      }
+
+      if (!userCard.available_card) {
+        console.log('🔍 Backend - userCard encontrado pero sin available_card');
+        throw new Error('Tarjeta no encontrada o no pertenece al usuario');
+      }
+
+      const card = userCard.available_card;
 
 
       // 2. Determinar el estado de pago según el tipo de tarjeta
