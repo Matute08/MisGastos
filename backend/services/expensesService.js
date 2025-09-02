@@ -32,8 +32,11 @@ export class ExpensesService {
         // Validar que el mes esté en el rango correcto
         if (month >= 1 && month <= 12) {
           const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
-          const endDate = `${year}-${month.toString().padStart(2, '0')}-31`;
-          query = query.gte('purchase_date', startDate).lte('purchase_date', endDate);
+          // Usar el primer día del mes siguiente con comparación < para evitar fechas inválidas (31)
+          const nextMonth = month === 12 ? 1 : month + 1;
+          const nextMonthYear = month === 12 ? year + 1 : year;
+          const nextMonthStart = `${nextMonthYear}-${nextMonth.toString().padStart(2, '0')}-01`;
+          query = query.gte('purchase_date', startDate).lt('purchase_date', nextMonthStart);
         }
       }
 
@@ -234,7 +237,10 @@ export class ExpensesService {
       
       // Calcular fechas de inicio y fin del mes
       const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
-      const endDate = `${year}-${(month + 1).toString().padStart(2, '0')}-01`;
+      // Usar el primer día del mes siguiente con comparación < para evitar fechas inválidas (31)
+      const nextMonth = month === 12 ? 1 : month + 1;
+      const nextMonthYear = month === 12 ? year + 1 : year;
+      const endDate = `${nextMonthYear}-${nextMonth.toString().padStart(2, '0')}-01`;
 
       // Consulta SQL directa para obtener SOLO gastos directos (sin cuotas) del mes
       let directQuery = supabase
@@ -269,7 +275,15 @@ export class ExpensesService {
         .from('installments')
         .select(`
           *,
-          expenses!inner(description, user_id, installments_count, available_cards(id, name, type), categories(id, name, color), subcategories(id, name, color)),
+          expenses!inner(
+            description, 
+            user_id, 
+            installments_count, 
+            card_id,
+            available_cards(id, name, type, bank), 
+            categories(id, name, color), 
+            subcategories(id, name, color)
+          ),
           payment_status(code, label)
         `)
         .eq('expenses.user_id', userId)
@@ -288,6 +302,8 @@ export class ExpensesService {
       const { data: installments, error: installmentsError } = await installmentsQuery.order('due_date', { ascending: true });
 
       if (installmentsError) throw installmentsError;
+
+
 
       // Marcar gastos directos
       const markedDirectExpenses = (directExpenses || []).map(expense => ({
@@ -359,7 +375,10 @@ export class ExpensesService {
       
       // Calcular fechas de inicio y fin del mes
       const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
-      const endDate = `${year}-${(month + 1).toString().padStart(2, '0')}-01`;
+      // Usar el primer día del mes siguiente con comparación < para evitar fechas inválidas (31)
+      const nextMonth = month === 12 ? 1 : month + 1;
+      const nextMonthYear = month === 12 ? year + 1 : year;
+      const endDate = `${nextMonthYear}-${nextMonth.toString().padStart(2, '0')}-01`;
 
 
       // Obtener gastos directos del mes con información de tarjeta
@@ -522,7 +541,14 @@ export class ExpensesService {
             .from('installments')
             .select(`
               *,
-              expenses!inner(description, user_id, available_cards(name, type), categories(name, color), subcategories(name, color)),
+              expenses!inner(
+                description, 
+                user_id, 
+                card_id,
+                available_cards(id, name, type, bank), 
+                categories(id, name, color), 
+                subcategories(id, name, color)
+              ),
               payment_status(code, label)
             `)
             .in('expense_id', expenseIds)

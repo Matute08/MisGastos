@@ -497,4 +497,38 @@ router.get('/user-cards', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /api/expenses/credit-cards-summary - Obtener resumen de gastos por tarjeta de crédito
+router.get('/credit-cards-summary', authenticateToken, async (req, res) => {
+  try {
+    const isAnnual = req.query.period === 'annual';
+    
+    const result = await ExpensesService.getCreditCardsSummary(req.user.id, isAnnual);
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error obteniendo resumen de tarjetas:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// GET /api/expenses/summary-by-type - Obtener resumen de gastos por tipo de tarjeta
+router.get('/summary-by-type', authenticateToken, async (req, res) => {
+  try {
+    const isAnnual = req.query.period === 'annual';
+    
+    const result = await ExpensesService.getExpensesSummaryByType(req.user.id, isAnnual);
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error obteniendo resumen por tipo:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 export default router; 
