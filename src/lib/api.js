@@ -443,6 +443,16 @@ export const expenses = {
     return response;
   },
 
+  async getCreditCardsSummary(isAnnual = false) {
+    const response = await apiClient.get('/expenses/credit-cards-summary', { period: isAnnual ? 'annual' : 'monthly' });
+    return response;
+  },
+
+  async getExpensesSummaryByType(isAnnual = false) {
+    const response = await apiClient.get('/expenses/summary-by-type', { period: isAnnual ? 'annual' : 'monthly' });
+    return response;
+  },
+
   async createInstallments(installmentsData) {
     const response = await apiClient.post('/expenses/installments', installmentsData);
     return response;

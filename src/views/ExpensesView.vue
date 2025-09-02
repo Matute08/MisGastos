@@ -523,7 +523,7 @@
                                     <td
                                         class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
                                     >
-                                        {{ item.cards?.name || "Sin cuenta" }}
+                                        {{ item.expenses?.available_cards?.name || item.available_cards?.name || "Sin cuenta" }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span
@@ -640,7 +640,7 @@
                                         class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
                                     >
                                         {{
-                                            expense.cards?.name || "Sin cuenta"
+                                            expense.expenses?.available_cards?.name || expense.available_cards?.name || "Sin cuenta"
                                         }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -915,8 +915,9 @@
                             <!-- Tarjeta -->
                             <div class="flex items-center justify-between text-xs">
                                 <span class="text-gray-600">Tarjeta</span>
-                                <span class="text-gray-900 font-medium">{{ item.cards?.name || "Sin cuenta" }}</span>
+                                <span class="text-gray-900 font-medium">{{ item.expenses?.available_cards?.name || item.available_cards?.name || "Sin cuenta" }}</span>
                             </div>
+
 
                             <!-- Estado -->
                             <div class="flex items-center justify-between">
@@ -1032,7 +1033,7 @@
                             <!-- Tarjeta -->
                             <div class="flex items-center justify-between text-xs">
                                 <span class="text-gray-600">Tarjeta</span>
-                                <span class="text-gray-900 font-medium">{{ expense.cards?.name || "Sin cuenta" }}</span>
+                                <span class="text-gray-900 font-medium">{{ expense.expenses?.available_cards?.name || expense.available_cards?.name || "Sin cuenta" }}</span>
                             </div>
 
                             <!-- Estado -->

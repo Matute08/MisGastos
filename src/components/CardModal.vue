@@ -1,6 +1,6 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @wheel.prevent @touchmove.prevent @scroll.prevent>
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" @wheel.stop @touchmove.stop @scroll.stop>
       <!-- Header -->
       <div class="flex justify-between items-center p-6 border-b border-gray-200">
         <h3 class="text-lg font-semibold text-gray-900">
@@ -97,7 +97,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import { X, AlertCircle } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -162,6 +162,11 @@ const handleSubmit = async () => {
 }
 
 onMounted(() => {
+  document.body.style.overflow = 'hidden'
   resetForm()
+})
+
+onBeforeUnmount(() => {
+  document.body.style.overflow = ''
 })
 </script> 

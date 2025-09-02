@@ -69,7 +69,7 @@
             class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6"
         >
             <div
-                v-for="category in categoriesStore.categories"
+                v-for="category in categoriesStore.categories.filter(c => c && c.id)"
                 :key="category.id"
                 class="group bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200 cursor-pointer overflow-hidden"
                 @click="toggleCategory(category)"
@@ -148,9 +148,11 @@
             <div
                 v-if="showSubcategoriesModal"
                 class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 px-4"
+                @wheel.prevent @touchmove.prevent @scroll.prevent
             >
                 <div
                     class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[75vh] overflow-y-auto"
+                    @wheel.stop @touchmove.stop @scroll.stop
                 >
                     <div
                         class="flex justify-between items-center p-4 border-b border-gray-200"
@@ -160,7 +162,7 @@
                             {{ selectedCategoryForSubcategory?.name }}
                         </h3>
                         <button
-                            @click="showSubcategoriesModal = false"
+                            @click="closeSubcategoriesModal"
                             class="text-gray-400 hover:text-gray-600"
                         >
                             <X class="h-5 w-5" />
@@ -171,7 +173,7 @@
                         <div
                             v-for="subcategory in getSubcategoriesForCategory(
                                 selectedCategoryForSubcategory?.id
-                            )"
+                            ).filter(s => s && s.id)"
                             :key="subcategory.id"
                             class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                         >
@@ -191,7 +193,7 @@
                             <div class="flex items-center space-x-2">
                                 <button
                                     v-if="
-                                        subcategoriesStore.canEditSubcategory()
+                                        subcategoriesStore.canEditSubcategory() && subcategory && subcategory.id
                                     "
                                     @click="editSubcategory(subcategory)"
                                     class="p-1 text-gray-400 hover:text-gray-600"
@@ -200,7 +202,7 @@
                                 </button>
                                 <button
                                     v-if="
-                                        subcategoriesStore.canDeleteSubcategory()
+                                        subcategoriesStore.canDeleteSubcategory() && subcategory && subcategory.id
                                     "
                                     @click="deleteSubcategory(subcategory.id)"
                                     class="p-1 text-red-400 hover:text-red-600"
@@ -225,7 +227,7 @@
                         </div>
 
                         <button
-                            v-if="subcategoriesStore.canCreateSubcategory()"
+                            v-if="subcategoriesStore.canCreateSubcategory() && selectedCategoryForSubcategory"
                             @click="
                                 addSubcategory(selectedCategoryForSubcategory)
                             "
@@ -291,7 +293,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useCategoriesStore } from "@/stores/categories";
 import { useSubcategoriesStore } from "@/stores/subcategories";
 import { useExpensesStore } from "@/stores/expenses";
@@ -337,6 +339,20 @@ onMounted(async () => {
     ]);
 });
 
+// Bloqueo de scroll del body cuando hay cualquier modal abierto
+watch(
+    [showModal, showSubcategoryModal, showSubcategoriesModal],
+    ([catOpen, subOpen, listOpen]) => {
+        const anyOpen = catOpen || subOpen || listOpen;
+        if (anyOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    },
+    { immediate: true }
+);
+
 // Función para expandir automáticamente categorías con subcategorías (comentada)
 // const expandCategoriesWithSubcategories = () => {
 //   categoriesStore.categories.forEach(category => {
@@ -348,6 +364,11 @@ onMounted(async () => {
 // }
 
 const toggleCategory = (category) => {
+    if (!category || !category.id) {
+        console.error('Error: category is null or undefined in toggleCategory');
+        return;
+    }
+    
     selectedCategoryForSubcategory.value = category;
     showSubcategoriesModal.value = true;
 };
@@ -399,6 +420,8 @@ const deleteCategory = async (categoryId) => {
                 if (index > -1) {
                     expandedCategories.value.splice(index, 1);
                 }
+                await categoriesStore.loadCategories();
+                await subcategoriesStore.loadCategoriesWithSubcategories();
                 await Swal.fire({
                     icon: "success",
                     title: "¡Categoría eliminada!",
@@ -428,6 +451,11 @@ const deleteCategory = async (categoryId) => {
 };
 
 const addSubcategory = (category) => {
+    if (!category || !category.id) {
+        console.error('Error: category is null or undefined in addSubcategory');
+        return;
+    }
+    
     selectedCategoryForSubcategory.value = category;
     editingSubcategory.value = null;
     showSubcategoryModal.value = true;
@@ -439,12 +467,27 @@ const addSubcategory = (category) => {
 };
 
 const editSubcategory = (subcategory) => {
+    if (!subcategory || !subcategory.id) {
+        console.error('Error: subcategory is null or undefined in editSubcategory');
+        return;
+    }
+    
     editingSubcategory.value = { ...subcategory };
     showSubcategoryModal.value = true;
     activeSubcategoryMenu.value = null;
 };
 
 const deleteSubcategory = async (subcategoryId) => {
+    if (!subcategoryId) {
+        console.error('Error: subcategoryId is null or undefined in deleteSubcategory');
+        await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "No se pudo identificar la subcategoría a eliminar.",
+        });
+        return;
+    }
+    
     const result = await Swal.fire({
         title: "¿Estás seguro de que quieres eliminar esta subcategoría?",
         text: "Esta acción no se puede deshacer.",
@@ -464,6 +507,7 @@ const deleteSubcategory = async (subcategoryId) => {
 
             if (deleteResult.success) {
                 activeSubcategoryMenu.value = null;
+                await subcategoriesStore.loadCategoriesWithSubcategories();
                 await Swal.fire({
                     icon: "success",
                     title: "¡Subcategoría eliminada!",
@@ -501,6 +545,15 @@ const closeSubcategoryModal = () => {
     showSubcategoryModal.value = false;
     editingSubcategory.value = null;
     selectedCategoryForSubcategory.value = null;
+    // Restaurar scroll del body
+    document.body.style.overflow = '';
+};
+
+const closeSubcategoriesModal = () => {
+    showSubcategoriesModal.value = false;
+    selectedCategoryForSubcategory.value = null;
+    // Restaurar scroll del body
+    document.body.style.overflow = '';
 };
 
 const saveCategory = async (categoryData) => {
@@ -561,7 +614,7 @@ const saveCategory = async (categoryData) => {
 const saveSubcategory = async (subcategoryData) => {
     try {
         let result;
-        if (editingSubcategory.value) {
+        if (editingSubcategory.value && editingSubcategory.value.id) {
             result = await subcategoriesStore.updateSubcategory(
                 editingSubcategory.value.id,
                 subcategoryData
@@ -574,6 +627,13 @@ const saveSubcategory = async (subcategoryData) => {
                 });
                 return;
             }
+        } else if (editingSubcategory.value && !editingSubcategory.value.id) {
+            await Swal.fire({
+                icon: "error",
+                title: "Error al actualizar subcategoría",
+                text: "No se pudo identificar la subcategoría a actualizar.",
+            });
+            return;
         } else {
             result = await subcategoriesStore.createSubcategory(
                 subcategoryData
@@ -602,7 +662,13 @@ const saveSubcategory = async (subcategoryData) => {
             showConfirmButton: false,
         });
 
-        closeSubcategoryModal();
+        // Cerrar modal de edición/creación pero mantener el modal de subcategorías abierto
+        showSubcategoryModal.value = false;
+        editingSubcategory.value = null;
+        // NO limpiar selectedCategoryForSubcategory para mantener el modal de subcategorías abierto
+        // selectedCategoryForSubcategory.value = null;
+        // NO restaurar scroll del body porque el modal de subcategorías sigue abierto
+        // document.body.style.overflow = '';
     } catch (error) {
         await Swal.fire({
             icon: "error",
@@ -614,6 +680,8 @@ const saveSubcategory = async (subcategoryData) => {
 
 // Obtener subcategorías para una categoría específica
 const getSubcategoriesForCategory = (categoryId) => {
+    if (!categoryId) return [];
+    
     // Buscar en categoriesWithSubcategories que tiene la estructura correcta
     const categoryData = subcategoriesStore.categoriesWithSubcategories.find(
         (cat) => cat.id === categoryId
@@ -625,7 +693,7 @@ const getSubcategoriesForCategory = (categoryId) => {
 
     // Fallback: buscar en subcategories directo
     return subcategoriesStore.subcategories.filter(
-        (subcategory) => subcategory.category_id === categoryId
+        (subcategory) => subcategory && subcategory.category_id === categoryId
     );
 };
 

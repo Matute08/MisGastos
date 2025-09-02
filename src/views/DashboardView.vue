@@ -19,68 +19,68 @@
         <span :class="['text-sm font-medium', isAnnual ? 'text-blue-600' : 'text-gray-500']">Anual</span>
       </div>
     </div>
-                         <!-- Cuentas de resumen (solo desktop) -->
-     <div class="hidden lg:grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-{{ 1 + creditCards.length }} gap-6">
-      <!-- Total gastos (mes o año) -->
-      <div class="card">
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <div class="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
-              <DollarSign class="h-5 w-5 text-primary-600" />
-            </div>
+    <!-- Resumen de tarjetas de crédito -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <!-- Tarjetas de crédito -->
+      <div 
+        v-for="card in displayedCreditCards" 
+        :key="card.id" 
+        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <CreditCard class="h-5 w-5 text-blue-600" />
           </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600">{{ isAnnual ? 'Total Año' : 'Total Mes' }}</p>
-            <p class="text-2xl font-bold text-gray-900">
-              {{ formatCurrency(totalExpensesView) }}
-            </p>
+          <div class="text-right">
+            <p class="text-xs text-gray-500">{{ isAnnual ? 'Año' : 'Mes' }}</p>
           </div>
         </div>
+        <div>
+          <h3 class="text-sm font-medium text-gray-900 mb-1">{{ card.name }}</h3>
+          <p class="text-lg font-bold text-gray-900">{{ formatCurrency(card.amount) }}</p>
+          <p class="text-xs text-gray-500 mt-1">{{ card.bank }}</p>
+        </div>
       </div>
-      <!-- Resumen por tarjeta de crédito -->
-      <div v-for="card in creditCards" :key="card.id" class="card">
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <CreditCard class="h-5 w-5 text-blue-600" />
-            </div>
+      
+      <!-- Botón para agregar más tarjetas si hay más de 4 -->
+      <div 
+        v-if="(expensesStore.creditCardsSummary || []).length > 4" 
+        class="bg-white rounded-lg shadow-sm border-2 border-dashed border-gray-300 p-4 flex items-center justify-center hover:border-blue-400 transition-colors duration-200 cursor-pointer"
+        @click="showAllCards = !showAllCards"
+      >
+        <div class="text-center">
+          <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <Plus class="h-5 w-5 text-gray-400" />
           </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600">{{ card.name }}</p>
-            <p class="text-2xl font-bold text-gray-900">
-              {{ formatCurrency(cardTotal(card)) }}
-            </p>
-          </div>
+          <p class="text-xs text-gray-500">{{ showAllCards ? 'Ver menos' : `Ver ${(expensesStore.creditCardsSummary || []).length - 4} más` }}</p>
         </div>
       </div>
     </div>
 
-    <!-- Diseño compacto para móviles y tablet -->
-    <div class="block lg:hidden">
-      <div class="bg-white rounded-lg shadow p-4">
-                  <h3 class="text-lg font-semibold text-gray-900 mb-3">Resumen de Cuentas</h3>
-        <div class="space-y-3">
-          <!-- Total compacto -->
-          <div class="flex items-center justify-between py-2 border-b border-gray-100">
-            <div class="flex items-center">
-              <div class="w-6 h-6 bg-primary-100 rounded-md flex items-center justify-center mr-3">
-                <DollarSign class="h-4 w-4 text-primary-600" />
-              </div>
-              <span class="text-sm font-medium text-gray-600">{{ isAnnual ? 'Total Año' : 'Total Mes' }}</span>
+    <!-- Resumen de cuentas detallado -->
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-3">Resumen de Cuentas</h3>
+      <div class="space-y-3">
+        <!-- Filas por tipo de tarjeta -->
+        <div v-for="summary in expensesStore.expensesSummaryByType" :key="summary.type" class="flex items-center justify-between py-2 border-b border-gray-100">
+          <div class="flex items-center">
+            <div class="w-6 h-6 bg-blue-100 rounded-md flex items-center justify-center mr-3">
+              <CreditCard class="h-4 w-4 text-blue-600" />
             </div>
-            <span class="text-lg font-bold text-gray-900">{{ formatCurrency(totalExpensesView) }}</span>
+            <span class="text-sm font-medium text-gray-600">{{ summary.type }}</span>
           </div>
-          <!-- Cuentas compactas -->
-          <div v-for="card in creditCards" :key="card.id" class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-            <div class="flex items-center">
-              <div class="w-6 h-6 bg-blue-100 rounded-md flex items-center justify-center mr-3">
-                <CreditCard class="h-4 w-4 text-blue-600" />
-              </div>
-              <span class="text-sm font-medium text-gray-600">{{ card.name }}</span>
+          <span class="text-lg font-bold text-gray-900">{{ formatCurrency(summary.total) }}</span>
+        </div>
+        
+        <!-- Total general -->
+        <div class="flex items-center justify-between py-2 border-t-2 border-gray-200 pt-3">
+          <div class="flex items-center">
+            <div class="w-6 h-6 bg-primary-100 rounded-md flex items-center justify-center mr-3">
+              <DollarSign class="h-4 w-4 text-primary-600" />
             </div>
-            <span class="text-lg font-bold text-gray-900">{{ formatCurrency(cardTotal(card)) }}</span>
+            <span class="text-sm font-medium text-gray-600">{{ isAnnual ? 'Total Año' : 'Total Mes' }}</span>
           </div>
-
+          <span class="text-xl font-bold text-gray-900">{{ formatCurrency(totalExpensesView) }}</span>
         </div>
       </div>
     </div>
@@ -272,7 +272,7 @@
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="inst in paginatedUpcomingInstallments" :key="inst.id">
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ inst.expenses?.description || 'Cuota' }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ inst.expenses?.cards?.name || 'Sin tarjeta' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ inst.expenses?.available_cards?.name || 'Sin tarjeta' }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :style="{ backgroundColor: (inst.expenses?.categories?.color || '#888') + '20', color: inst.expenses?.categories?.color || '#888' }">
                   {{ inst.expenses?.categories?.name || 'Sin categoría' }}
@@ -342,7 +342,7 @@
                 <span class="text-lg font-bold text-gray-900">{{ formatCurrency(inst.amount) }}</span>
               </div>
               <div class="flex items-center space-x-2 text-xs text-gray-600">
-                <span>{{ inst.expenses?.cards?.name || 'Sin cuenta' }}</span>
+                <span>{{ inst.expenses?.available_cards?.name || 'Sin cuenta' }}</span>
                 <span>•</span>
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" 
                       :style="{ backgroundColor: (inst.expenses?.categories?.color || '#888') + '20', color: inst.expenses?.categories?.color || '#888' }">
@@ -431,11 +431,21 @@ const cardsStore = useCardsStore()
 const categoriesStore = useCategoriesStore()
 
 const isAnnual = ref(false)
+const showAllCards = ref(false)
 
 // Estado para el carrusel de gráficos móviles
 const currentChartIndex = ref(0)
 const touchStartX = ref(0)
 const touchEndX = ref(0)
+
+// Tarjetas de crédito a mostrar
+const displayedCreditCards = computed(() => {
+  const cards = expensesStore.creditCardsSummary || []
+  if (showAllCards.value) {
+    return cards
+  }
+  return cards.slice(0, 4)
+})
 
 // Gráficos disponibles para el carrusel
 const availableCharts = computed(() => {
@@ -487,18 +497,27 @@ const upcomingInstallmentsList = computed(() => {
   })
 })
 onMounted(async () => {
+  // Limpiar filtros antes de cargar gastos en el Dashboard
+  expensesStore.clearFilters()
+  
   await Promise.all([
     expensesStore.loadExpenses(),
     expensesStore.loadUpcomingInstallments(1000), // Traer todas las cuotas posibles
+    expensesStore.loadCreditCardsSummary(isAnnual.value), // Cargar resumen de tarjetas
+    expensesStore.loadExpensesSummaryByType(isAnnual.value), // Cargar resumen por tipo
     cardsStore.loadCards(),
     categoriesStore.loadCategories()
   ])
-  // upcomingInstallmentsList.value = expensesStore.filteredUpcomingInstallments // This line is no longer needed
 })
 
 // Resetear índice del carrusel cuando cambie la vista anual/mensual
-watch(isAnnual, () => {
+watch(isAnnual, async () => {
   currentChartIndex.value = 0
+  // Recargar resumen de tarjetas y por tipo cuando cambie el período
+  await Promise.all([
+    expensesStore.loadCreditCardsSummary(isAnnual.value),
+    expensesStore.loadExpensesSummaryByType(isAnnual.value)
+  ])
 })
 
 // Gastos del mes actual
@@ -524,7 +543,7 @@ const recentExpenses = computed(() => {
 function isDirectCashOrTransfer(expense) {
   // Si no tiene installments_count o es 1, y la tarjeta es null o no es de crédito
   const isDirect = !expense.installments_count || expense.installments_count === 1
-  const isCashOrTransfer = !expense.cards || expense.cards.type === 'Efectivo' || expense.cards.type === 'Transferencia' || expense.card_id === null
+  const isCashOrTransfer = !expense.available_cards || expense.available_cards.type === 'Efectivo' || expense.available_cards.type === 'Transferencia' || expense.card_id === null
   return isDirect && isCashOrTransfer
 }
 
@@ -568,8 +587,8 @@ const chartData = computed(() => {
   if (isAnnual.value) {
     expensesStore.upcomingInstallments.forEach(inst => {
       const due = parseISO(inst.due_date)
-      if (due.getFullYear() === currentYear && inst.payment_status_id !== 3 && inst.expenses && inst.expenses.cards) {
-        const card = inst.expenses.cards.name || 'Sin cuenta'
+      if (due.getFullYear() === currentYear && inst.payment_status_id !== 3 && inst.expenses && inst.expenses.available_cards) {
+        const card = inst.expenses.available_cards.name || 'Sin cuenta'
         cards[card] = (cards[card] || 0) + inst.amount
       }
       if (due.getFullYear() === currentYear && inst.payment_status_id !== 3 && inst.expenses && inst.expenses.categories) {
@@ -589,8 +608,8 @@ const chartData = computed(() => {
         categories[cat] = (categories[cat] || 0) + expense.amount
       }
       // Para cuentas, cualquier gasto directo con cuenta
-      if (isPeriodo && (!expense.installments_count || expense.installments_count === 1) && expense.cards) {
-        const card = expense.cards.name || 'Sin cuenta'
+      if (isPeriodo && (!expense.installments_count || expense.installments_count === 1) && expense.available_cards) {
+        const card = expense.available_cards.name || 'Sin cuenta'
         cards[card] = (cards[card] || 0) + expense.amount
       }
     })
@@ -598,8 +617,8 @@ const chartData = computed(() => {
 
     expensesStore.upcomingInstallments.forEach(inst => {
       const due = parseISO(inst.due_date)
-      if (due.getMonth() + 1 === currentMonth && due.getFullYear() === currentYear && inst.payment_status_id !== 3 && inst.expenses && inst.expenses.cards) {
-        const card = inst.expenses.cards.name || 'Sin cuenta'
+      if (due.getMonth() + 1 === currentMonth && due.getFullYear() === currentYear && inst.payment_status_id !== 3 && inst.expenses && inst.expenses.available_cards) {
+        const card = inst.expenses.available_cards.name || 'Sin cuenta'
         cards[card] = (cards[card] || 0) + inst.amount
       }
       if (due.getMonth() + 1 === currentMonth && due.getFullYear() === currentYear && inst.payment_status_id !== 3 && inst.expenses && inst.expenses.categories) {
@@ -619,8 +638,8 @@ const chartData = computed(() => {
         categories[cat] = (categories[cat] || 0) + expense.amount
       }
       // Para cuentas, cualquier gasto directo con cuenta
-      if (isPeriodo && (!expense.installments_count || expense.installments_count === 1) && expense.cards) {
-        const card = expense.cards.name || 'Sin cuenta'
+      if (isPeriodo && (!expense.installments_count || expense.installments_count === 1) && expense.available_cards) {
+        const card = expense.available_cards.name || 'Sin cuenta'
         cards[card] = (cards[card] || 0) + expense.amount
       }
     })

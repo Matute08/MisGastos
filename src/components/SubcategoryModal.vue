@@ -1,6 +1,6 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @wheel.prevent @touchmove.prevent @scroll.prevent>
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" @wheel.stop @touchmove.stop @scroll.stop>
       <!-- Header -->
       <div class="flex justify-between items-center p-6 border-b border-gray-200">
         <h3 class="text-lg font-semibold text-gray-900">
@@ -143,7 +143,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, onBeforeUnmount } from 'vue'
 import { X, AlertCircle } from 'lucide-vue-next'
 import { useCategoriesStore } from '@/stores/categories'
 
@@ -221,19 +221,19 @@ const parentCategoryName = computed(() => {
 
 // Función para inicializar el formulario
 const initializeForm = () => {
-  if (props.subcategory) {
+  if (props.subcategory && props.subcategory.id) {
     // Editando una subcategoría existente
     form.value = {
-      category_id: props.subcategory.category_id,
-      name: props.subcategory.name,
-      color: props.subcategory.color
+      category_id: props.subcategory.category_id || '',
+      name: props.subcategory.name || '',
+      color: props.subcategory.color || '#3B82F6'
     }
-  } else if (props.selectedCategory) {
+  } else if (props.selectedCategory && props.selectedCategory.id) {
     // Creando una nueva subcategoría con categoría padre seleccionada
     form.value = {
       category_id: props.selectedCategory.id,
       name: '',
-      color: props.selectedCategory.color
+      color: props.selectedCategory.color || '#3B82F6'
     }
   } else {
     // Creando una nueva subcategoría sin categoría padre pre-seleccionada
@@ -288,10 +288,16 @@ const handleSubmit = async () => {
 }
 
 onMounted(async () => {
+  const previousOverflow = document.body.style.overflow
+  document.body.style.overflow = 'hidden'
   // Cargar categorías si no están cargadas
   if (categories.value.length === 0) {
     await categoriesStore.loadCategories()
   }
   initializeForm()
+})
+
+onBeforeUnmount(() => {
+  document.body.style.overflow = ''
 })
 </script> 

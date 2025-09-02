@@ -1,6 +1,6 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @wheel.prevent @touchmove.prevent @scroll.prevent>
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" @wheel.stop @touchmove.stop @scroll.stop>
       <div class="flex justify-between items-center p-6 border-b border-gray-200">
         <h3 class="text-lg font-semibold text-gray-900">
           {{ expense ? 'Editar Gasto' : 'Nuevo Gasto' }}
@@ -251,7 +251,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useUserCardsStore } from '@/stores/userCards'
 import { useCategoriesStore } from '@/stores/categories'
 import { useSubcategoriesStore } from '@/stores/subcategories'
@@ -506,10 +506,16 @@ const getSubcategoriesForCategory = (categoryId) => {
 }
 
 onMounted(async () => {
+  // Bloquear scroll del body mientras el modal esté abierto
+  document.body.style.overflow = 'hidden'
   await Promise.all([
     userCardsStore.loadUserCards(),
     categoriesStore.loadCategories(),
     subcategoriesStore.loadSubcategories()
   ])
+})
+
+onBeforeUnmount(() => {
+  document.body.style.overflow = ''
 })
 </script> 

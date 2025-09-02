@@ -22,13 +22,15 @@ export const useExpensesStore = defineStore('expenses', () => {
   
   const authStore = useAuthStore()
   const upcomingInstallments = ref([])
+  const creditCardsSummary = ref([])
+  const expensesSummaryByType = ref([])
 
   // Computed properties
   const filteredExpenses = computed(() => {
     let filtered = expenses.value
 
     if (filters.value.card_id) {
-      filtered = filtered.filter(expense => expense.cards?.id === filters.value.card_id)
+      filtered = filtered.filter(expense => expense.available_cards?.id === filters.value.card_id)
     }
     
     if (filters.value.category_id) {
@@ -69,7 +71,7 @@ export const useExpensesStore = defineStore('expenses', () => {
   const expensesByCard = computed(() => {
     const grouped = {}
     filteredExpenses.value.forEach(expense => {
-      const cardName = expense.cards?.name || 'Sin tarjeta'
+      const cardName = expense.available_cards?.name || 'Sin tarjeta'
       if (!grouped[cardName]) {
         grouped[cardName] = 0
       }
@@ -88,7 +90,7 @@ export const useExpensesStore = defineStore('expenses', () => {
     }
     
     if (filters.value.card_id) {
-      filtered = filtered.filter(expense => expense.cards?.id === filters.value.card_id)
+      filtered = filtered.filter(expense => expense.available_cards?.id === filters.value.card_id)
     }
 
     return filtered
@@ -183,6 +185,8 @@ export const useExpensesStore = defineStore('expenses', () => {
       
       // Asegurar que accedemos al array real de gastos
       monthlyExpensesWithInstallments.value = response.data || []
+      
+
       
       return { success: true, data: response.data }
     } catch (err) {
@@ -426,6 +430,48 @@ export const useExpensesStore = defineStore('expenses', () => {
     }
   }
 
+  // Cargar resumen de tarjetas de crédito
+  const loadCreditCardsSummary = async (isAnnual = false) => {
+    if (!authStore.user) return
+    loading.value = true
+    error.value = null
+    try {
+      const response = await expensesApi.getCreditCardsSummary(isAnnual)
+      if (!response.success) {
+        error.value = response.error
+        return { success: false, error: response.error }
+      }
+      creditCardsSummary.value = response.data || []
+      return { success: true, data: response.data }
+    } catch (err) {
+      error.value = err.message
+      return { success: false, error: err.message }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Cargar resumen por tipo de tarjeta
+  const loadExpensesSummaryByType = async (isAnnual = false) => {
+    if (!authStore.user) return
+    loading.value = true
+    error.value = null
+    try {
+      const response = await expensesApi.getExpensesSummaryByType(isAnnual)
+      if (!response.success) {
+        error.value = response.error
+        return { success: false, error: response.error }
+      }
+      expensesSummaryByType.value = response.data || []
+      return { success: true, data: response.data }
+    } catch (err) {
+      error.value = err.message
+      return { success: false, error: err.message }
+    } finally {
+      loading.value = false
+    }
+  }
+
   // Actualizar filtros
   const updateFilters = (newFilters) => {
     let payment_status_code = newFilters.payment_status_code || null
@@ -478,6 +524,10 @@ export const useExpensesStore = defineStore('expenses', () => {
     clearError,
     upcomingInstallments,
     loadUpcomingInstallments,
-    filteredUpcomingInstallments
+    filteredUpcomingInstallments,
+    creditCardsSummary,
+    loadCreditCardsSummary,
+    expensesSummaryByType,
+    loadExpensesSummaryByType
   }
 }) 
