@@ -54,8 +54,6 @@ export class ExpensesService {
   // Crear nuevo gasto
   static async createExpense(expenseData) {
     try {
-      console.log('🔍 Backend - expenseData recibido:', expenseData);
-      
       // Validar datos requeridos
       if (!expenseData.user_id) {
         throw new Error('user_id es requerido');
@@ -65,11 +63,6 @@ export class ExpensesService {
       }
       
       // 1. Verificar que la tarjeta pertenece al usuario y obtener información
-      console.log('🔍 Backend - Buscando tarjeta con:', {
-        user_id: expenseData.user_id,
-        card_id: expenseData.card_id
-      });
-
       const { data: userCard, error: userCardError } = await supabase
         .from('user_cards')
         .select(`
@@ -80,24 +73,15 @@ export class ExpensesService {
         .eq('available_card_id', expenseData.card_id)
         .single();
 
-      console.log('🔍 Backend - Resultado de la consulta:', {
-        userCard,
-        userCardError,
-        hasAvailableCard: userCard ? !!userCard.available_card : false
-      });
-
       if (userCardError) {
-        console.log('🔍 Backend - Error en la consulta:', userCardError);
         throw new Error(`Error en la consulta: ${userCardError.message}`);
       }
 
       if (!userCard) {
-        console.log('🔍 Backend - No se encontró userCard');
         throw new Error('Tarjeta no encontrada o no pertenece al usuario');
       }
 
       if (!userCard.available_card) {
-        console.log('🔍 Backend - userCard encontrado pero sin available_card');
         throw new Error('Tarjeta no encontrada o no pertenece al usuario');
       }
 
@@ -155,7 +139,6 @@ export class ExpensesService {
         .single();
 
       if (insertError) {
-        console.error('🔍 Backend - Error insertando gasto:', insertError);
         throw insertError;
       }
 
@@ -166,7 +149,6 @@ export class ExpensesService {
         try {
           await this.createInstallmentsForExpense(createdExpense);
         } catch (error) {
-          console.error('🔍 Backend - Error creando cuotas:', error);
           // NO fallar la creación del gasto si fallan las cuotas
         }
       } else {
@@ -178,7 +160,6 @@ export class ExpensesService {
       };
 
     } catch (error) {
-      console.error('🔍 Backend - Error en createExpense:', error);
       throw error;
     }
   }
@@ -604,6 +585,18 @@ export class ExpensesService {
   // Marcar gasto como pagado
   static async markAsPaid(expenseId, paymentStatusId) {
     try {
+      // Primero verificar que el gasto existe
+      const { data: existingExpense, error: checkError } = await supabase
+        .from('expenses')
+        .select('id')
+        .eq('id', expenseId)
+        .single();
+
+      if (checkError) {
+        throw new Error(`Gasto no encontrado: ${expenseId}`);
+      }
+
+      // Actualizar el gasto
       const { data, error } = await supabase
         .from('expenses')
         .update({ payment_status_id: paymentStatusId })

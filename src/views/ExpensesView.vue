@@ -327,7 +327,7 @@
         </div>
 
         <!-- Lista de gastos -->
-        <div v-else class="space-y-4">
+        <div v-else class="space-y-4 pb-20">
 
             <!-- Botón Seleccionar y Barra de acciones múltiples -->
             <div class="space-y-3">
@@ -1307,10 +1307,15 @@ const bulkChangeStatus = async (newStatusId) => {
             let errorCount = 0;
             
             for (const expenseId of selectedExpenses.value) {
-                const result = await expensesStore.markAsPaid(expenseId, newStatusId);
-                if (result.success) {
-                    successCount++;
-                } else {
+                try {
+                    const result = await expensesStore.markAsPaid(expenseId, newStatusId);
+                    if (result.success) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                    }
+                } catch (error) {
+                    console.error(`Error actualizando gasto ${expenseId}:`, error);
                     errorCount++;
                 }
             }

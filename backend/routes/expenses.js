@@ -19,7 +19,6 @@ const validateExpense = [
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('🔍 Backend - Errores de validación:', errors.array());
       return res.status(400).json({
         success: false,
         error: 'Datos de entrada inválidos',
@@ -139,15 +138,10 @@ router.get('/monthly-total', authenticateToken, async (req, res) => {
 // POST /api/expenses - Crear nuevo gasto
 router.post('/', authenticateToken, validateExpense, async (req, res) => {
   try {
-    console.log('🔍 Backend - Datos recibidos:', JSON.stringify(req.body, null, 2));
-    console.log('🔍 Backend - Usuario autenticado:', req.user);
-    
     const expenseData = {
       ...req.body,
       user_id: req.user.id
     };
-
-    console.log('🔍 Backend - Datos procesados:', JSON.stringify(expenseData, null, 2));
 
     const result = await ExpensesService.createExpense(expenseData);
 
