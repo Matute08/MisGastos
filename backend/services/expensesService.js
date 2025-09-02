@@ -74,7 +74,7 @@ export class ExpensesService {
         .from('user_cards')
         .select(`
           *,
-          available_card:cards(*)
+          available_card:available_cards(*)
         `)
         .eq('user_id', expenseData.user_id)
         .eq('available_card_id', expenseData.card_id)
