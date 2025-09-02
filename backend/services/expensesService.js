@@ -92,11 +92,21 @@ export class ExpensesService {
 
 
       // 2. Determinar el estado de pago según el tipo de tarjeta
-      let paymentStatusId = 1; // Por defecto pendiente
-      if (card.type === 'Débito') {
-        paymentStatusId = 2; // Pagada para débito
-      } else if (card.type === 'Crédito') {
-        paymentStatusId = 1; // Pendiente para crédito
+      let paymentStatusId = expenseData.payment_status_id || 1; // Usar el del frontend o por defecto pendiente
+      
+      console.log('🔍 Debug - Payment Status Logic:', {
+        cardType: card.type,
+        frontendPaymentStatusId: expenseData.payment_status_id,
+        finalPaymentStatusId: paymentStatusId
+      });
+      
+      // Solo aplicar lógica automática si no se envió payment_status_id desde el frontend
+      if (!expenseData.payment_status_id) {
+        if (card.type === 'Débito' || card.type === 'Transferencia') {
+          paymentStatusId = 2; // Pagada para débito y transferencias
+        } else if (card.type === 'Crédito') {
+          paymentStatusId = 1; // Pendiente para crédito
+        }
       }
 
       // 3. Preparar datos para inserción (SIN incluir month y year)
@@ -115,8 +125,8 @@ export class ExpensesService {
       // 4. Determinar la fecha de primera cuota según el tipo de tarjeta
       let firstInstallmentDate = null;
       
-      if (card.type === 'Débito') {
-        // Para débito, usar la fecha de compra como fecha de primera cuota
+      if (card.type === 'Débito' || card.type === 'Transferencia') {
+        // Para débito y transferencias, usar la fecha de compra como fecha de primera cuota
         firstInstallmentDate = expenseData.purchase_date;
       } else if (card.type === 'Crédito') {
         // Para crédito, usar la fecha proporcionada o null

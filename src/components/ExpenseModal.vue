@@ -311,7 +311,7 @@ const selectedCard = computed(() => {
 
 watch(selectedCard, (card) => {
   if (!card) return;
-  if (card.type === 'Débito') {
+  if (card.type === 'Débito' || card.type === 'Transferencia') {
     form.value.payment_type = 'single';
     form.value.payment_status_id = 2;
     firstInstallmentDateManual.value = '';
@@ -417,7 +417,7 @@ const getInstallmentDates = () => {
   return dates
 }
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (form.value.payment_type === 'installments' && form.value.installments_count < 2) {
     error.value = 'El número de cuotas debe ser mayor a 1'
     return
@@ -474,7 +474,16 @@ const handleSubmit = () => {
     expenseData.first_installment_date = firstInstallmentDate;
   }
   
-  emit('save', expenseData)
+  // Activar loading
+  loading.value = true
+  error.value = ''
+  
+  try {
+    emit('save', expenseData)
+  } catch (err) {
+    error.value = 'Error al guardar el gasto'
+    loading.value = false
+  }
 }
 
 const formatCurrency = (amount) => {
@@ -517,5 +526,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.body.style.overflow = ''
+  // Desactivar loading al cerrar el modal
+  loading.value = false
 })
 </script> 
