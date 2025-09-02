@@ -71,7 +71,7 @@
             <div
                 v-for="category in categoriesStore.categories.filter(c => c && c.id)"
                 :key="category.id"
-                class="group bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200 cursor-pointer overflow-hidden"
+                class="group relative bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200 cursor-pointer overflow-visible"
                 @click="toggleCategory(category)"
             >
                 <!-- Color de fondo de la categoría -->
@@ -120,7 +120,7 @@
                         <!-- Menú desplegable -->
                         <div
                             v-if="activeCategoryMenu === category.id"
-                            class="absolute right-0 w-28 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
+                            class="absolute right-0 w-28 bg-white rounded-md shadow-lg py-1 z-[9999] border border-gray-200"
                             style="top: calc(100% + 4px)"
                         >
                             <button

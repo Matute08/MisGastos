@@ -167,7 +167,6 @@ export const useExpensesStore = defineStore('expenses', () => {
     loading.value = true
     error.value = null
     
-    
     try {
       const response = await expensesApi.getMonthlyExpensesWithInstallments(
         authStore.user.id, 
@@ -176,17 +175,13 @@ export const useExpensesStore = defineStore('expenses', () => {
         filters
       )
       
-      
       if (!response.success) {
         error.value = response.error || 'Error al cargar gastos mensuales'
         return { success: false, error: response.error || 'Error al cargar gastos mensuales' }
       }
       
-      
       // Asegurar que accedemos al array real de gastos
       monthlyExpensesWithInstallments.value = response.data || []
-      
-
       
       return { success: true, data: response.data }
     } catch (err) {

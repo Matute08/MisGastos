@@ -119,11 +119,11 @@
                     >
                         <option value="">Todas las tarjetas</option>
                         <option
-                            v-for="card in userCardsStore.cards"
+                            v-for="card in availableCardsForMonth"
                             :key="card.id"
-                            :value="card.id"
+                            :value="card.available_card_id"
                         >
-                            {{ card.name }}
+                            {{ card.available_card?.name || card.name }}
                         </option>
                     </select>
                 </div>
@@ -140,7 +140,7 @@
                     >
                         <option value="">Todas las categorías</option>
                         <option
-                            v-for="category in userCategoriesStore.categories"
+                            v-for="category in availableCategoriesForMonth"
                             :key="category.id"
                             :value="category.id"
                         >
@@ -229,11 +229,11 @@
                         >
                             <option value="">Todas</option>
                             <option
-                                v-for="card in userCardsStore.cards"
+                                v-for="card in availableCardsForMonth"
                                 :key="card.id"
-                                :value="card.id"
+                                :value="card.available_card_id"
                             >
-                                {{ card.name }}
+                                {{ card.available_card?.name || card.name }}
                             </option>
                         </select>
                     </div>
@@ -250,7 +250,7 @@
                         >
                             <option value="">Todas</option>
                             <option
-                                v-for="category in userCategoriesStore.categories"
+                                v-for="category in availableCategoriesForMonth"
                                 :key="category.id"
                                 :value="category.id"
                             >
@@ -392,7 +392,7 @@
             </div>
 
             <!-- Vista Desktop: Tabla de gastos -->
-            <div class="hidden lg:block card">
+            <div class="hidden md:block card">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -757,7 +757,7 @@
             </div>
 
             <!-- Vista Móvil: Lista de tarjetas de gastos -->
-            <div class="md:hidden space-y-2">
+            <div class="block md:hidden space-y-2">
                 <template v-if="paginatedExpenses.length > 0">
                     <div
                         v-for="item in paginatedExpenses"
@@ -1461,6 +1461,44 @@ const loadMonthlyData = async () => {
     }
 };
 
+// Computed para las tarjetas utilizadas en el mes actual
+const availableCardsForMonth = computed(() => {
+    const allData = expensesStore.monthlyExpensesWithInstallments;
+    if (!allData || allData.length === 0) {
+        return [];
+    }
+    
+    // Extraer IDs únicos de tarjetas utilizadas en el mes
+    const cardIds = new Set();
+    allData.forEach(item => {
+        if (item.available_cards?.id) {
+            cardIds.add(item.available_cards.id);
+        }
+    });
+    
+    // Filtrar las tarjetas del usuario que se usaron en este mes
+    return userCardsStore.cards.filter(card => cardIds.has(card.available_card_id));
+});
+
+// Computed para las categorías utilizadas en el mes actual
+const availableCategoriesForMonth = computed(() => {
+    const allData = expensesStore.monthlyExpensesWithInstallments;
+    if (!allData || allData.length === 0) {
+        return [];
+    }
+    
+    // Extraer IDs únicos de categorías utilizadas en el mes
+    const categoryIds = new Set();
+    allData.forEach(item => {
+        if (item.categories?.id) {
+            categoryIds.add(item.categories.id);
+        }
+    });
+    
+    // Filtrar las categorías del usuario que se usaron en este mes
+    return userCategoriesStore.categories.filter(category => categoryIds.has(category.id));
+});
+
 // Computed para el nombre del mes y año actual
 const monthNames = [
     "Enero",
@@ -1855,13 +1893,20 @@ const filteredExpensesToShow = computed(() => {
         return [];
     }
 
+    // Filtrar objetos vacíos - corregir la lógica para objetos Proxy
+    const validData = allData.filter(item => {
+        if (!item) return false;
+        // Para objetos Proxy, verificar si tienen propiedades importantes
+        return item.id || item.expense_id || item.amount !== undefined;
+    });
+
     // Ordenar por fecha decreciente (más reciente primero)
-    const sorted = allData.sort((a, b) => {
+    const sorted = validData.sort((a, b) => {
         const dateA = a.is_installment ? a.due_date : a.purchase_date;
         const dateB = b.is_installment ? b.due_date : b.purchase_date;
         return new Date(dateB) - new Date(dateA);
     });
-
+    
     return sorted;
 });
 

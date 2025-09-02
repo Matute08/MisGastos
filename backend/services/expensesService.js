@@ -276,10 +276,7 @@ export class ExpensesService {
         .select(`
           *,
           expenses!inner(
-            description, 
-            user_id, 
-            installments_count, 
-            card_id,
+            *,
             available_cards(id, name, type, bank), 
             categories(id, name, color), 
             subcategories(id, name, color)
@@ -315,15 +312,13 @@ export class ExpensesService {
               // Marcar cuotas
         const markedInstallments = (installments || []).map(installment => ({
           ...installment,
+          ...installment.expenses, // Copiar todos los campos del expense
           is_installment: true,
           type: 'installment',
-          description: installment.expenses.description,
-          cards: installment.expenses.cards,
-          categories: installment.expenses.categories,
-          subcategories: installment.expenses.subcategories,
           installment_amount: installment.amount,
           installment_id: installment.id,
-          installments_count: installment.expenses.installments_count
+          due_date: installment.due_date,
+          installment_number: installment.installment_number
         }));
 
       // Combinar resultados
@@ -822,6 +817,208 @@ export class ExpensesService {
       return {
         success: true,
         message: 'Gasto eliminado correctamente'
+      };
+
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Obtener resumen detallado por tipo de tarjeta
+  static async getExpensesSummaryByType(userId, isAnnual = false) {
+    try {
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1;
+
+      // Calcular fechas según el período
+      let startDate, endDate;
+      
+      if (isAnnual) {
+        // Año: desde enero hasta el mes actual
+        startDate = `${currentYear}-01-01`;
+        const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
+        endDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-${lastDayOfMonth.toString().padStart(2, '0')}`;
+      } else {
+        // Mes: desde el primer día del mes actual hasta el último día
+        startDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`;
+        const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
+        const nextMonthYear = currentMonth === 12 ? currentYear + 1 : currentYear;
+        endDate = `${nextMonthYear}-${nextMonth.toString().padStart(2, '0')}-01`;
+      }
+
+      // Obtener gastos directos agrupados por tipo de tarjeta
+      const { data: directExpenses, error: directError } = await supabase
+        .from('expenses')
+        .select(`
+          amount,
+          available_cards(type)
+        `)
+        .eq('user_id', userId)
+        .eq('installments_count', 1) // Solo gastos directos
+        .gte('purchase_date', startDate)
+        .lt('purchase_date', endDate);
+
+      if (directError) throw directError;
+
+      // Obtener cuotas agrupadas por tipo de tarjeta
+      const { data: installments, error: installmentsError } = await supabase
+        .from('installments')
+        .select(`
+          amount,
+          expenses!inner(
+            available_cards(type)
+          )
+        `)
+        .eq('expenses.user_id', userId)
+        .gte('due_date', startDate)
+        .lt('due_date', endDate);
+
+      if (installmentsError) throw installmentsError;
+
+      // Agrupar por tipo de tarjeta
+      const summaryByType = {};
+
+      // Procesar gastos directos
+      (directExpenses || []).forEach(expense => {
+        const cardType = expense.available_cards?.type || 'Sin especificar';
+        if (!summaryByType[cardType]) {
+          summaryByType[cardType] = { direct: 0, installments: 0, total: 0 };
+        }
+        summaryByType[cardType].direct += expense.amount;
+        summaryByType[cardType].total += expense.amount;
+      });
+
+      // Procesar cuotas
+      (installments || []).forEach(installment => {
+        const cardType = installment.expenses?.available_cards?.type || 'Sin especificar';
+        if (!summaryByType[cardType]) {
+          summaryByType[cardType] = { direct: 0, installments: 0, total: 0 };
+        }
+        summaryByType[cardType].installments += installment.amount;
+        summaryByType[cardType].total += installment.amount;
+      });
+
+      // Convertir a array y ordenar por tipo
+      const summaryArray = Object.entries(summaryByType).map(([type, amounts]) => ({
+        type,
+        direct: amounts.direct,
+        installments: amounts.installments,
+        total: amounts.total
+      })).sort((a, b) => a.type.localeCompare(b.type));
+
+      return {
+        success: true,
+        data: summaryArray
+      };
+
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Obtener resumen de gastos por tarjeta de crédito
+  static async getCreditCardsSummary(userId, isAnnual = false) {
+    try {
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1;
+
+      // Obtener todas las tarjetas de crédito del usuario
+      const { data: userCards, error: userCardsError } = await supabase
+        .from('user_cards')
+        .select(`
+          *,
+          available_card:available_cards(*)
+        `)
+        .eq('user_id', userId)
+        .eq('available_card.type', 'Crédito');
+
+      if (userCardsError) throw userCardsError;
+
+      if (!userCards || userCards.length === 0) {
+        return {
+          success: true,
+          data: []
+        };
+      }
+
+      const cardsSummary = [];
+
+      for (const userCard of userCards) {
+        const card = userCard.available_card;
+        
+        // Saltar si la tarjeta no existe
+        if (!card || !card.id) {
+          continue;
+        }
+        
+        // Calcular fechas según el período
+        let startDate, endDate;
+        
+        if (isAnnual) {
+          // Año: desde enero hasta el mes actual
+          startDate = `${currentYear}-01-01`;
+          // Calcular el último día del mes actual
+          const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
+          endDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-${lastDayOfMonth.toString().padStart(2, '0')}`;
+        } else {
+          // Mes: desde el primer día del mes actual hasta el último día
+          startDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`;
+          const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
+          const nextMonthYear = currentMonth === 12 ? currentYear + 1 : currentYear;
+          endDate = `${nextMonthYear}-${nextMonth.toString().padStart(2, '0')}-01`;
+        }
+
+        // Obtener gastos directos de la tarjeta en el período
+        const { data: directExpenses, error: directError } = await supabase
+          .from('expenses')
+          .select('amount')
+          .eq('user_id', userId)
+          .eq('card_id', card.id)
+          .eq('installments_count', 1) // Solo gastos directos
+          .gte('purchase_date', startDate)
+          .lt('purchase_date', endDate);
+
+        if (directError) throw directError;
+
+        // Obtener cuotas que vencen en el período
+        const { data: installments, error: installmentsError } = await supabase
+          .from('installments')
+          .select(`
+            amount,
+            expenses!inner(card_id, user_id)
+          `)
+          .eq('expenses.user_id', userId)
+          .eq('expenses.card_id', card.id)
+          .gte('due_date', startDate)
+          .lt('due_date', endDate);
+
+        if (installmentsError) throw installmentsError;
+
+        // Calcular totales
+        const directTotal = (directExpenses || []).reduce((sum, expense) => sum + expense.amount, 0);
+        const installmentsTotal = (installments || []).reduce((sum, installment) => sum + installment.amount, 0);
+        const totalAmount = directTotal + installmentsTotal;
+
+        cardsSummary.push({
+          id: card.id,
+          name: card.name,
+          bank: card.bank,
+          type: card.type,
+          amount: totalAmount,
+          directExpenses: directTotal,
+          installments: installmentsTotal,
+          period: isAnnual ? 'annual' : 'monthly'
+        });
+      }
+
+      // Ordenar por nombre de tarjeta alfabéticamente
+      cardsSummary.sort((a, b) => a.name.localeCompare(b.name));
+
+      return {
+        success: true,
+        data: cardsSummary
       };
 
     } catch (error) {
