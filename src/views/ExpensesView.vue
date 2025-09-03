@@ -1132,7 +1132,7 @@
 
             <!-- Estado vacío -->
             <div
-                v-if="filteredExpensesToShow.length === 0"
+                v-if="filteredExpensesToShow.length === 0 && !expensesStore.loading"
                 class="text-center py-12"
             >
                 <Receipt class="mx-auto h-12 w-12 text-gray-400" />
@@ -1359,7 +1359,7 @@ const bulkChangeStatus = async (newStatusId) => {
                     
                     let result;
                     if (isInstallment) {
-                        result = await expensesStore.markInstallmentAsPaid(actualId, newStatusId);
+                        result = await expensesStore.markInstallmentAsPaid(expenseId, newStatusId);
                     } else {
                         result = await expensesStore.markAsPaid(actualId, newStatusId);
                     }
@@ -1461,6 +1461,17 @@ onMounted(async () => {
     document.addEventListener('click', handleClickOutside);
 });
 
+// Watcher para forzar actualización cuando cambien los filtros
+watch(
+    () => filters.value.payment_status_id,
+    () => {
+        // Limpiar datos inmediatamente cuando cambie el filtro de estado
+        expensesStore.clearMonthlyData();
+        forceTableUpdate();
+    },
+    { immediate: false }
+);
+
 // Limpiar event listener al desmontar
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
@@ -1489,6 +1500,12 @@ const updateFilters = () => {
         year: filters.value.year || null,
         payment_status_id: filters.value.payment_status_id || null
     });
+    
+    // Forzar limpieza adicional
+    setTimeout(() => {
+        expensesStore.clearMonthlyData();
+        forceTableUpdate();
+    }, 50);
     
     // Recargar datos del backend cuando cambien los filtros
     if (filters.value && filters.value.month && filters.value.year) {
@@ -1778,10 +1795,10 @@ const saveExpense = async (expenseData) => {
 
 const toggleInstallmentPaid = async (item) => {
     const currentStatus = item.payment_status_code;
-    const newStatusCode = currentStatus === "pendiente" ? "pagada" : "pendiente";
+    const newStatusId = currentStatus === "pendiente" ? 2 : 1; // 2 = pagada, 1 = pendiente
     await expensesStore.markInstallmentAsPaid(
         item.installment_id,
-        newStatusCode
+        newStatusId
     );
     // Recargar datos si estamos en vista mensual
     if (filters.value.year) {
@@ -1883,8 +1900,8 @@ const showInstallments = async (expenseId, installmentNumber = null) => {
         }
       });
 
-      const newStatus = isPaid ? 'pagada' : 'pendiente';
-      const result = await expensesStore.markInstallmentAsPaid(cuota.id, newStatus);
+      const newStatusId = isPaid ? 2 : 1; // 2 = pagada, 1 = pendiente
+      const result = await expensesStore.markInstallmentAsPaid(cuota.id, newStatusId);
       
       Swal.close();
       
@@ -1973,7 +1990,8 @@ const filteredExpensesToShow = computed(() => {
     // Usar los datos filtrados del store, no los datos sin filtrar
     const allData = expensesStore.filteredExpensesWithInstallments;
     
-    if (!allData || allData.length === 0) {
+    // Si no hay datos o está cargando, retornar array vacío
+    if (!allData || allData.length === 0 || expensesStore.loading) {
         return [];
     }
 

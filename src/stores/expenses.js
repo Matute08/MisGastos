@@ -359,7 +359,13 @@ export const useExpensesStore = defineStore('expenses', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await expensesApi.markInstallmentAsPaid(id, payment_status_id)
+      // Extraer el ID real si viene con prefijo
+      let actualId = id;
+      if (id.startsWith('installment-')) {
+        actualId = id.replace('installment-', '');
+      }
+      
+      const response = await expensesApi.markInstallmentAsPaid(actualId, payment_status_id)
       
       if (response.error) {
         error.value = response.error
@@ -482,10 +488,19 @@ export const useExpensesStore = defineStore('expenses', () => {
     // Limpiar datos de manera más agresiva
     monthlyExpensesWithInstallments.value = []
     monthlyTotals.value = null
-    // Forzar reactividad con un pequeño delay
+    
+    // Forzar reactividad múltiples veces
     setTimeout(() => {
       monthlyExpensesWithInstallments.value = []
     }, 0)
+    
+    setTimeout(() => {
+      monthlyExpensesWithInstallments.value = []
+    }, 10)
+    
+    setTimeout(() => {
+      monthlyExpensesWithInstallments.value = []
+    }, 50)
   }
 
   // Limpiar error
