@@ -94,11 +94,7 @@ export class ExpensesService {
       // 2. Determinar el estado de pago según el tipo de tarjeta
       let paymentStatusId = expenseData.payment_status_id || 1; // Usar el del frontend o por defecto pendiente
       
-      console.log('🔍 Debug - Payment Status Logic:', {
-        cardType: card.type,
-        frontendPaymentStatusId: expenseData.payment_status_id,
-        finalPaymentStatusId: paymentStatusId
-      });
+
       
       // Solo aplicar lógica automática si no se envió payment_status_id desde el frontend
       if (!expenseData.payment_status_id) {
@@ -267,13 +263,17 @@ export class ExpensesService {
         .gte('purchase_date', startDate)
         .lt('purchase_date', endDate);
 
-      // Aplicar filtros de tarjeta y categoría
+      // Aplicar filtros de tarjeta, categoría y estado de pago
       if (filters.card_id && filters.card_id !== 'null' && filters.card_id !== null) {
         directQuery = directQuery.eq('card_id', filters.card_id);
       }
 
       if (filters.category_id && filters.category_id !== 'null' && filters.category_id !== null) {
         directQuery = directQuery.eq('category_id', filters.category_id);
+      }
+
+      if (filters.payment_status_id && filters.payment_status_id !== 'null' && filters.payment_status_id !== null) {
+        directQuery = directQuery.eq('payment_status_id', filters.payment_status_id);
       }
 
       const { data: directExpenses, error: directError } = await directQuery.order('purchase_date', { ascending: false });
@@ -297,13 +297,17 @@ export class ExpensesService {
         .gte('due_date', startDate)
         .lt('due_date', endDate);
 
-      // Aplicar filtros de tarjeta y categoría a las cuotas
+      // Aplicar filtros de tarjeta, categoría y estado de pago a las cuotas
       if (filters.card_id && filters.card_id !== 'null' && filters.card_id !== null) {
         installmentsQuery = installmentsQuery.eq('expenses.card_id', filters.card_id);
       }
 
       if (filters.category_id && filters.category_id !== 'null' && filters.category_id !== null) {
         installmentsQuery = installmentsQuery.eq('expenses.category_id', filters.category_id);
+      }
+
+      if (filters.payment_status_id && filters.payment_status_id !== 'null' && filters.payment_status_id !== null) {
+        installmentsQuery = installmentsQuery.eq('payment_status_id', filters.payment_status_id);
       }
 
       const { data: installments, error: installmentsError } = await installmentsQuery.order('due_date', { ascending: true });
@@ -328,7 +332,10 @@ export class ExpensesService {
           installment_amount: installment.amount,
           installment_id: installment.id,
           due_date: installment.due_date,
-          installment_number: installment.installment_number
+          installment_number: installment.installment_number,
+          // Mantener el payment_status de la cuota, no del expense
+          payment_status: installment.payment_status,
+          payment_status_id: installment.payment_status_id
         }));
 
       // Combinar resultados
@@ -349,6 +356,8 @@ export class ExpensesService {
         return isInRange;
       });
 
+
+
       return {
         success: true,
         data: filteredResults
@@ -361,7 +370,7 @@ export class ExpensesService {
   }
 
   // Obtener total mensual con cuotas
-  static async getMonthlyTotalWithInstallments(userId, month, year) {
+  static async getMonthlyTotalWithInstallments(userId, month, year, filters = {}) {
     try {
 
       // Validar que month y year sean números válidos
@@ -387,7 +396,7 @@ export class ExpensesService {
 
 
       // Obtener gastos directos del mes con información de tarjeta
-      const { data: directExpenses, error: directError } = await supabase
+      let directQuery = supabase
         .from('expenses')
         .select(`
           amount, 
@@ -399,10 +408,23 @@ export class ExpensesService {
         .gte('purchase_date', startDate)
         .lt('purchase_date', endDate);
 
+      // Aplicar filtros
+      if (filters.card_id && filters.card_id !== 'null' && filters.card_id !== null) {
+        directQuery = directQuery.eq('card_id', filters.card_id);
+      }
+      if (filters.category_id && filters.category_id !== 'null' && filters.category_id !== null) {
+        directQuery = directQuery.eq('category_id', filters.category_id);
+      }
+      if (filters.payment_status_id && filters.payment_status_id !== 'null' && filters.payment_status_id !== null) {
+        directQuery = directQuery.eq('payment_status_id', filters.payment_status_id);
+      }
+
+      const { data: directExpenses, error: directError } = await directQuery;
+
       if (directError) throw directError;
 
       // Obtener cuotas del mes
-      const { data: installments, error: installmentsError } = await supabase
+      let installmentsQuery = supabase
         .from('installments')
         .select(`
           amount,
@@ -412,6 +434,19 @@ export class ExpensesService {
         .eq('expenses.user_id', userId)
         .gte('due_date', startDate)
         .lt('due_date', endDate);
+
+      // Aplicar filtros a cuotas
+      if (filters.card_id && filters.card_id !== 'null' && filters.card_id !== null) {
+        installmentsQuery = installmentsQuery.eq('expenses.card_id', filters.card_id);
+      }
+      if (filters.category_id && filters.category_id !== 'null' && filters.category_id !== null) {
+        installmentsQuery = installmentsQuery.eq('expenses.category_id', filters.category_id);
+      }
+      if (filters.payment_status_id && filters.payment_status_id !== 'null' && filters.payment_status_id !== null) {
+        installmentsQuery = installmentsQuery.eq('payment_status_id', filters.payment_status_id);
+      }
+
+      const { data: installments, error: installmentsError } = await installmentsQuery;
 
       if (installmentsError) throw installmentsError;
 
@@ -1029,6 +1064,52 @@ export class ExpensesService {
       return {
         success: true,
         data: cardsSummary
+      };
+
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Marcar cuota como pagada/pendiente
+  static async markInstallmentAsPaid(installmentId, paymentStatusId) {
+    try {
+      // Actualizar el estado de pago de la cuota
+      const { data, error } = await supabase
+        .from('installments')
+        .update({ payment_status_id: paymentStatusId })
+        .eq('id', installmentId)
+        .select(`
+          *,
+          payment_status(code, label)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data
+      };
+
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Obtener todos los estados de pago
+  static async getAllPaymentStatuses() {
+    try {
+      const { data, error } = await supabase
+        .from('payment_status')
+        .select('id, code, label')
+        .order('id', { ascending: true });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data || []
       };
 
     } catch (error) {

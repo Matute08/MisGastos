@@ -17,13 +17,15 @@ export const useExpensesStore = defineStore('expenses', () => {
     category_id: null,
     month: null,
     year: null,
-    payment_status_code: null
+    payment_status_code: null,
+    payment_status_id: null
   })
   
   const authStore = useAuthStore()
   const upcomingInstallments = ref([])
   const creditCardsSummary = ref([])
   const expensesSummaryByType = ref([])
+  const paymentStatuses = ref([])
 
   // Computed properties
   const filteredExpenses = computed(() => {
@@ -82,18 +84,9 @@ export const useExpensesStore = defineStore('expenses', () => {
 
   // Computed para gastos con cuotas filtrados
   const filteredExpensesWithInstallments = computed(() => {
-    let filtered = monthlyExpensesWithInstallments.value
-
-    // Aplicar filtros de categoría y tarjeta si están definidos
-    if (filters.value.category_id) {
-      filtered = filtered.filter(expense => expense.categories?.id === filters.value.category_id)
-    }
-    
-    if (filters.value.card_id) {
-      filtered = filtered.filter(expense => expense.available_cards?.id === filters.value.card_id)
-    }
-
-    return filtered
+    // Los datos ya vienen filtrados del backend, no necesitamos aplicar filtros adicionales aquí
+    // El backend maneja todos los filtros: card_id, category_id, payment_status_id, month, year
+    return monthlyExpensesWithInstallments.value
   })
 
   // Computed para totales con cuotas
@@ -194,14 +187,15 @@ export const useExpensesStore = defineStore('expenses', () => {
   }
 
   // Cargar totales mensuales con cuotas
-  const loadMonthlyTotals = async (month, year) => {
+  const loadMonthlyTotals = async (month, year, filters = {}) => {
     if (!authStore.user) return
     
     try {
       const response = await expensesApi.getMonthlyTotalWithInstallments(
         authStore.user.id, 
         month, 
-        year
+        year,
+        filters
       )
       
       if (!response.success) {
@@ -335,6 +329,8 @@ export const useExpensesStore = defineStore('expenses', () => {
     }
   }
 
+
+
   // Cargar cuotas de un gasto
   const loadInstallments = async (expenseId) => {
     loading.value = true
@@ -358,40 +354,16 @@ export const useExpensesStore = defineStore('expenses', () => {
     }
   }
 
-  // Cambiar la firma de la función para aceptar el código de estado
-  const markInstallmentAsPaid = async (id, statusCode) => {
+  // Función para marcar cuota como pagada/pendiente usando payment_status_id
+  const markInstallmentAsPaid = async (id, payment_status_id) => {
     loading.value = true
     error.value = null
     try {
-      // Buscar la cuota antes del update para obtener el expense_id
-      const installment = installments.value.find(inst => inst.id === id)
-      const expense_id = installment ? installment.expense_id : null
+      const response = await expensesApi.markInstallmentAsPaid(id, payment_status_id)
       
-      const statusResponse = await expensesApi.getPaymentStatusByCode(statusCode)
-      if (!statusResponse.success || !statusResponse.data || statusResponse.data.length === 0) {
-        error.value = 'No se pudo obtener el estado de pago.'
-        console.error('[markInstallmentAsPaid] Error al obtener estado:', statusResponse.error, statusResponse.data)
-        return { success: false, error: error.value }
-      }
-      
-      const payment_status_id = statusResponse.data[0].id
-      
-      const response = await expensesApi.updateInstallmentStatus(id, payment_status_id)
-      if (!response.success) {
+      if (response.error) {
         error.value = response.error
-        console.error('[markInstallmentAsPaid] Error al actualizar cuota:', response.error)
         return { success: false, error: response.error }
-      }
-      
-      // Actualizar la cuota en el store local
-      const index = installments.value.findIndex(installment => installment.id === id)
-      if (index !== -1) {
-        installments.value[index] = response.data
-      }
-      
-      // Recargar los datos mensuales para actualizar la vista
-      if (expense_id) {
-        await loadInstallments(expense_id)
       }
       
       return { success: true, data: response.data }
@@ -467,6 +439,26 @@ export const useExpensesStore = defineStore('expenses', () => {
     }
   }
 
+  // Cargar todos los estados de pago
+  const loadPaymentStatuses = async () => {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const response = await expensesApi.getAllPaymentStatuses()
+      if (!response.success) {
+        return { success: false, error: response.error }
+      }
+      paymentStatuses.value = response.data || []
+      return { success: true, data: response.data }
+    } catch (err) {
+      error.value = err.message
+      return { success: false, error: err.message }
+    } finally {
+      loading.value = false
+    }
+  }
+
   // Actualizar filtros
   const updateFilters = (newFilters) => {
     let payment_status_code = newFilters.payment_status_code || null
@@ -480,8 +472,20 @@ export const useExpensesStore = defineStore('expenses', () => {
       category_id: null,
       month: null,
       year: null,
-      payment_status_code: null
+      payment_status_code: null,
+      payment_status_id: null
     }
+  }
+
+  // Limpiar datos mensuales
+  const clearMonthlyData = () => {
+    // Limpiar datos de manera más agresiva
+    monthlyExpensesWithInstallments.value = []
+    monthlyTotals.value = null
+    // Forzar reactividad con un pequeño delay
+    setTimeout(() => {
+      monthlyExpensesWithInstallments.value = []
+    }, 0)
   }
 
   // Limpiar error
@@ -516,6 +520,7 @@ export const useExpensesStore = defineStore('expenses', () => {
     markInstallmentAsPaid,
     updateFilters,
     clearFilters,
+    clearMonthlyData,
     clearError,
     upcomingInstallments,
     loadUpcomingInstallments,
@@ -523,6 +528,8 @@ export const useExpensesStore = defineStore('expenses', () => {
     creditCardsSummary,
     loadCreditCardsSummary,
     expensesSummaryByType,
-    loadExpensesSummaryByType
+    loadExpensesSummaryByType,
+    paymentStatuses,
+    loadPaymentStatuses
   }
 }) 

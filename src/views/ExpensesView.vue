@@ -188,6 +188,27 @@
                         </option>
                     </select>
                 </div>
+
+                <!-- Filtro por estado de pago -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"
+                        >Estado</label
+                    >
+                    <select
+                        v-model="filters.payment_status_id"
+                        @change="updateFilters"
+                        class="input-field"
+                    >
+                        <option :value="null">Todos los estados</option>
+                        <option
+                            v-for="status in availablePaymentStatuses"
+                            :key="status.id"
+                            :value="status.id"
+                        >
+                            {{ status.label }}
+                        </option>
+                    </select>
+                </div>
             </div>
 
             <!-- Botón limpiar filtros mejorado -->
@@ -298,6 +319,27 @@
                             </option>
                         </select>
                     </div>
+
+                    <!-- Filtro por estado de pago -->
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1"
+                            >Estado</label
+                        >
+                        <select
+                            v-model="filters.payment_status_id"
+                            @change="updateFilters"
+                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option :value="null">Todos</option>
+                            <option
+                                v-for="status in availablePaymentStatuses"
+                                :key="status.id"
+                                :value="status.id"
+                            >
+                                {{ status.label }}
+                            </option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -394,7 +436,7 @@
             <!-- Vista Desktop: Tabla de gastos -->
             <div class="hidden md:block card">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+                    <table :key="tableKey" class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th
@@ -452,14 +494,11 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <!-- Gastos directos y cuotas -->
+
                             <template v-if="paginatedExpensesDesktop.length > 0">
                                 <tr
-                                    v-for="item in paginatedExpensesDesktop"
-                                    :key="
-                                        item.is_installment
-                                            ? `installment-${item.installment_id}`
-                                            : `expense-${item.id}`
-                                    "
+                                    v-for="(item, index) in paginatedExpensesDesktop"
+                                    :key="`${tableKey}-${Date.now()}-${item.is_installment ? 'installment-' + item.installment_id : 'expense-' + item.id}-${index}`"
                                 >
                                     <td v-if="isBulkMode" class="px-6 py-4 whitespace-nowrap">
                                         <input
@@ -760,12 +799,8 @@
             <div class="block md:hidden space-y-2">
                 <template v-if="paginatedExpenses.length > 0">
                     <div
-                        v-for="item in paginatedExpenses"
-                        :key="
-                            item.is_installment
-                                ? `installment-${item.installment_id}`
-                                : `expense-${item.id}`
-                        "
+                        v-for="(item, index) in paginatedExpenses"
+                        :key="`${tableKey}-${Date.now()}-${item.is_installment ? 'installment-' + item.installment_id : 'expense-' + item.id}-${index}`"
                         class="bg-white rounded-lg shadow-sm border border-gray-200 p-3"
                     >
                         <!-- Header de la tarjeta -->
@@ -1143,7 +1178,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, watchEffect, onUnmounted } from "vue";
+import { ref, computed, onMounted, watch, watchEffect, onUnmounted, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import { useExpensesStore } from "@/stores/expenses";
 import { useUserCardsStore } from "@/stores/userCards";
@@ -1190,6 +1225,7 @@ const filters = ref({
     category_id: "",
     month: now.getMonth() + 1, // Mes actual (getMonth() devuelve 0-11, por eso +1)
     year: now.getFullYear(), // Año actual
+    payment_status_id: null, // Por defecto "Todos los estados"
 });
 
 // Variables para selección múltiple
@@ -1309,7 +1345,24 @@ const bulkChangeStatus = async (newStatusId) => {
             
             for (const expenseId of selectedExpenses.value) {
                 try {
-                    const result = await expensesStore.markAsPaid(expenseId, newStatusId);
+                    let actualId = expenseId;
+                    let isInstallment = false;
+                    
+                    // Extraer el ID real y determinar si es cuota o gasto
+                    if (expenseId.startsWith('installment-')) {
+                        actualId = expenseId.replace('installment-', '');
+                        isInstallment = true;
+                    } else if (expenseId.startsWith('expense-')) {
+                        actualId = expenseId.replace('expense-', '');
+                        isInstallment = false;
+                    }
+                    
+                    let result;
+                    if (isInstallment) {
+                        result = await expensesStore.markInstallmentAsPaid(actualId, newStatusId);
+                    } else {
+                        result = await expensesStore.markAsPaid(actualId, newStatusId);
+                    }
                     if (result.success) {
                         successCount++;
                     } else {
@@ -1388,6 +1441,7 @@ onMounted(async () => {
         expensesStore.loadExpenses(),
         userCardsStore.loadUserCards(),
         userCategoriesStore.loadUserCategories(),
+        expensesStore.loadPaymentStatuses(),
     ]);
     
     // Actualizar filtros iniciales en el store
@@ -1419,6 +1473,10 @@ const handleClickOutside = (event) => {
 };
 
 const updateFilters = () => {
+    // Limpiar datos inmediatamente y forzar actualización
+    expensesStore.clearMonthlyData();
+    forceTableUpdate();
+    
     // Resetear paginación cuando cambian los filtros
     currentPage.value = 1;
     currentPageDesktop.value = 1;
@@ -1428,7 +1486,8 @@ const updateFilters = () => {
         card_id: filters.value.card_id || null,
         category_id: filters.value.category_id || null,
         month: filters.value.month || null,
-        year: filters.value.year || null
+        year: filters.value.year || null,
+        payment_status_id: filters.value.payment_status_id || null
     });
     
     // Recargar datos del backend cuando cambien los filtros
@@ -1441,13 +1500,21 @@ const updateFilters = () => {
 
 const loadMonthlyData = async () => {
     if (filters.value && filters.value.month && filters.value.year) {
-        // Normalizar filtros para enviar al backend
+        // Limpiar datos inmediatamente
+        expensesStore.clearMonthlyData();
+        
+        // Esperar un momento para que se limpien los datos
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        forceTableUpdate();
+        
         const backendFilters = {
             card_id: filters.value.card_id && filters.value.card_id !== 'null' ? filters.value.card_id : null,
-            category_id: filters.value.category_id && filters.value.category_id !== 'null' ? filters.value.category_id : null
+            category_id: filters.value.category_id && filters.value.category_id !== 'null' ? filters.value.category_id : null,
+            payment_status_id: filters.value.payment_status_id && filters.value.payment_status_id !== 'null' ? filters.value.payment_status_id : null
         };
         
-        const result = await Promise.all([
+        await Promise.all([
             expensesStore.loadMonthlyExpensesWithInstallments(
                 parseInt(filters.value.month),
                 parseInt(filters.value.year),
@@ -1455,9 +1522,13 @@ const loadMonthlyData = async () => {
             ),
             expensesStore.loadMonthlyTotals(
                 parseInt(filters.value.month),
-                parseInt(filters.value.year)
+                parseInt(filters.value.year),
+                backendFilters
             ),
         ]);
+        
+        // Forzar actualización después de cargar
+        forceTableUpdate();
     }
 };
 
@@ -1497,6 +1568,11 @@ const availableCategoriesForMonth = computed(() => {
     
     // Filtrar las categorías del usuario que se usaron en este mes
     return userCategoriesStore.categories.filter(category => categoryIds.has(category.id));
+});
+
+// Computed para los estados de pago (ahora viene de la API)
+const availablePaymentStatuses = computed(() => {
+    return expensesStore.paymentStatuses || [];
 });
 
 // Computed para el nombre del mes y año actual
@@ -1883,31 +1959,34 @@ const formatDate = (date) => {
 // Checkbox para alternar entre gastos directos y cuotas
 const showDirectExpenses = ref(false);
 
+// Forzar actualización de la tabla
+const tableKey = ref(0);
+const forceTableUpdate = () => {
+    tableKey.value++;
+};
+
 // Computed para filtrar lo que se muestra en la tabla
 const filteredExpensesToShow = computed(() => {
-    // Obtener todos los datos del store
+    // Forzar reactividad con tableKey
+    const key = tableKey.value;
+    
+    // Usar los datos filtrados del store, no los datos sin filtrar
     const allData = expensesStore.filteredExpensesWithInstallments;
     
-    // Si no hay datos, retornar array vacío
     if (!allData || allData.length === 0) {
         return [];
     }
 
-    // Filtrar objetos vacíos - corregir la lógica para objetos Proxy
     const validData = allData.filter(item => {
         if (!item) return false;
-        // Para objetos Proxy, verificar si tienen propiedades importantes
         return item.id || item.expense_id || item.amount !== undefined;
     });
 
-    // Ordenar por fecha decreciente (más reciente primero)
-    const sorted = validData.sort((a, b) => {
+    return validData.sort((a, b) => {
         const dateA = a.is_installment ? a.due_date : a.purchase_date;
         const dateB = b.is_installment ? b.due_date : b.purchase_date;
         return new Date(dateB) - new Date(dateA);
     });
-    
-    return sorted;
 });
 
 // Funciones para cambiar de mes con las flechas

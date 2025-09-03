@@ -54,7 +54,7 @@ router.get('/', authenticateToken, async (req, res) => {
 // GET /api/expenses/monthly - Obtener gastos mensuales con cuotas
 router.get('/monthly', authenticateToken, async (req, res) => {
   try {
-    const { month, year, card_id, category_id } = req.query;
+    const { month, year, card_id, category_id, payment_status_id } = req.query;
     
     if (!month || !year) {
       return res.status(400).json({
@@ -76,8 +76,11 @@ router.get('/monthly', authenticateToken, async (req, res) => {
 
     const filters = {
       card_id: card_id && card_id !== 'null' ? card_id : null,
-      category_id: category_id && category_id !== 'null' ? category_id : null
+      category_id: category_id && category_id !== 'null' ? category_id : null,
+      payment_status_id: payment_status_id && payment_status_id !== 'null' ? payment_status_id : null
     };
+    
+
 
     const result = await ExpensesService.getMonthlyExpensesWithInstallments(
       req.user.id,
@@ -119,10 +122,18 @@ router.get('/monthly-total', authenticateToken, async (req, res) => {
       });
     }
 
+    // Extraer filtros adicionales
+    const filters = {
+      card_id: req.query.card_id || null,
+      category_id: req.query.category_id || null,
+      payment_status_id: req.query.payment_status_id || null
+    };
+
     const result = await ExpensesService.getMonthlyTotalWithInstallments(
       req.user.id,
       monthNum,
-      yearNum
+      yearNum,
+      filters
     );
 
     res.json(result);
@@ -295,7 +306,15 @@ router.put('/:id/mark-as-paid', authenticateToken, async (req, res) => {
       });
     }
 
-    const result = await ExpensesService.markAsPaid(id, payment_status_id);
+    let result;
+    
+    // Detectar si es una cuota (prefijo installment-) o un gasto normal
+    if (id.startsWith('installment-')) {
+      const installmentId = id.replace('installment-', '');
+      result = await ExpensesService.markInstallmentAsPaid(installmentId, payment_status_id);
+    } else {
+      result = await ExpensesService.markAsPaid(id, payment_status_id);
+    }
 
     res.json(result);
   } catch (error) {
@@ -341,6 +360,21 @@ router.get('/payment-status', authenticateToken, async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Error obteniendo estado de pago:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// GET /api/expenses/payment-statuses - Obtener todos los estados de pago
+router.get('/payment-statuses', authenticateToken, async (req, res) => {
+  try {
+    const result = await ExpensesService.getAllPaymentStatuses();
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error obteniendo estados de pago:', error);
     res.status(500).json({
       success: false,
       error: error.message

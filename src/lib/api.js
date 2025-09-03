@@ -416,8 +416,9 @@ export const expenses = {
     return response;
   },
 
-  async getMonthlyTotalWithInstallments(userId, month, year) {
-    const response = await apiClient.get('/expenses/monthly-total', { month, year });
+  async getMonthlyTotalWithInstallments(userId, month, year, filters = {}) {
+    const params = { month, year, ...filters };
+    const response = await apiClient.get('/expenses/monthly-total', params);
     return response;
   },
 
@@ -463,8 +464,20 @@ export const expenses = {
     return response;
   },
 
+  async getAllPaymentStatuses() {
+    const response = await apiClient.get('/expenses/payment-statuses');
+    return response;
+  },
+
   async markAsPaid(id, payment_status_id) {
     const response = await apiClient.put(`/expenses/${id}/mark-as-paid`, {
+      payment_status_id
+    });
+    return response;
+  },
+
+  async markInstallmentAsPaid(id, payment_status_id) {
+    const response = await apiClient.put(`/expenses/installment-${id}/mark-as-paid`, {
       payment_status_id
     });
     return response;
