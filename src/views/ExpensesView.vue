@@ -630,7 +630,7 @@
                                             </button>
                                             <button
                                                 v-if="!item.is_installment"
-                                                @click="deleteExpense(item.id)"
+                                                @click="deleteExpense(item.id, item)"
                                                 class="text-danger-600 hover:text-danger-900 transition-colors duration-200"
                                             >
                                                 <Trash2 class="h-4 w-4" />
@@ -745,7 +745,7 @@
                                             </button>
                                             <button
                                                 @click="
-                                                    deleteExpense(expense.id)
+                                                    deleteExpense(expense.id, expense)
                                                 "
                                                 class="text-danger-600 hover:text-danger-900 transition-colors duration-200"
                                             >
@@ -901,7 +901,7 @@
                                         </button>
                                         <button
                                             v-if="!item.is_installment"
-                                            @click="deleteExpense(item.id)"
+                                            @click="deleteExpense(item.id, item)"
                                             class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                         >
                                             <Trash2 class="h-4 w-4" />
@@ -1045,7 +1045,7 @@
                                             Editar
                                         </button>
                                         <button
-                                            @click="deleteExpense(expense.id)"
+                                            @click="deleteExpense(expense.id, expense)"
                                             class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                         >
                                             <Trash2 class="h-4 w-4" />
@@ -1163,18 +1163,53 @@
         @close="closeInstallmentsModal"
     />
 
-    <!-- Botón flotante para nuevo gasto -->
-    <button 
-        @click="openNewExpenseModal"
+    <!-- Modal para gastos programados -->
+    <ScheduledExpenseModal
+        v-if="showScheduledModal"
+        @close="closeScheduledModal"
+        @save="saveScheduledExpense"
+    />
+
+    <!-- Botones flotantes para gastos -->
+    <div 
         :class="[
-            'fixed bottom-24 lg:bottom-6 right-6 z-50 flex items-center justify-center gap-2 px-6 py-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-400 focus:ring-offset-2 transform hover:scale-105 active:scale-95',
-            (showModal || showInstallmentsModal) ? 'hidden' : ''
+            'fixed bottom-24 lg:bottom-6 right-6 z-50 flex flex-col gap-3',
+            (showModal || showInstallmentsModal || showScheduledModal) ? 'hidden' : ''
         ]"
-        title="Agregar nuevo gasto"
     >
-        <Plus class="h-6 w-6" />
-        <span class="hidden lg:inline">Nuevo Gasto</span>
-    </button>
+        <!-- Botones de opciones (se muestran cuando showExpenseOptions es true) -->
+        <div v-if="showExpenseOptions" class="flex flex-col gap-2">
+            <!-- Botón para gasto programado -->
+            <button 
+                @click="openNewScheduledExpenseModal"
+                class="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-purple-600 hover:bg-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-purple-400 focus:ring-offset-2 transform hover:scale-105 active:scale-95"
+                title="Nuevo gasto programado"
+            >
+                <Calendar class="h-5 w-5" />
+                <span class="hidden lg:inline">Gasto Programado</span>
+            </button>
+            
+            <!-- Botón para gasto normal -->
+            <button 
+                @click="openNewExpenseModal"
+                class="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-400 focus:ring-offset-2 transform hover:scale-105 active:scale-95"
+                title="Nuevo gasto"
+            >
+                <Receipt class="h-5 w-5" />
+                <span class="hidden lg:inline">Gasto Normal</span>
+            </button>
+        </div>
+        
+        <!-- Botón principal (se muestra cuando showExpenseOptions es false) -->
+        <button 
+            @click="toggleExpenseOptions"
+            class="flex items-center justify-center gap-2 px-6 py-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-400 focus:ring-offset-2 transform hover:scale-105 active:scale-95"
+            title="Agregar gasto"
+        >
+            <Plus class="h-6 w-6" />
+            <span class="hidden lg:inline">Nuevo Gasto</span>
+        </button>
+    </div>
 </template>
 
 <script setup>
@@ -1185,6 +1220,7 @@ import { useUserCardsStore } from "@/stores/userCards";
 import { useUserCategoriesStore } from "@/stores/userCategories";
 import ExpenseModal from "@/components/ExpenseModal.vue";
 import InstallmentsList from "@/components/InstallmentsList.vue";
+import ScheduledExpenseModal from "@/components/ScheduledExpenseModal.vue";
 import {
     Plus,
     Receipt,
@@ -1197,6 +1233,7 @@ import {
     ChevronRight,
     MoreVertical,
     CheckCircle2,
+    Calendar,
 } from "lucide-vue-next";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -1217,8 +1254,10 @@ const userCardsStore = useUserCardsStore();
 const userCategoriesStore = useUserCategoriesStore();
 
 const showModal = ref(false);
+const showScheduledModal = ref(false);
 const showNoCardsAlert = ref(false);
 const editingExpense = ref(null);
+const showExpenseOptions = ref(false);
 const now = new Date();
 const filters = ref({
     card_id: "",
@@ -1481,6 +1520,11 @@ const handleClickOutside = (event) => {
     if (!event.target.closest('.action-menu-container')) {
         activeActionMenu.value = null;
     }
+    
+    // Cerrar opciones de gastos si se hace clic fuera
+    if (!event.target.closest('.fixed.bottom-24') && !event.target.closest('.fixed.bottom-6')) {
+        showExpenseOptions.value = false;
+    }
 };
 
 const updateFilters = () => {
@@ -1639,50 +1683,133 @@ const editExpense = (expense) => {
     showModal.value = true;
 };
 
-const deleteExpense = async (expenseId) => {
-    const { value: confirmed } = await Swal.fire({
-        title: "¿Estás seguro?",
-        text: "Esta acción no se puede deshacer.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#dc2626",
-        cancelButtonColor: "#6b7280",
-        confirmButtonText: "Sí, eliminar",
-        cancelButtonText: "Cancelar",
-    });
+const deleteExpense = async (expenseId, expenseItem = null) => {
+    
+    const isScheduled = expenseItem?.is_scheduled || false;
+    
+    
+    if (isScheduled) {
+        // Modal para gastos programados
+        const { value: deleteOption } = await Swal.fire({
+            title: "¿Cómo quieres eliminar este gasto programado?",
+            html: `
+                <div style="text-align: left; margin: 20px 0;">
+                    <p style="margin-bottom: 15px; color: #374151;">
+                        Este es un gasto programado. Puedes:
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+                            <input type="radio" name="deleteOption" value="current" checked style="margin: 0;">
+                            <div>
+                                <div style="font-weight: 600; color: #374151;">Solo este mes</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">Eliminar únicamente este gasto, mantener los futuros</div>
+                            </div>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+                            <input type="radio" name="deleteOption" value="future" style="margin: 0;">
+                            <div>
+                                <div style="font-weight: 600; color: #374151;">Este mes y todos los futuros</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">Cancelar completamente el gasto programado</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            `,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#dc2626",
+            cancelButtonColor: "#6b7280",
+            confirmButtonText: "Eliminar",
+            cancelButtonText: "Cancelar",
+            preConfirm: () => {
+                const selectedOption = document.querySelector('input[name="deleteOption"]:checked');
+                return selectedOption ? selectedOption.value : null;
+            }
+        });
 
-    if (confirmed) {
-        try {
-            const result = await expensesStore.deleteExpense(expenseId);
+        
+        
+        if (deleteOption) {
+            try {
+                
+                const result = await expensesStore.deleteExpense(expenseId, deleteOption);
 
-            if (result.success) {
-                // Recargar datos según el contexto actual
-                if (filters.value && filters.value.year) {
-                    await loadMonthlyData();
+                if (result.success) {
+                    // Recargar datos
+                    if (filters.value && filters.value.year) {
+                        await loadMonthlyData();
+                    } else {
+                        await expensesStore.loadExpenses();
+                    }
+
+                    await Swal.fire({
+                        icon: "success",
+                        title: "¡Gasto eliminado!",
+                        text: result.message,
+                        timer: 3000,
+                        showConfirmButton: false,
+                    });
                 } else {
-                    await expensesStore.loadExpenses();
+                    await Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: result.error || "No se pudo eliminar el gasto.",
+                    });
                 }
-
-                await Swal.fire({
-                    icon: "success",
-                    title: "¡Gasto eliminado!",
-                    text: "El gasto se eliminó correctamente.",
-                    timer: 2000,
-                    showConfirmButton: false,
-                });
-            } else {
+            } catch (error) {
                 await Swal.fire({
                     icon: "error",
-                    title: "Error al eliminar",
-                    text: result.error || "No se pudo eliminar el gasto.",
+                    title: "Error inesperado",
+                    text: error.message || "Ocurrió un error inesperado.",
                 });
             }
-        } catch (error) {
-            await Swal.fire({
-                icon: "error",
-                title: "Error inesperado",
-                text: error.message || "Ocurrió un error al eliminar el gasto.",
-            });
+        }
+    } else {
+        // Gasto normal
+        const result = await Swal.fire({
+            title: "¿Estás seguro?",
+            text: "Esta acción no se puede deshacer",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#dc2626",
+            cancelButtonColor: "#6b7280",
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar",
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const deleteResult = await expensesStore.deleteExpense(expenseId);
+
+                if (deleteResult.success) {
+                    // Recargar datos
+                    if (filters.value && filters.value.year) {
+                        await loadMonthlyData();
+                    } else {
+                        await expensesStore.loadExpenses();
+                    }
+
+                    await Swal.fire({
+                        icon: "success",
+                        title: "¡Gasto eliminado!",
+                        text: "El gasto se eliminó correctamente",
+                        timer: 2000,
+                        showConfirmButton: false,
+                    });
+                } else {
+                    await Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: deleteResult.error || "No se pudo eliminar el gasto.",
+                    });
+                }
+            } catch (error) {
+                await Swal.fire({
+                    icon: "error",
+                    title: "Error inesperado",
+                    text: error.message || "Ocurrió un error inesperado.",
+                });
+            }
         }
     }
 };
@@ -1735,11 +1862,60 @@ const openNewExpenseModal = async () => {
     // Si tiene tarjetas, abrir el modal normalmente
     editingExpense.value = null;
     showModal.value = true;
+    showExpenseOptions.value = false;
 };
 
 const closeModal = () => {
-    showModal.value = false;
-    editingExpense.value = null;
+  showModal.value = false;
+  editingExpense.value = null;
+};
+
+const closeScheduledModal = () => {
+  showScheduledModal.value = false;
+};
+
+const toggleExpenseOptions = () => {
+  showExpenseOptions.value = !showExpenseOptions.value;
+};
+
+const openNewScheduledExpenseModal = async () => {
+  // Verificar si el usuario tiene tarjetas asociadas
+  const userCards = userCardsStore.cards;
+  
+  if (!userCards || userCards.length === 0) {
+    // Mostrar alerta para asociar tarjeta primero
+    showNoCardsAlert.value = true;
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'Sin tarjetas asociadas',
+      html: `
+        <div style="text-align: center; padding: 20px 0;">
+          <p style="color: #374151; margin-bottom: 16px; font-size: 16px;">
+            Para poder agregar gastos programados, primero necesitas asociar una cuenta.
+          </p>
+          <p style="color: #6b7280; font-size: 14px;">
+            Ve a la sección de <strong>Cuentas</strong> para vincular tu primer cuenta.
+          </p>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Ir a Cuentas',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#3b82f6',
+      cancelButtonColor: '#6b7280',
+      reverseButtons: true
+    });
+    
+    if (result.isConfirmed) {
+      // Redirigir a la vista de cuentas
+      router.push('/cuentas');
+    }
+    return;
+  }
+  
+  // Si tiene tarjetas, abrir el modal normalmente
+  showScheduledModal.value = true;
+  showExpenseOptions.value = false;
 };
 
 const saveExpense = async (expenseData) => {
@@ -1784,6 +1960,40 @@ const saveExpense = async (expenseData) => {
             text: "El gasto se guardó correctamente.",
         });
         closeModal();
+    } catch (error) {
+        Swal.fire({
+            icon: "error",
+            title: "Error inesperado",
+            text: error.message || "Ocurrió un error inesperado.",
+        });
+    }
+};
+
+const saveScheduledExpense = async (result) => {
+    try {
+        // El resultado ya viene del modal, no necesitamos crear el gasto aquí
+        if (!result.success) {
+            Swal.fire({
+                icon: "error",
+                title: "Error al crear gasto programado",
+                text: result.error || "Ocurrió un error inesperado.",
+            });
+            return;
+        }
+
+        // Recargar datos según el contexto actual
+        if (filters.value && filters.value.year) {
+            await loadMonthlyData();
+        } else {
+            await expensesStore.loadExpenses();
+        }
+
+        Swal.fire({
+            icon: "success",
+            title: "¡Gasto programado creado!",
+            text: `Se crearon ${result.data.length} gastos programados correctamente.`,
+        });
+        closeScheduledModal();
     } catch (error) {
         Swal.fire({
             icon: "error",

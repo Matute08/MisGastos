@@ -126,10 +126,13 @@ class ApiClient {
     });
   }
 
-  async delete(endpoint) {
-    return this.request(endpoint, {
-      method: 'DELETE',
-    });
+  async delete(endpoint, data = undefined) {
+    const options = { method: 'DELETE' };
+    // Algunos backends (como Express) no aceptan body vacío en DELETE; solo lo enviamos si existe
+    if (data !== undefined) {
+      options.body = JSON.stringify(data);
+    }
+    return this.request(endpoint, options);
   }
 
   setToken(token) {
@@ -405,8 +408,8 @@ export const expenses = {
     return response;
   },
 
-  async deleteExpense(id) {
-    const response = await apiClient.delete(`/expenses/${id}`);
+  async deleteExpense(id, deleteOption = null) {
+    const response = await apiClient.delete(`/expenses/${id}`, { deleteOption });
     return response;
   },
 
@@ -481,7 +484,25 @@ export const expenses = {
       payment_status_id
     });
     return response;
-  }
+  },
+
+  // ===== FUNCIONES PARA GASTOS PROGRAMADOS =====
+
+  async getScheduledExpenses() {
+    const response = await apiClient.get('/expenses/scheduled');
+    return response;
+  },
+
+  async createScheduledExpense(expenseData) {
+    const response = await apiClient.post('/expenses/scheduled', expenseData);
+    return response;
+  },
+
+  async cancelScheduledExpense(scheduledExpenseId) {
+    const response = await apiClient.delete(`/expenses/scheduled/${scheduledExpenseId}`);
+    return response;
+  },
+
 };
 
 export const categories = {

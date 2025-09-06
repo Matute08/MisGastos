@@ -1,4 +1,4 @@
-const CACHE_NAME = 'misgastos-v1.0.0';
+const CACHE_NAME = 'misgastos-v1.0.1';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -62,50 +62,31 @@ self.addEventListener('activate', (event) => {
 
 // Interceptar peticiones
 self.addEventListener('fetch', (event) => {
-  // No cachear peticiones a Supabase
-  if (event.request.url.includes('supabase.co')) {
-    return;
-  }
+  const url = new URL(event.request.url);
 
-  // No cachear peticiones POST, PUT, DELETE
-  if (event.request.method !== 'GET') {
-    return;
-  }
+  // No cachear API ni Supabase
+  if (url.pathname.startsWith('/api/') || url.host.includes('supabase.co')) return;
 
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Si está en cache, devolverlo
-        if (response) {
-          return response;
-        }
+  if (event.request.method !== 'GET')) return;
 
-        // Si no está en cache, hacer la petición
-        return fetch(event.request)
-          .then((response) => {
-            // Verificar que la respuesta sea válida
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(event.request);
+    if (cached) return cached;
 
-            // Clonar la respuesta para cachearla
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          })
-          .catch(() => {
-            // Si falla la petición y es una página HTML, mostrar página offline
-            if (event.request.headers.get('accept').includes('text/html')) {
-              return caches.match('/index.html');
-            }
-          });
-      })
-  );
+    try {
+      const res = await fetch(event.request);
+      const ct = res.headers.get('content-type') || '';
+      const isOk = res.ok && !ct.includes('text/html');
+      if (isOk) await cache.put(event.request, res.clone());
+      return res;
+    } catch (_) {
+      if (event.request.headers.get('accept')?.includes('text/html')) {
+        return cache.match('/index.html');
+      }
+      throw _;
+    }
+  })());
 });
 
 // Manejar mensajes del cliente

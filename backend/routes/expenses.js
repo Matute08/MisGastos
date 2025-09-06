@@ -29,6 +29,32 @@ const validateExpense = [
   }
 ];
 
+// Middleware de validación para gastos programados
+const validateScheduledExpense = [
+  body('description').isLength({ min: 1 }).withMessage('La descripción es requerida'),
+  body('amount').isFloat({ min: 0.01 }).withMessage('El monto debe ser mayor a 0'),
+  body('card_id').isUUID().withMessage('ID de tarjeta inválido'),
+  body('category_id').isUUID().withMessage('ID de categoría inválido'),
+  body('scheduled_start_month').matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('Fecha de inicio inválida (formato: YYYY-MM-DD)'),
+  body('scheduled_months').optional().custom((value) => {
+    if (value === null || value === undefined) return true;
+    if (typeof value === 'number' && value >= 1) return true;
+    throw new Error('El número de meses debe ser mayor a 0');
+  }),
+  body('payment_status_id').optional().isInt({ min: 1 }).withMessage('ID de estado de pago inválido'),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Datos de entrada inválidos',
+        details: errors.array()
+      });
+    }
+    next();
+  }
+];
+
 // GET /api/expenses - Obtener gastos del usuario
 router.get('/', authenticateToken, async (req, res) => {
   try {
@@ -195,12 +221,43 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// DELETE /api/expenses/:id/scheduled - Eliminar gasto programado con opciones (DEBE IR ANTES DE /:id)
+router.delete('/:id/scheduled', authenticateToken, async (req, res) => {
+  try {
+    console.log('🔍 DEBUG - Ruta de eliminación programada llamada');
+    console.log('📋 Parámetros:', { id: req.params.id, body: req.body });
+    
+    const { deleteOption } = req.body; // 'current' o 'future'
+    console.log('🔍 DeleteOption recibido:', deleteOption);
+    
+    const result = await ExpensesService.deleteScheduledExpense(
+      req.user.id, 
+      req.params.id, 
+      deleteOption || 'current'
+    );
+    
+    console.log('✅ Resultado de eliminación:', result);
+    res.json(result);
+  } catch (error) {
+    console.error('❌ Error eliminando gasto programado:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Error interno del servidor'
+    });
+  }
+});
+
 // DELETE /api/expenses/:id - Eliminar gasto
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const { deleteOption } = req.body; // Puede ser 'future' para gastos programados
 
-    const result = await ExpensesService.deleteExpense(id, req.user.id);
+    console.log('🔍 DEBUG - Eliminando gasto ID:', id, 'deleteOption:', deleteOption);
+    console.log('🔍 DEBUG - Cuerpo de la petición:', req.body);
+    console.log('🔍 DEBUG - Tipo de deleteOption:', typeof deleteOption);
+
+    const result = await ExpensesService.deleteExpense(id, req.user.id, deleteOption);
 
     res.json(result);
   } catch (error) {
@@ -558,6 +615,59 @@ router.get('/summary-by-type', authenticateToken, async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Error obteniendo resumen por tipo:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ===== RUTAS PARA GASTOS PROGRAMADOS =====
+
+// GET /api/expenses/scheduled - Obtener gastos programados del usuario
+router.get('/scheduled', authenticateToken, async (req, res) => {
+  try {
+    const result = await ExpensesService.getScheduledExpenses(req.user.id);
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error obteniendo gastos programados:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// POST /api/expenses/scheduled - Crear gasto programado
+router.post('/scheduled', authenticateToken, validateScheduledExpense, async (req, res) => {
+  try {
+    const expenseData = {
+      ...req.body,
+      user_id: req.user.id,
+      is_scheduled: true
+    };
+
+    const result = await ExpensesService.createScheduledExpense(expenseData);
+
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('Error creando gasto programado:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// DELETE /api/expenses/scheduled/:id - Cancelar gasto programado
+router.delete('/scheduled/:id', authenticateToken, async (req, res) => {
+  try {
+    const result = await ExpensesService.cancelScheduledExpense(req.user.id, req.params.id);
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error cancelando gasto programado:', error);
     res.status(500).json({
       success: false,
       error: error.message

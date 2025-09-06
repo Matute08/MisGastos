@@ -64,6 +64,11 @@ export class ExpensesService {
       if (!expenseData.card_id) {
         throw new Error('card_id es requerido');
       }
+
+      // Si es un gasto programado, crear múltiples gastos
+      if (expenseData.is_scheduled) {
+        return await this.createScheduledExpense(expenseData);
+      }
       
       // 1. Verificar que la tarjeta pertenece al usuario y obtener información
       const { data: userCard, error: userCardError } = await supabase
@@ -252,7 +257,26 @@ export class ExpensesService {
       let directQuery = supabase
         .from('expenses')
         .select(`
-          *,
+          id,
+          user_id,
+          description,
+          amount,
+          card_id,
+          category_id,
+          subcategory_id,
+          purchase_date,
+          payment_status_id,
+          installments_count,
+          first_installment_date,
+          month,
+          year,
+          created_at,
+          updated_at,
+          is_scheduled,
+          scheduled_start_month,
+          scheduled_months,
+          scheduled_end_month,
+          is_active,
           available_cards(id, name, type),
           categories(id, name, color),
           subcategories(id, name, color),
@@ -280,13 +304,34 @@ export class ExpensesService {
 
       if (directError) throw directError;
 
+      // Logs de depuración removidos
+
       // Consulta SQL directa para obtener cuotas que vencen en el mes
       let installmentsQuery = supabase
         .from('installments')
         .select(`
           *,
           expenses!inner(
-            *,
+            id,
+            user_id,
+            description,
+            amount,
+            card_id,
+            category_id,
+            subcategory_id,
+            purchase_date,
+            payment_status_id,
+            installments_count,
+            first_installment_date,
+            month,
+            year,
+            created_at,
+            updated_at,
+            is_scheduled,
+            scheduled_start_month,
+            scheduled_months,
+            scheduled_end_month,
+            is_active,
             available_cards(id, name, type, bank), 
             categories(id, name, color), 
             subcategories(id, name, color)
@@ -838,32 +883,103 @@ export class ExpensesService {
   }
 
   // Eliminar gasto
-  static async deleteExpense(id, userId) {
+  static async deleteExpense(id, userId, deleteOption = null) {
     try {
-      // Primero eliminar las cuotas asociadas
-      const { error: installmentsError } = await supabase
-        .from('installments')
-        .delete()
-        .eq('expense_id', id);
+      // Primero obtener el gasto para verificar si es programado
+      const { data: expense, error: fetchError } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('id', id)
+        .eq('user_id', userId)
+        .single();
 
-      if (installmentsError) {
-        console.error('Error eliminando cuotas:', installmentsError);
+      if (fetchError) {
+        throw new Error('Gasto no encontrado');
       }
 
-      // Luego eliminar el gasto
-      const { error } = await supabase
-        .from('expenses')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', userId);
+      // Logs de depuración removidos
 
-      if (error) throw error;
+      // Si es un gasto programado y se especifica eliminar futuros
+      if (expense.is_scheduled && deleteOption === 'future') {
+        // Logs de depuración removidos
+        
+        // Para gastos programados, usar scheduled_start_month como referencia
+        // y eliminar desde la fecha actual en adelante
+        const currentDate = expense.purchase_date; // Fecha del gasto que se está eliminando
+        
+        // Logs de depuración removidos
+        
+        // Obtener todos los gastos programados de la misma serie programada
+        const { data: relatedExpenses, error: fetchRelatedError } = await supabase
+          .from('expenses')
+          .select('id, purchase_date, description, amount, scheduled_start_month')
+          .eq('user_id', userId)
+          .eq('is_scheduled', true)
+          .eq('description', expense.description)
+          .eq('amount', expense.amount)
+          .eq('card_id', expense.card_id)
+          .eq('category_id', expense.category_id)
+          .eq('scheduled_start_month', expense.scheduled_start_month) // Mismo inicio programado
+          .gte('purchase_date', currentDate)
+          .order('purchase_date', { ascending: true });
 
-      return {
-        success: true,
-        message: 'Gasto eliminado correctamente'
-      };
+        if (fetchRelatedError) throw fetchRelatedError;
 
+        // Logs de depuración removidos
+
+        if (relatedExpenses && relatedExpenses.length > 0) {
+          // Eliminar todos los gastos encontrados
+          const { error: deleteError } = await supabase
+            .from('expenses')
+            .delete()
+            .eq('user_id', userId)
+            .eq('is_scheduled', true)
+            .eq('description', expense.description)
+            .eq('amount', expense.amount)
+            .eq('card_id', expense.card_id)
+            .eq('category_id', expense.category_id)
+            .eq('scheduled_start_month', expense.scheduled_start_month)
+            .gte('purchase_date', currentDate);
+
+          if (deleteError) throw deleteError;
+
+          return {
+            success: true,
+            message: `Gasto programado cancelado. Se eliminaron ${relatedExpenses.length} gastos (actual y futuros).`
+          };
+        } else {
+          return {
+            success: true,
+            message: 'No se encontraron gastos futuros para eliminar.'
+          };
+        }
+      } else {
+        // Eliminación normal (solo el gasto actual)
+        
+        // Primero eliminar las cuotas asociadas
+        const { error: installmentsError } = await supabase
+          .from('installments')
+          .delete()
+          .eq('expense_id', id);
+
+        if (installmentsError) {
+          console.error('Error eliminando cuotas:', installmentsError);
+        }
+
+        // Luego eliminar el gasto
+        const { error } = await supabase
+          .from('expenses')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', userId);
+
+        if (error) throw error;
+
+        return {
+          success: true,
+          message: 'Gasto eliminado correctamente'
+        };
+      }
     } catch (error) {
       throw error;
     }
@@ -1110,6 +1226,223 @@ export class ExpensesService {
       return {
         success: true,
         data: data || []
+      };
+
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Crear gasto programado
+  static async createScheduledExpense(expenseData) {
+    try {
+      // Validar datos específicos de gastos programados
+      if (!expenseData.scheduled_start_month) {
+        throw new Error('scheduled_start_month es requerido para gastos programados');
+      }
+
+      // 1. Verificar que la tarjeta pertenece al usuario
+      const { data: userCard, error: userCardError } = await supabase
+        .from('user_cards')
+        .select(`
+          *,
+          available_card:available_cards(*)
+        `)
+        .eq('user_id', expenseData.user_id)
+        .eq('available_card_id', expenseData.card_id)
+        .single();
+
+      if (userCardError) {
+        throw new Error(`Error en la consulta: ${userCardError.message}`);
+      }
+
+      if (!userCard) {
+        throw new Error('Tarjeta no encontrada o no pertenece al usuario');
+      }
+
+      const card = userCard.available_card;
+
+      // 2. Para gastos programados, siempre usar estado pendiente
+      let paymentStatusId = 1; // Siempre pendiente para gastos programados
+
+      // 3. Calcular fechas de inicio y fin
+      // CORRECCIÓN FINAL: Parsear la fecha correctamente
+      const [year, month, day] = expenseData.scheduled_start_month.split('-');
+      const startYear = parseInt(year);
+      const startMonth = parseInt(month) - 1; // Convertir de 1-12 a 0-11 para JavaScript
+      const startDate = new Date(startYear, startMonth, parseInt(day));
+      
+      // Debug logs (remover en producción)
+      // console.log(`🔍 Debug - Fecha de inicio: ${expenseData.scheduled_start_month}`);
+      // console.log(`🔍 Debug - Fecha parseada: ${startDate.toISOString().split('T')[0]}`);
+      // console.log(`🔍 Debug - Mes (0-11): ${startDate.getMonth()}, Mes (1-12): ${startDate.getMonth() + 1}`);
+
+      let endDate = null;
+      if (expenseData.scheduled_months && expenseData.scheduled_months > 0) {
+        endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + expenseData.scheduled_months);
+      }
+
+      // 4. Crear gastos para cada mes
+      const expensesToCreate = [];
+      const currentDate = new Date();
+      const maxMonths = expenseData.scheduled_months || 24; // 24 meses por defecto para gastos indefinidos
+
+      for (let i = 0; i < maxMonths; i++) {
+        // Calcular la fecha correctamente
+        // CORRECCIÓN FINAL: Usar directamente startYear y startMonth + i
+        const expenseDate = new Date(startYear, startMonth + i, 1);
+        
+        // console.log(`🔍 Debug - Mes ${i + 1}: ${expenseDate.toISOString().split('T')[0]} (${expenseDate.getFullYear()}-${(expenseDate.getMonth() + 1).toString().padStart(2, '0')})`);
+
+        // Si hay fecha de fin y ya la pasamos, parar
+        if (endDate && expenseDate >= endDate) {
+          break;
+        }
+
+        // Solo crear gastos para meses futuros o el mes actual
+        if (expenseDate >= new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)) {
+          const expense = {
+            user_id: expenseData.user_id,
+            description: expenseData.description,
+            amount: expenseData.amount,
+            card_id: expenseData.card_id,
+            category_id: expenseData.category_id,
+            subcategory_id: expenseData.subcategory_id || null,
+            purchase_date: expenseDate.toISOString().split('T')[0],
+            payment_status_id: paymentStatusId,
+            installments_count: 1,
+            is_scheduled: true,
+            scheduled_start_month: expenseData.scheduled_start_month,
+            scheduled_months: expenseData.scheduled_months,
+            scheduled_end_month: endDate ? endDate.toISOString().split('T')[0] : null,
+            is_active: true
+          };
+
+          expensesToCreate.push(expense);
+        }
+      }
+
+      if (expensesToCreate.length === 0) {
+        throw new Error('No se pueden crear gastos programados para fechas pasadas');
+      }
+
+      // 5. Insertar todos los gastos
+      const { data, error } = await supabase
+        .from('expenses')
+        .insert(expensesToCreate)
+        .select(`
+          *,
+          available_cards(name, type),
+          categories(name, color),
+          subcategories(name, color),
+          payment_status(code, label)
+        `);
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data,
+        message: `Se crearon ${data.length} gastos programados`
+      };
+
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Cancelar gasto programado (marcar como inactivo)
+  static async cancelScheduledExpense(userId, scheduledExpenseId) {
+    try {
+      // Obtener el gasto programado original
+      const { data: originalExpense, error: fetchError } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('id', scheduledExpenseId)
+        .eq('user_id', userId)
+        .eq('is_scheduled', true)
+        .single();
+
+      if (fetchError) {
+        throw new Error('Gasto programado no encontrado');
+      }
+
+      // Marcar como inactivo todos los gastos programados futuros de esta serie
+      const currentDate = new Date();
+      const currentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+
+      const { error: updateError } = await supabase
+        .from('expenses')
+        .update({ is_active: false })
+        .eq('user_id', userId)
+        .eq('is_scheduled', true)
+        .eq('scheduled_start_month', originalExpense.scheduled_start_month)
+        .eq('description', originalExpense.description)
+        .eq('amount', originalExpense.amount)
+        .eq('card_id', originalExpense.card_id)
+        .gte('purchase_date', currentMonth.toISOString().split('T')[0]);
+
+      if (updateError) throw updateError;
+
+      return {
+        success: true,
+        message: 'Gasto programado cancelado exitosamente'
+      };
+
+    } catch (error) {
+      throw error;
+    }
+  }
+
+
+  // Obtener gastos programados activos del usuario
+  static async getScheduledExpenses(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('expenses')
+        .select(`
+          *,
+          available_cards(name, type),
+          categories(name, color),
+          subcategories(name, color),
+          payment_status(code, label)
+        `)
+        .eq('user_id', userId)
+        .eq('is_scheduled', true)
+        .eq('is_active', true)
+        .order('scheduled_start_month', { ascending: false });
+
+      if (error) throw error;
+
+      // Agrupar por serie de gastos programados
+      const groupedExpenses = {};
+      data.forEach(expense => {
+        const key = `${expense.scheduled_start_month}-${expense.description}-${expense.amount}-${expense.card_id}`;
+        if (!groupedExpenses[key]) {
+          groupedExpenses[key] = {
+            id: expense.id,
+            description: expense.description,
+            amount: expense.amount,
+            card_id: expense.card_id,
+            category_id: expense.category_id,
+            subcategory_id: expense.subcategory_id,
+            scheduled_start_month: expense.scheduled_start_month,
+            scheduled_months: expense.scheduled_months,
+            scheduled_end_month: expense.scheduled_end_month,
+            available_cards: expense.available_cards,
+            categories: expense.categories,
+            subcategories: expense.subcategories,
+            payment_status: expense.payment_status,
+            expenses: []
+          };
+        }
+        groupedExpenses[key].expenses.push(expense);
+      });
+
+      return {
+        success: true,
+        data: Object.values(groupedExpenses)
       };
 
     } catch (error) {
