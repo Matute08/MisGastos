@@ -34,13 +34,18 @@
           </label>
           <input
             id="amount"
-            v-model.number="form.amount"
-            type="number"
-            step="0.01"
-            min="0"
+            v-model="form.amount"
+            type="text"
+            inputmode="decimal"
+            pattern="[0-9]*[.,]?[0-9]*"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
             required
             class="input-field mt-1"
             placeholder="0.00"
+            @input="onAmountInput"
           />
         </div>
 
@@ -107,7 +112,29 @@
           </select>
         </div>
 
-        <div>
+        <div v-if="expense && expense.is_scheduled">
+          <label for="payment_status_id" class="block text-sm font-medium text-gray-700">
+            Estado de pago
+          </label>
+          <select
+            id="payment_status_id"
+            v-model="form.payment_status_id"
+            class="input-field mt-1"
+          >
+            <option
+              v-for="status in paymentStatuses"
+              :key="status.id"
+              :value="status.id"
+            >
+              {{ status.label }}
+            </option>
+          </select>
+          <p class="mt-1 text-xs text-gray-500">
+            Solo se actualizará el estado de este gasto del mes seleccionado
+          </p>
+        </div>
+
+        <div v-if="!expense || !expense.is_scheduled">
           <label for="purchase_date" class="block text-sm font-medium text-gray-700">
             Fecha de compra
           </label>
@@ -120,7 +147,7 @@
           />
         </div>
 
-        <div v-if="selectedCard && selectedCard.type === 'Crédito'">
+        <div v-if="(!expense || !expense.is_scheduled) && selectedCard && selectedCard.type === 'Crédito'">
           <label class="block text-sm font-medium text-gray-700 mb-2">
             Tipo de pago
           </label>
@@ -146,7 +173,7 @@
           </div>
         </div>
 
-        <div v-if="form.payment_type === 'installments'">
+        <div v-if="(!expense || !expense.is_scheduled) && form.payment_type === 'installments'">
           <label for="installments_count" class="block text-sm font-medium text-gray-700">
             Número de cuotas
           </label>
@@ -165,7 +192,7 @@
           </p>
         </div>
 
-        <div v-if="selectedCard && selectedCard.type === 'Crédito' && form.payment_type === 'single'">
+        <div v-if="(!expense || !expense.is_scheduled) && selectedCard && selectedCard.type === 'Crédito' && form.payment_type === 'single'">
           <label for="single_installment_date" class="block text-sm font-medium text-gray-700">
             Fecha de la cuota <span class="text-red-500">*</span>
           </label>
@@ -181,7 +208,7 @@
           </p>
         </div>
 
-        <div v-if="form.payment_type === 'installments'">
+        <div v-if="(!expense || !expense.is_scheduled) && form.payment_type === 'installments'">
           <label for="first_installment_date" class="block text-sm font-medium text-gray-700">
             Fecha de la primera cuota <span class="text-red-500">*</span>
           </label>
@@ -197,7 +224,7 @@
           </p>
         </div>
 
-        <div v-if="form.payment_type === 'installments' && selectedCard" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div v-if="(!expense || !expense.is_scheduled) && form.payment_type === 'installments' && selectedCard" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h4 class="text-sm font-medium text-blue-900 mb-2">Información de cuotas</h4>
           <div class="grid grid-cols-2 gap-4 text-sm">
             <div>
@@ -239,10 +266,10 @@
           <button
             type="submit"
             :disabled="loading"
-            class="btn-primary"
+            class="btn-primary inline-flex items-center justify-center min-w-[120px]"
           >
             <div v-if="loading" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-            {{ loading ? 'Guardando...' : (expense ? 'Actualizar' : 'Crear') }}
+            <span>{{ loading ? 'Guardando...' : (expense ? 'Actualizar' : 'Crear') }}</span>
           </button>
         </div>
       </form>
@@ -255,6 +282,7 @@ import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useUserCardsStore } from '@/stores/userCards'
 import { useCategoriesStore } from '@/stores/categories'
 import { useSubcategoriesStore } from '@/stores/subcategories'
+import { useExpensesStore } from '@/stores/expenses'
 import { X, AlertCircle } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -269,10 +297,33 @@ const emit = defineEmits(['close', 'save'])
 const userCardsStore = useUserCardsStore()
 const categoriesStore = useCategoriesStore()
 const subcategoriesStore = useSubcategoriesStore()
+const expensesStore = useExpensesStore()
+
+const paymentStatuses = computed(() => expensesStore.paymentStatuses || [])
+
+const sanitizeAmount = (rawValue) => {
+  const value = String(rawValue ?? '')
+    .replace(/,/g, '.')
+    .replace(/[^\d.]/g, '')
+
+  const [intPart, ...rest] = value.split('.')
+  const decimals = rest.join('')
+  if (!rest.length) return intPart
+  const safeInt = intPart === '' ? '0' : intPart
+  return `${safeInt}.${decimals.slice(0, 2)}`
+}
+
+const onAmountInput = (event) => {
+  const input = event?.target
+  if (!input) return
+  const next = sanitizeAmount(input.value)
+  if (next !== input.value) input.value = next
+  form.value.amount = next
+}
 
 const form = ref({
   description: '',
-  amount: null,
+  amount: '',
   card_id: '',
   category_id: '',
   subcategory_id: '',
@@ -290,7 +341,7 @@ const singleInstallmentDate = ref('')
 const resetForm = () => {
   form.value = {
     description: '',
-    amount: null,
+    amount: '',
     card_id: '',
     category_id: '',
     subcategory_id: '',
@@ -311,28 +362,51 @@ const selectedCard = computed(() => {
 
 watch(selectedCard, (card) => {
   if (!card) return;
-  if (card.type === 'Débito' || card.type === 'Transferencia') {
-    form.value.payment_type = 'single';
-    form.value.payment_status_id = 2;
-    firstInstallmentDateManual.value = '';
-    singleInstallmentDate.value = '';
-  } else if (card.type === 'Crédito') {
-    form.value.payment_status_id = 1;
+  // Solo actualizar payment_status_id si no estamos editando un gasto existente
+  // para evitar sobrescribir el estado actual del gasto
+  if (!props.expense) {
+    if (card.type === 'Débito' || card.type === 'Transferencia') {
+      form.value.payment_type = 'single';
+      form.value.payment_status_id = 2;
+      firstInstallmentDateManual.value = '';
+      singleInstallmentDate.value = '';
+    } else if (card.type === 'Crédito') {
+      form.value.payment_status_id = 1;
+    }
+  } else {
+    // Si estamos editando, solo actualizar payment_type si es necesario
+    if (card.type === 'Débito' || card.type === 'Transferencia') {
+      form.value.payment_type = 'single';
+      firstInstallmentDateManual.value = '';
+      singleInstallmentDate.value = '';
+    }
   }
 });
 
-watch(() => props.expense, (newExpense) => {
+watch(() => props.expense, async (newExpense) => {
   if (newExpense) {
+    // Buscar la tarjeta del usuario que corresponde al card_id del gasto
+    // El card_id del gasto es el available_card_id, necesitamos encontrar el user_card.id
+    let selectedCardId = newExpense.card_id
+    if (newExpense.card_id) {
+      const userCard = userCardsStore.cards.find(card => 
+        card.available_card_id === newExpense.card_id
+      )
+      if (userCard) {
+        selectedCardId = userCard.id
+      }
+    }
+    
     form.value = {
       description: newExpense.description,
-      amount: newExpense.amount,
-      card_id: newExpense.card_id,
+      amount: String(newExpense.amount ?? ''),
+      card_id: selectedCardId,
       category_id: newExpense.category_id,
       subcategory_id: newExpense.subcategory_id || '',
       purchase_date: newExpense.purchase_date,
       payment_type: newExpense.installments_count > 1 ? 'installments' : 'single',
       installments_count: newExpense.installments_count || 1,
-      payment_status_id: newExpense.payment_status_id
+      payment_status_id: newExpense.payment_status_id || 1
     }
     
     if (newExpense.first_installment_date) {
@@ -350,8 +424,9 @@ watch(() => props.expense, (newExpense) => {
 }, { immediate: true })
 
 const installmentAmount = computed(() => {
-  if (form.value.amount && form.value.installments_count > 1) {
-    return form.value.amount / form.value.installments_count
+  const amount = parseFloat(form.value.amount)
+  if (Number.isFinite(amount) && form.value.installments_count > 1) {
+    return amount / form.value.installments_count
   }
   return 0
 })
@@ -418,22 +493,28 @@ const getInstallmentDates = () => {
 }
 
 const handleSubmit = async () => {
-  if (form.value.payment_type === 'installments' && form.value.installments_count < 2) {
-    error.value = 'El número de cuotas debe ser mayor a 1'
-    return
-  }
-  if (form.value.payment_type === 'installments' && form.value.installments_count > 24) {
-    error.value = 'El número de cuotas no puede ser mayor a 24'
-    return
-  }
-  if (form.value.payment_type === 'installments' && !firstInstallmentDateManual.value) {
-    error.value = 'La fecha de la primera cuota es obligatoria para cuotas'
-    return
-  }
+  // Si estamos editando un gasto programado individual, solo validar campos básicos
+  const isScheduledExpense = props.expense && props.expense.is_scheduled;
   
-  if (selectedCard.value && selectedCard.value.type === 'Crédito' && form.value.payment_type === 'single' && !singleInstallmentDate.value) {
-    error.value = 'La fecha de la cuota es obligatoria para tarjetas de crédito'
-    return
+  if (!isScheduledExpense) {
+    // Validaciones solo para gastos normales (no programados)
+    if (form.value.payment_type === 'installments' && form.value.installments_count < 2) {
+      error.value = 'El número de cuotas debe ser mayor a 1'
+      return
+    }
+    if (form.value.payment_type === 'installments' && form.value.installments_count > 24) {
+      error.value = 'El número de cuotas no puede ser mayor a 24'
+      return
+    }
+    if (form.value.payment_type === 'installments' && !firstInstallmentDateManual.value) {
+      error.value = 'La fecha de la primera cuota es obligatoria para cuotas'
+      return
+    }
+    
+    if (selectedCard.value && selectedCard.value.type === 'Crédito' && form.value.payment_type === 'single' && !singleInstallmentDate.value) {
+      error.value = 'La fecha de la cuota es obligatoria para tarjetas de crédito'
+      return
+    }
   }
   
   const formatDateForAPI = (dateString) => {
@@ -443,7 +524,8 @@ const handleSubmit = async () => {
   }
   
   let firstInstallmentDate = null;
-  if (selectedCard.value && selectedCard.value.type === 'Crédito') {
+  // Solo procesar fechas de cuotas si NO es un gasto programado individual
+  if (!isScheduledExpense && selectedCard.value && selectedCard.value.type === 'Crédito') {
     if (form.value.payment_type === 'single') {
       firstInstallmentDate = formatDateForAPI(singleInstallmentDate.value);
     } else if (form.value.payment_type === 'installments') {
@@ -453,6 +535,9 @@ const handleSubmit = async () => {
       }
       firstInstallmentDate = formatDateForAPI(firstInstallmentDateManual.value);
     }
+  } else if (isScheduledExpense && props.expense && props.expense.first_installment_date) {
+    // Si es un gasto programado, mantener la fecha de cuota original si existe
+    firstInstallmentDate = formatDateForAPI(props.expense.first_installment_date);
   }
   
   // Obtener el card_id real de la tarjeta seleccionada
@@ -461,13 +546,23 @@ const handleSubmit = async () => {
 
   const expenseData = {
     description: form.value.description,
-    amount: form.value.amount,
+    amount: parseFloat(form.value.amount),
     card_id: realCardId,
     category_id: form.value.category_id,
     subcategory_id: form.value.subcategory_id || null,
-    purchase_date: formatDateForAPI(form.value.purchase_date),
-    installments_count: form.value.payment_type === 'installments' ? form.value.installments_count : 1,
     payment_status_id: form.value.payment_status_id
+  }
+  
+  // Solo incluir purchase_date y installments_count si NO es un gasto programado
+  if (!isScheduledExpense) {
+    expenseData.purchase_date = formatDateForAPI(form.value.purchase_date);
+    expenseData.installments_count = form.value.payment_type === 'installments' ? form.value.installments_count : 1;
+  } else {
+    // Para gastos programados, mantener los valores originales
+    if (props.expense) {
+      expenseData.purchase_date = formatDateForAPI(props.expense.purchase_date);
+      expenseData.installments_count = props.expense.installments_count || 1;
+    }
   }
   
   if (firstInstallmentDate) {
@@ -520,7 +615,8 @@ onMounted(async () => {
   await Promise.all([
     userCardsStore.loadUserCards(),
     categoriesStore.loadCategories(),
-    subcategoriesStore.loadSubcategories()
+    subcategoriesStore.loadSubcategories(),
+    expensesStore.loadPaymentStatuses()
   ])
 })
 

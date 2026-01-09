@@ -150,6 +150,40 @@ export class AuthService {
     }
   }
 
+  // Función para traducir errores de Supabase al español
+  static translateAuthError(errorMessage) {
+    if (!errorMessage) return 'Error al iniciar sesión';
+    
+    const errorLower = errorMessage.toLowerCase();
+    
+    // Errores comunes de Supabase Auth
+    if (errorLower.includes('invalid login credentials') || 
+        errorLower.includes('invalid credentials') ||
+        errorLower.includes('email not confirmed') ||
+        errorLower.includes('incorrect email or password')) {
+      return 'Usuario o contraseña incorrectos. Por favor, verifica tus datos e intenta nuevamente.';
+    }
+    
+    if (errorLower.includes('user not found')) {
+      return 'No se encontró una cuenta con este correo electrónico.';
+    }
+    
+    if (errorLower.includes('invalid password')) {
+      return 'La contraseña ingresada es incorrecta.';
+    }
+    
+    if (errorLower.includes('email rate limit')) {
+      return 'Demasiados intentos. Por favor, espera unos minutos e intenta nuevamente.';
+    }
+    
+    if (errorLower.includes('network') || errorLower.includes('fetch')) {
+      return 'Error de conexión. Por favor, verifica tu internet e intenta nuevamente.';
+    }
+    
+    // Si el mensaje ya está en español, devolverlo tal cual
+    return errorMessage;
+  }
+
   // Iniciar sesión
   static async login(email, password) {
     try {
@@ -160,7 +194,8 @@ export class AuthService {
       });
 
       if (authError) {
-        throw new Error(authError.message);
+        const translatedError = this.translateAuthError(authError.message);
+        throw new Error(translatedError);
       }
 
       // 2. Obtener perfil del usuario

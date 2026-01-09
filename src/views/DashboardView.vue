@@ -21,46 +21,72 @@
     </div>
     <!-- Resumen de tarjetas de crédito -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <!-- Tarjetas de crédito -->
-      <div 
-        v-for="card in displayedCreditCards" 
-        :key="card.id" 
-        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200"
-      >
-        <div class="flex items-center justify-between mb-3">
-          <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-            <CreditCard class="h-5 w-5 text-blue-600" />
-          </div>
-          <div class="text-right">
-            <p class="text-xs text-gray-500">{{ isAnnual ? 'Año' : 'Mes' }}</p>
-          </div>
-        </div>
-        <div>
-          <h3 class="text-sm font-medium text-gray-900 mb-1">{{ card.name }}</h3>
-          <p class="text-lg font-bold text-gray-900">{{ formatCurrency(card.amount) }}</p>
-          <p class="text-xs text-gray-500 mt-1">{{ card.bank }}</p>
-        </div>
-      </div>
+      <!-- Skeleton mientras carga -->
+      <template v-if="expensesStore.loading && (!expensesStore.creditCardsSummary || expensesStore.creditCardsSummary.length === 0)">
+        <SkeletonCard v-for="i in 4" :key="`skeleton-card-${i}`" />
+      </template>
       
-      <!-- Botón para agregar más tarjetas si hay más de 4 -->
-      <div 
-        v-if="(expensesStore.creditCardsSummary || []).length > 4" 
-        class="bg-white rounded-lg shadow-sm border-2 border-dashed border-gray-300 p-4 flex items-center justify-center hover:border-blue-400 transition-colors duration-200 cursor-pointer"
-        @click="showAllCards = !showAllCards"
-      >
-        <div class="text-center">
-          <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-            <Plus class="h-5 w-5 text-gray-400" />
+      <!-- Tarjetas de crédito -->
+      <template v-else>
+        <div 
+          v-for="card in displayedCreditCards" 
+          :key="card.id" 
+          class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200"
+        >
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <CreditCard class="h-5 w-5 text-blue-600" />
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-gray-500">{{ isAnnual ? 'Año' : 'Mes' }}</p>
+            </div>
           </div>
-          <p class="text-xs text-gray-500">{{ showAllCards ? 'Ver menos' : `Ver ${(expensesStore.creditCardsSummary || []).length - 4} más` }}</p>
+          <div>
+            <h3 class="text-sm font-medium text-gray-900 mb-1">{{ card.name }}</h3>
+            <p class="text-lg font-bold text-gray-900">{{ formatCurrency(card.amount) }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ card.bank }}</p>
+          </div>
         </div>
-      </div>
+        
+        <!-- Botón para agregar más tarjetas si hay más de 4 -->
+        <div 
+          v-if="displayedCreditCards.length > 4" 
+          class="bg-white rounded-lg shadow-sm border-2 border-dashed border-gray-300 p-4 flex items-center justify-center hover:border-blue-400 transition-colors duration-200 cursor-pointer"
+          @click="showAllCards = !showAllCards"
+        >
+          <div class="text-center">
+            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+              <Plus class="h-5 w-5 text-gray-400" />
+            </div>
+            <p class="text-xs text-gray-500">{{ showAllCards ? 'Ver menos' : `Ver ${displayedCreditCards.length - 4} más` }}</p>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- Resumen de cuentas detallado -->
     <div class="bg-white rounded-lg shadow p-4 mb-6">
       <h3 class="text-lg font-semibold text-gray-900 mb-3">Resumen de Cuentas</h3>
-      <div class="space-y-3">
+      <!-- Skeleton mientras carga -->
+      <div v-if="expensesStore.loading && (!expensesStore.expensesSummaryByType || expensesStore.expensesSummaryByType.length === 0)" class="space-y-3 animate-pulse">
+        <div v-for="i in 3" :key="`skeleton-summary-${i}`" class="flex items-center justify-between py-2 border-b border-gray-100">
+          <div class="flex items-center space-x-3">
+            <div class="w-6 h-6 bg-gray-200 rounded-md"></div>
+            <div class="w-24 h-4 bg-gray-200 rounded"></div>
+          </div>
+          <div class="w-32 h-6 bg-gray-200 rounded"></div>
+        </div>
+        <div class="flex items-center justify-between py-2 border-t-2 border-gray-200 pt-3">
+          <div class="flex items-center space-x-3">
+            <div class="w-6 h-6 bg-gray-200 rounded-md"></div>
+            <div class="w-20 h-4 bg-gray-200 rounded"></div>
+          </div>
+          <div class="w-40 h-6 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+      
+      <!-- Contenido real -->
+      <div v-else class="space-y-3">
         <!-- Filas por tipo de tarjeta -->
         <div v-for="summary in expensesStore.expensesSummaryByType" :key="summary.type" class="flex items-center justify-between py-2 border-b border-gray-100">
           <div class="flex items-center">
@@ -87,62 +113,74 @@
 
          <!-- Gráficos Desktop -->
      <div class="hidden lg:grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-      <!-- Gráfico por categorías -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">Gastos por Categoría</h3>
-          <p class="card-subtitle">Distribución de gastos por categoría</p>
-        </div>
-        <div class="h-64">
-          <Pie
-            v-if="chartData.categories.labels.length > 0"
-            :data="chartData.categories"
-            :options="chartOptions"
-          />
-          <div v-else class="h-full flex items-center justify-center text-gray-500">
-            No hay datos para mostrar
+      <!-- Skeleton mientras carga -->
+      <template v-if="expensesStore.loading">
+        <SkeletonChart v-for="i in (isAnnual ? 3 : 2)" :key="`skeleton-chart-${i}`" />
+      </template>
+      
+      <!-- Gráficos reales -->
+      <template v-else>
+        <!-- Gráfico por categorías -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Gastos por Categoría</h3>
+            <p class="card-subtitle">Distribución de gastos por categoría</p>
+          </div>
+          <div class="h-64">
+            <Pie
+              v-if="chartData.categories.labels.length > 0"
+              :data="chartData.categories"
+              :options="chartOptions"
+            />
+            <div v-else class="h-full flex items-center justify-center text-gray-500">
+              No hay datos para mostrar
+            </div>
           </div>
         </div>
-      </div>
-              <!-- Gráfico por cuentas -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">Gastos por Tarjeta</h3>
-          <p class="card-subtitle">Distribución de gastos por tarjeta</p>
-        </div>
-        <div class="h-64">
-          <Bar
-            v-if="chartData.cards.labels.length > 0"
-            :data="chartData.cards"
-            :options="barChartOptions"
-          />
-          <div v-else class="h-full flex items-center justify-center text-gray-500">
-            No hay datos para mostrar
+        <!-- Gráfico por cuentas -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Gastos por Tarjeta</h3>
+            <p class="card-subtitle">Distribución de gastos por tarjeta</p>
+          </div>
+          <div class="h-64">
+            <Bar
+              v-if="chartData.cards.labels.length > 0"
+              :data="chartData.cards"
+              :options="barChartOptions"
+            />
+            <div v-else class="h-full flex items-center justify-center text-gray-500">
+              No hay datos para mostrar
+            </div>
           </div>
         </div>
-      </div>
-      <!-- Gráfico de evolución mensual solo si es anual -->
-      <div v-if="isAnnual" class="card">
-        <div class="card-header">
-          <h3 class="card-title">Evolución de Gastos Mensuales</h3>
-          <p class="card-subtitle">Gastos totales por mes</p>
-        </div>
-        <div class="h-64">
-          <Bar
-            v-if="evolutionChartData.labels.length > 0"
-            :data="evolutionChartData"
-            :options="evolutionChartOptions"
-          />
-          <div v-else class="h-full flex items-center justify-center text-gray-500">
-            No hay datos para mostrar
+        <!-- Gráfico de evolución mensual solo si es anual -->
+        <div v-if="isAnnual" class="card">
+          <div class="card-header">
+            <h3 class="card-title">Evolución de Gastos Mensuales</h3>
+            <p class="card-subtitle">Gastos totales por mes</p>
+          </div>
+          <div class="h-64">
+            <Bar
+              v-if="evolutionChartData.labels.length > 0"
+              :data="evolutionChartData"
+              :options="evolutionChartOptions"
+            />
+            <div v-else class="h-full flex items-center justify-center text-gray-500">
+              No hay datos para mostrar
+            </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
 
     <!-- Carrusel de gráficos para móviles y tablet -->
     <div class="block lg:hidden">
-      <div class="relative">
+      <!-- Skeleton mientras carga -->
+      <SkeletonChart v-if="expensesStore.loading" />
+      
+      <!-- Contenido real -->
+      <div v-else class="relative">
         <!-- Contenedor del carrusel -->
         <div class="overflow-hidden">
           <div 
@@ -252,12 +290,16 @@
       </div>
     </div>
     <!-- Próximos vencimientos Desktop -->
-    <div class="hidden lg:block card">
+    <div v-if="!expensesStore.loading && upcomingInstallmentsList.length > 0" class="hidden lg:block card">
       <div class="card-header">
         <h3 class="card-title">Próximos Vencimientos</h3>
         <p class="card-subtitle">Pagos próximos a vencer</p>
       </div>
-      <div class="overflow-x-auto">
+      <!-- Skeleton mientras carga -->
+      <SkeletonTable v-if="expensesStore.loading" :rows="5" :columns="6" />
+      
+      <!-- Contenido real -->
+      <div v-else class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
@@ -313,8 +355,29 @@
     </div>
 
     <!-- Próximos vencimientos Móvil -->
-    <div class="block lg:hidden">
-      <div class="bg-white rounded-lg shadow">
+    <div v-if="!expensesStore.loading && upcomingInstallmentsList.length > 0" class="block lg:hidden">
+      <!-- Skeleton mientras carga -->
+      <div v-if="expensesStore.loading" class="bg-white rounded-lg shadow animate-pulse">
+        <div class="px-4 py-3 border-b border-gray-200">
+          <div class="w-48 h-6 bg-gray-200 rounded mb-2"></div>
+          <div class="w-32 h-4 bg-gray-200 rounded"></div>
+        </div>
+        <div class="divide-y divide-gray-100">
+          <div v-for="i in 3" :key="i" class="p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="w-24 h-4 bg-gray-200 rounded"></div>
+              <div class="w-20 h-4 bg-gray-200 rounded"></div>
+            </div>
+            <div class="space-y-2">
+              <div class="w-3/4 h-5 bg-gray-200 rounded"></div>
+              <div class="w-1/2 h-4 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Contenido real -->
+      <div v-else class="bg-white rounded-lg shadow">
         <div class="px-4 py-3 border-b border-gray-200">
           <h3 class="text-lg font-semibold text-gray-900">Próximos Vencimientos</h3>
           <p class="text-sm text-gray-600">Pagos próximos a vencer</p>
@@ -414,6 +477,9 @@ import {
 } from 'lucide-vue-next'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
+import SkeletonCard from '@/components/SkeletonCard.vue'
+import SkeletonChart from '@/components/SkeletonChart.vue'
+import SkeletonTable from '@/components/SkeletonTable.vue'
 
 // Registrar componentes de Chart.js
 ChartJS.register(
@@ -441,10 +507,12 @@ const touchEndX = ref(0)
 // Tarjetas de crédito a mostrar
 const displayedCreditCards = computed(() => {
   const cards = expensesStore.creditCardsSummary || []
+  // Filtrar tarjetas con monto mayor a 0
+  const filteredCards = cards.filter(card => card.amount > 0)
   if (showAllCards.value) {
-    return cards
+    return filteredCards
   }
-  return cards.slice(0, 4)
+  return filteredCards.slice(0, 4)
 })
 
 // Gráficos disponibles para el carrusel
@@ -548,34 +616,13 @@ function isDirectCashOrTransfer(expense) {
 }
 
 
+// Total calculado como suma de los detalles por tipo para garantizar consistencia
 const totalExpensesView = computed(() => {
-  const now = new Date()
-  const currentMonth = now.getMonth() + 1
-  const currentYear = now.getFullYear()
-  
-  if (isAnnual.value) {
-    const annualExpenses = expensesStore.expenses.filter(expense => {
-      const date = parseISO(expense.purchase_date)
-      return date.getFullYear() === currentYear
-    })
-    const annualTotal = annualExpenses.reduce((sum, exp) => sum + exp.amount, 0)
-    
-    return annualTotal
-  } else {
-    const monthlyExpenses = expensesStore.expenses.filter(expense => {
-      const date = parseISO(expense.purchase_date)
-      return date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear
-    })
-    const monthlyTotal = monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0)
-    
-    const monthlyInstallments = expensesStore.upcomingInstallments.filter(inst => {
-      const due = parseISO(inst.due_date)
-      return due.getMonth() + 1 === currentMonth && due.getFullYear() === currentYear
-    })
-    const monthlyInstallmentsTotal = monthlyInstallments.reduce((sum, inst) => sum + inst.amount, 0)
-    
-    return monthlyTotal + monthlyInstallmentsTotal
+  // El total siempre debe ser la suma de los subtotales por tipo
+  if (expensesStore.expensesSummaryByType && expensesStore.expensesSummaryByType.length > 0) {
+    return expensesStore.expensesSummaryByType.reduce((sum, item) => sum + (item.total || 0), 0)
   }
+  return 0
 })
 
 

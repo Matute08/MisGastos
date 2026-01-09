@@ -209,6 +209,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
       });
     }
 
+    // IMPORTANTE: Aunque el gasto sea parte de un gasto programado (is_scheduled = true),
+    // cuando se actualiza un gasto individual, solo debemos actualizar ese gasto específico,
+    // NO todos los gastos programados relacionados.
+    // Para actualizar todos los gastos programados de una serie, se debe usar PUT /api/expenses/scheduled/:id
     const result = await ExpensesService.updateExpense(id, updates);
 
     res.json(result);
@@ -608,7 +612,10 @@ router.get('/credit-cards-summary', authenticateToken, async (req, res) => {
 // GET /api/expenses/summary-by-type - Obtener resumen de gastos por tipo de tarjeta
 router.get('/summary-by-type', authenticateToken, async (req, res) => {
   try {
-    const isAnnual = req.query.period === 'annual';
+    const period = req.query.period;
+    const isAnnual = period === 'annual';
+    
+    console.log(`📊 Request recibido - period: "${period}", isAnnual: ${isAnnual}`);
     
     const result = await ExpensesService.getExpensesSummaryByType(req.user.id, isAnnual);
 
@@ -653,6 +660,21 @@ router.post('/scheduled', authenticateToken, validateScheduledExpense, async (re
     res.status(201).json(result);
   } catch (error) {
     console.error('Error creando gasto programado:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// PUT /api/expenses/scheduled/:id - Actualizar gasto programado
+router.put('/scheduled/:id', authenticateToken, validateScheduledExpense, async (req, res) => {
+  try {
+    const result = await ExpensesService.updateScheduledExpense(req.user.id, req.params.id, req.body);
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error actualizando gasto programado:', error);
     res.status(500).json({
       success: false,
       error: error.message

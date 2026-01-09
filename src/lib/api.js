@@ -498,6 +498,11 @@ export const expenses = {
     return response;
   },
 
+  async updateScheduledExpense(scheduledExpenseId, expenseData) {
+    const response = await apiClient.put(`/expenses/scheduled/${scheduledExpenseId}`, expenseData);
+    return response;
+  },
+
   async cancelScheduledExpense(scheduledExpenseId) {
     const response = await apiClient.delete(`/expenses/scheduled/${scheduledExpenseId}`);
     return response;

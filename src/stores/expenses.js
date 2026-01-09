@@ -537,9 +537,9 @@ export const useExpensesStore = defineStore('expenses', () => {
     try {
       loading.value = true
       error.value = null
-      
+
       const response = await expensesApi.createScheduledExpense(expenseData)
-      
+
       if (response.success) {
         // Recargar gastos programados
         await loadScheduledExpenses()
@@ -550,6 +550,30 @@ export const useExpensesStore = defineStore('expenses', () => {
     } catch (err) {
       error.value = err.message
       console.error('Error creando gasto programado:', err)
+      return { success: false, error: err.message }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Actualizar gasto programado
+  const updateScheduledExpense = async (scheduledExpenseId, expenseData) => {
+    try {
+      loading.value = true
+      error.value = null
+
+      const response = await expensesApi.updateScheduledExpense(scheduledExpenseId, expenseData)
+
+      if (response.success) {
+        // Recargar gastos programados
+        await loadScheduledExpenses()
+        return { success: true, data: response.data }
+      } else {
+        throw new Error(response.error || 'Error al actualizar gasto programado')
+      }
+    } catch (err) {
+      error.value = err.message
+      console.error('Error actualizando gasto programado:', err)
       return { success: false, error: err.message }
     } finally {
       loading.value = false
@@ -623,6 +647,7 @@ export const useExpensesStore = defineStore('expenses', () => {
     scheduledExpenses,
     loadScheduledExpenses,
     createScheduledExpense,
+    updateScheduledExpense,
     cancelScheduledExpense,
   }
 }) 

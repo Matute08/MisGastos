@@ -499,7 +499,7 @@ export class ExpensesService {
       const totalDebitTransfer = directExpenses
         ?.filter(expense => {
           // Incluir gastos de débito, transferencia o sin tarjeta (efectivo)
-          const cardType = expense.cards?.type;
+          const cardType = expense.available_cards?.type;
           return !cardType || cardType === 'Débito' || cardType === 'Transferencia';
         })
         ?.reduce((sum, expense) => sum + expense.amount, 0) || 0;
@@ -863,14 +863,31 @@ export class ExpensesService {
   // Actualizar gasto existente
   static async updateExpense(id, updates) {
     try {
+      // IMPORTANTE: Cuando se actualiza un gasto individual (incluso si es parte de un gasto programado),
+      // solo debemos actualizar ese gasto específico, NO todos los gastos programados relacionados.
+      // Para actualizar todos los gastos programados de una serie, se debe usar updateScheduledExpense.
+      
+      // Asegurarse de que solo se actualice el gasto específico por ID
+      // y no otros gastos relacionados, incluso si tienen is_scheduled = true
+      // Usar .eq('id', id) es suficiente para actualizar solo ese gasto específico
       const { data, error } = await supabase
         .from('expenses')
         .update(updates)
-        .eq('id', id)
+        .eq('id', id)  // Solo actualizar el gasto con este ID específico - esto garantiza que solo se actualice UN gasto
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error(`Error actualizando gasto ${id}:`, error);
+        throw error;
+      }
+
+      // Verificar que solo se actualizó un gasto
+      if (!data) {
+        throw new Error('No se encontró el gasto a actualizar');
+      }
+
+      console.log(`✅ Gasto ${id} actualizado correctamente (solo este gasto, no otros relacionados)`);
 
       return {
         success: true,
@@ -878,6 +895,7 @@ export class ExpensesService {
       };
 
     } catch (error) {
+      console.error(`❌ Error actualizando gasto ${id}:`, error);
       throw error;
     }
   }
@@ -996,38 +1014,45 @@ export class ExpensesService {
       let startDate, endDate;
       
       if (isAnnual) {
-        // Año: desde enero hasta el mes actual
+        // Año: desde enero hasta diciembre del año actual (todo el año completo)
         startDate = `${currentYear}-01-01`;
-        const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
-        endDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-${lastDayOfMonth.toString().padStart(2, '0')}`;
+        endDate = `${currentYear + 1}-01-01`; // Primer día del año siguiente (exclusivo)
       } else {
-        // Mes: desde el primer día del mes actual hasta el último día
+        // Mes: desde el primer día del mes actual hasta el primer día del mes siguiente (exclusivo)
         startDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`;
         const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
         const nextMonthYear = currentMonth === 12 ? currentYear + 1 : currentYear;
         endDate = `${nextMonthYear}-${nextMonth.toString().padStart(2, '0')}-01`;
       }
 
-      // Obtener gastos directos agrupados por tipo de tarjeta
+      console.log(`📊 getExpensesSummaryByType - isAnnual: ${isAnnual}, startDate: ${startDate}, endDate: ${endDate}`);
+
+      // Obtener gastos directos
       const { data: directExpenses, error: directError } = await supabase
         .from('expenses')
         .select(`
           amount,
-          available_cards(type)
+          available_cards(name, type)
         `)
         .eq('user_id', userId)
         .eq('installments_count', 1) // Solo gastos directos
         .gte('purchase_date', startDate)
         .lt('purchase_date', endDate);
 
-      if (directError) throw directError;
+      if (directError) {
+        console.error('Error obteniendo gastos directos:', directError);
+        throw directError;
+      }
 
-      // Obtener cuotas agrupadas por tipo de tarjeta
+      console.log(`📊 Gastos directos encontrados: ${directExpenses?.length || 0}`);
+
+      // Obtener cuotas
       const { data: installments, error: installmentsError } = await supabase
         .from('installments')
         .select(`
           amount,
           expenses!inner(
+            user_id,
             available_cards(type)
           )
         `)
@@ -1035,38 +1060,52 @@ export class ExpensesService {
         .gte('due_date', startDate)
         .lt('due_date', endDate);
 
-      if (installmentsError) throw installmentsError;
+      if (installmentsError) {
+        console.error('Error obteniendo cuotas:', installmentsError);
+        throw installmentsError;
+      }
 
-      // Agrupar por tipo de tarjeta
-      const summaryByType = {};
+      console.log(`📊 Cuotas encontradas: ${installments?.length || 0}`);
+
+      // Agrupar gastos directos por tipo
+      const summaryByType = {
+        'Crédito': 0,
+        'Débito': 0,
+        'Transferencia': 0
+      };
 
       // Procesar gastos directos
       (directExpenses || []).forEach(expense => {
-        const cardType = expense.available_cards?.type || 'Sin especificar';
-        if (!summaryByType[cardType]) {
-          summaryByType[cardType] = { direct: 0, installments: 0, total: 0 };
+        const cardType = expense.available_cards?.type;
+        
+        if (cardType === 'Crédito') {
+          summaryByType['Crédito'] += expense.amount;
+        } else if (cardType === 'Débito') {
+          summaryByType['Débito'] += expense.amount;
+        } else {
+          // Transferencia, Efectivo o sin tarjeta (null/undefined)
+          summaryByType['Transferencia'] += expense.amount;
         }
-        summaryByType[cardType].direct += expense.amount;
-        summaryByType[cardType].total += expense.amount;
       });
 
-      // Procesar cuotas
+      // Procesar cuotas (todas son de crédito)
       (installments || []).forEach(installment => {
-        const cardType = installment.expenses?.available_cards?.type || 'Sin especificar';
-        if (!summaryByType[cardType]) {
-          summaryByType[cardType] = { direct: 0, installments: 0, total: 0 };
-        }
-        summaryByType[cardType].installments += installment.amount;
-        summaryByType[cardType].total += installment.amount;
+        summaryByType['Crédito'] += installment.amount;
       });
 
-      // Convertir a array y ordenar por tipo
-      const summaryArray = Object.entries(summaryByType).map(([type, amounts]) => ({
-        type,
-        direct: amounts.direct,
-        installments: amounts.installments,
-        total: amounts.total
-      })).sort((a, b) => a.type.localeCompare(b.type));
+      console.log(`📊 Resumen por tipo:`, summaryByType);
+
+      // Convertir a array
+      const summaryArray = Object.entries(summaryByType)
+        .filter(([type, total]) => total > 0)
+        .map(([type, total]) => ({
+          type,
+          total
+        }))
+        .sort((a, b) => {
+          const order = { 'Crédito': 1, 'Débito': 2, 'Transferencia': 3 };
+          return (order[a.type] || 999) - (order[b.type] || 999);
+        });
 
       return {
         success: true,
@@ -1074,6 +1113,7 @@ export class ExpensesService {
       };
 
     } catch (error) {
+      console.error('Error en getExpensesSummaryByType:', error);
       throw error;
     }
   }
@@ -1118,13 +1158,11 @@ export class ExpensesService {
         let startDate, endDate;
         
         if (isAnnual) {
-          // Año: desde enero hasta el mes actual
+          // Año: desde enero hasta diciembre del año actual (todo el año completo)
           startDate = `${currentYear}-01-01`;
-          // Calcular el último día del mes actual
-          const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
-          endDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-${lastDayOfMonth.toString().padStart(2, '0')}`;
+          endDate = `${currentYear + 1}-01-01`; // Primer día del año siguiente (exclusivo)
         } else {
-          // Mes: desde el primer día del mes actual hasta el último día
+          // Mes: desde el primer día del mes actual hasta el primer día del mes siguiente (exclusivo)
           startDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`;
           const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
           const nextMonthYear = currentMonth === 12 ? currentYear + 1 : currentYear;
@@ -1162,16 +1200,19 @@ export class ExpensesService {
         const installmentsTotal = (installments || []).reduce((sum, installment) => sum + installment.amount, 0);
         const totalAmount = directTotal + installmentsTotal;
 
-        cardsSummary.push({
-          id: card.id,
-          name: card.name,
-          bank: card.bank,
-          type: card.type,
-          amount: totalAmount,
-          directExpenses: directTotal,
-          installments: installmentsTotal,
-          period: isAnnual ? 'annual' : 'monthly'
-        });
+        // Solo incluir tarjetas con monto mayor a 0
+        if (totalAmount > 0) {
+          cardsSummary.push({
+            id: card.id,
+            name: card.name,
+            bank: card.bank,
+            type: card.type,
+            amount: totalAmount,
+            directExpenses: directTotal,
+            installments: installmentsTotal,
+            period: isAnnual ? 'annual' : 'monthly'
+          });
+        }
       }
 
       // Ordenar por nombre de tarjeta alfabéticamente
@@ -1345,6 +1386,64 @@ export class ExpensesService {
         success: true,
         data: data,
         message: `Se crearon ${data.length} gastos programados`
+      };
+
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Actualizar gasto programado (actualiza los gastos futuros de la serie)
+  static async updateScheduledExpense(userId, scheduledExpenseId, updates) {
+    try {
+      // Obtener el gasto programado original
+      const { data: originalExpense, error: fetchError } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('id', scheduledExpenseId)
+        .eq('user_id', userId)
+        .eq('is_scheduled', true)
+        .single();
+
+      if (fetchError) {
+        throw new Error('Gasto programado no encontrado');
+      }
+
+      // Obtener todos los gastos futuros de esta serie
+      const currentDate = new Date();
+      const currentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+
+      // Preparar los datos de actualización
+      const updateData = {};
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.amount !== undefined) updateData.amount = updates.amount;
+      if (updates.card_id !== undefined) updateData.card_id = updates.card_id;
+      if (updates.category_id !== undefined) updateData.category_id = updates.category_id;
+      if (updates.subcategory_id !== undefined) updateData.subcategory_id = updates.subcategory_id;
+      if (updates.payment_status_id !== undefined) updateData.payment_status_id = updates.payment_status_id;
+      if (updates.scheduled_months !== undefined) updateData.scheduled_months = updates.scheduled_months;
+      if (updates.scheduled_start_month !== undefined) updateData.scheduled_start_month = updates.scheduled_start_month;
+
+      // Actualizar todos los gastos futuros de esta serie
+      const { data: updatedExpenses, error: updateError } = await supabase
+        .from('expenses')
+        .update(updateData)
+        .eq('user_id', userId)
+        .eq('is_scheduled', true)
+        .eq('is_active', true)
+        .eq('scheduled_start_month', originalExpense.scheduled_start_month)
+        .eq('description', originalExpense.description)
+        .eq('amount', originalExpense.amount)
+        .eq('card_id', originalExpense.card_id)
+        .gte('purchase_date', currentMonth.toISOString().split('T')[0])
+        .select();
+
+      if (updateError) throw updateError;
+
+      return {
+        success: true,
+        data: updatedExpenses,
+        message: `Se actualizaron ${updatedExpenses.length} gastos programados`
       };
 
     } catch (error) {

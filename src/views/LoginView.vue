@@ -60,14 +60,25 @@
           <label for="password" class="block text-sm font-medium text-gray-700">
             Contraseña
           </label>
-          <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            required
-            class="input-field mt-1"
-            placeholder="••••••••"
-          />
+          <div class="relative mt-1">
+            <input
+              id="password"
+              v-model="form.password"
+              :type="showPassword ? 'text' : 'password'"
+              required
+              class="input-field pr-10"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              @click="showPassword = !showPassword"
+              class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+              tabindex="-1"
+            >
+              <Eye v-if="!showPassword" class="h-5 w-5" />
+              <EyeOff v-else class="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         <!-- Checkbox Recordar mis datos -->
@@ -131,7 +142,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { CreditCard, AlertCircle } from 'lucide-vue-next'
+import { CreditCard, AlertCircle, Eye, EyeOff } from 'lucide-vue-next'
 import BiometricAuth from '@/components/BiometricAuth.vue'
 
 const router = useRouter()
@@ -144,6 +155,7 @@ const form = ref({
 })
 
 const rememberMe = ref(false)
+const showPassword = ref(false)
 
 // Referencias para autenticación biométrica
 const biometricAuthRef = ref(null)
