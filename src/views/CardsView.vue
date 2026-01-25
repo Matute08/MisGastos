@@ -19,11 +19,9 @@
     </div>
 
     <!-- Loading -->
-    <SkeletonGrid
-      v-if="userCardsStore.loading"
-      :count="6"
-      columns="grid-cols-2 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-    />
+    <div v-if="userCardsStore.loading" class="flex justify-center py-6 sm:py-8">
+      <div class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary-600"></div>
+    </div>
 
     <!-- Lista de cuentas vinculadas -->
     <div v-else class="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
@@ -404,7 +402,6 @@ import {
   X,
   AlertCircle
 } from 'lucide-vue-next'
-import SkeletonGrid from '@/components/SkeletonGrid.vue'
 
 const userCardsStore = useUserCardsStore()
 const availableCardsStore = useAvailableCardsStore()

@@ -54,11 +54,14 @@
         </div>
 
         <!-- Loading -->
-        <SkeletonGrid
+        <div
             v-if="categoriesStore.loading"
-            :count="8"
-            columns="grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-        />
+            class="flex justify-center py-6 sm:py-8"
+        >
+            <div
+                class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary-600"
+            ></div>
+        </div>
 
         <!-- Grid de categorías simplificado -->
         <div
@@ -297,7 +300,6 @@ import { useExpensesStore } from "@/stores/expenses";
 import { useAuthStore } from "@/stores/auth";
 import CategoryModal from "@/components/CategoryModal.vue";
 import SubcategoryModal from "@/components/SubcategoryModal.vue";
-import SkeletonGrid from "@/components/SkeletonGrid.vue";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import {

@@ -1,7 +1,129 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { supabase } from '../config/database.js';
 
 export class AuthService {
+  /**
+   * Generar hash SHA256 de un token (para almacenar de forma segura)
+   * @param {string} token - Token JWT
+   * @returns {string} Hash SHA256 del token
+   */
+  static hashToken(token) {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
+  /**
+   * Obtener fecha de expiración de un token
+   * @param {string} token - Token JWT
+   * @returns {Date} Fecha de expiración
+   */
+  static getTokenExpiration(token) {
+    try {
+      const decoded = jwt.decode(token, { complete: true });
+      if (!decoded || !decoded.payload.exp) {
+        return null;
+      }
+      return new Date(decoded.payload.exp * 1000);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Revocar un token agregándolo a la blacklist
+   * @param {string} token - Token JWT a revocar
+   * @returns {Promise<boolean>} true si se revocó correctamente
+   */
+  static async revokeToken(token) {
+    try {
+      const tokenHash = this.hashToken(token);
+      const expiresAt = this.getTokenExpiration(token);
+
+      if (!expiresAt) {
+        console.error('No se pudo obtener la fecha de expiración del token');
+        return false;
+      }
+
+      // Insertar en la blacklist (ignorar si ya existe)
+      const { error } = await supabase
+        .from('revoked_tokens')
+        .insert({
+          token_hash: tokenHash,
+          expires_at: expiresAt.toISOString()
+        })
+        .select();
+
+      if (error) {
+        // Si el token ya está en la blacklist, no es un error crítico
+        if (error.code !== '23505') { // 23505 = unique violation
+          console.error('Error revocando token:', error);
+          return false;
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error en revokeToken:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Verificar si un token está revocado
+   * @param {string} token - Token JWT a verificar
+   * @returns {Promise<boolean>} true si el token está revocado
+   */
+  static async isTokenRevoked(token) {
+    try {
+      const tokenHash = this.hashToken(token);
+
+      const { data, error } = await supabase
+        .from('revoked_tokens')
+        .select('id')
+        .eq('token_hash', tokenHash)
+        .single();
+
+      if (error) {
+        // Si no se encuentra, el token NO está revocado
+        if (error.code === 'PGRST116') {
+          return false;
+        }
+        console.error('Error verificando token revocado:', error);
+        return false;
+      }
+
+      // Si se encuentra, el token ESTÁ revocado
+      return !!data;
+    } catch (error) {
+      console.error('Error en isTokenRevoked:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Limpiar tokens expirados de la blacklist
+   * @returns {Promise<number>} Número de tokens eliminados
+   */
+  static async cleanupExpiredTokens() {
+    try {
+      const { data, error } = await supabase
+        .from('revoked_tokens')
+        .delete()
+        .lt('expires_at', new Date().toISOString())
+        .select();
+
+      if (error) {
+        console.error('Error limpiando tokens expirados:', error);
+        return 0;
+      }
+
+      return data?.length || 0;
+    } catch (error) {
+      console.error('Error en cleanupExpiredTokens:', error);
+      return 0;
+    }
+  }
+
   static generateToken(user) {
     return jwt.sign(
       { 
@@ -10,13 +132,20 @@ export class AuthService {
         role: user.role 
       },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '30d' } // Aumentar a 30 días
+      { expiresIn: process.env.JWT_EXPIRES_IN || '30d' }
     );
   }
 
   // Validar token
   static async validateToken(token) {
     try {
+      // Primero verificar si el token está revocado
+      const isRevoked = await this.isTokenRevoked(token);
+      if (isRevoked) {
+        return false;
+      }
+
+      // Verificar firma y expiración del token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
       // Verificar que el usuario aún existe en la base de datos
@@ -36,20 +165,28 @@ export class AuthService {
     }
   }
 
-  // Renovar token
+  // Renovar token con Refresh Token Rotation
   static async refreshToken(token) {
     try {
-      // Validar el token actual
-      const isValid = await this.validateToken(token);
-      if (!isValid) {
+      // Primero verificar si el token está revocado (no permitir renovar tokens ya revocados)
+      const isRevoked = await this.isTokenRevoked(token);
+      if (isRevoked) {
+        return {
+          success: false,
+          error: 'Token ya fue utilizado y revocado'
+        };
+      }
+
+      // Validar el token actual (firma y expiración)
+      let decoded;
+      try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+      } catch (jwtError) {
         return {
           success: false,
           error: 'Token inválido o expirado'
         };
       }
-
-      // Decodificar el token para obtener información del usuario
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
       // Obtener información actualizada del usuario desde la base de datos
       const { data: profile, error } = await supabase
@@ -69,6 +206,9 @@ export class AuthService {
         };
       }
 
+      // REVOCAR el token antiguo (Refresh Token Rotation)
+      await this.revokeToken(token);
+
       // Generar nuevo token
       const userData = {
         id: profile.id,
@@ -84,6 +224,7 @@ export class AuthService {
         user: userData
       };
     } catch (error) {
+      console.error('Error renovando token:', error);
       return {
         success: false,
         error: 'Error renovando token'
@@ -150,40 +291,6 @@ export class AuthService {
     }
   }
 
-  // Función para traducir errores de Supabase al español
-  static translateAuthError(errorMessage) {
-    if (!errorMessage) return 'Error al iniciar sesión';
-    
-    const errorLower = errorMessage.toLowerCase();
-    
-    // Errores comunes de Supabase Auth
-    if (errorLower.includes('invalid login credentials') || 
-        errorLower.includes('invalid credentials') ||
-        errorLower.includes('email not confirmed') ||
-        errorLower.includes('incorrect email or password')) {
-      return 'Usuario o contraseña incorrectos. Por favor, verifica tus datos e intenta nuevamente.';
-    }
-    
-    if (errorLower.includes('user not found')) {
-      return 'No se encontró una cuenta con este correo electrónico.';
-    }
-    
-    if (errorLower.includes('invalid password')) {
-      return 'La contraseña ingresada es incorrecta.';
-    }
-    
-    if (errorLower.includes('email rate limit')) {
-      return 'Demasiados intentos. Por favor, espera unos minutos e intenta nuevamente.';
-    }
-    
-    if (errorLower.includes('network') || errorLower.includes('fetch')) {
-      return 'Error de conexión. Por favor, verifica tu internet e intenta nuevamente.';
-    }
-    
-    // Si el mensaje ya está en español, devolverlo tal cual
-    return errorMessage;
-  }
-
   // Iniciar sesión
   static async login(email, password) {
     try {
@@ -194,8 +301,7 @@ export class AuthService {
       });
 
       if (authError) {
-        const translatedError = this.translateAuthError(authError.message);
-        throw new Error(translatedError);
+        throw new Error(authError.message);
       }
 
       // 2. Obtener perfil del usuario

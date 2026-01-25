@@ -254,6 +254,8 @@ export class ExpensesService {
       const endDate = `${nextMonthYear}-${nextMonth.toString().padStart(2, '0')}-01`;
 
       // Consulta SQL directa para obtener SOLO gastos directos (sin cuotas) del mes
+      // IMPORTANTE: Para tarjetas de crédito, debemos filtrar por first_installment_date si existe
+      // Para débito/transferencia, filtramos por purchase_date
       let directQuery = supabase
         .from('expenses')
         .select(`
@@ -283,9 +285,7 @@ export class ExpensesService {
           payment_status(code, label)
         `)
         .eq('user_id', userId)
-        .eq('installments_count', 1) // Solo gastos directos (sin cuotas)
-        .gte('purchase_date', startDate)
-        .lt('purchase_date', endDate);
+        .eq('installments_count', 1); // Solo gastos directos (sin cuotas)
 
       // Aplicar filtros de tarjeta, categoría y estado de pago
       if (filters.card_id && filters.card_id !== 'null' && filters.card_id !== null) {
@@ -300,9 +300,29 @@ export class ExpensesService {
         directQuery = directQuery.eq('payment_status_id', filters.payment_status_id);
       }
 
-      const { data: directExpenses, error: directError } = await directQuery.order('purchase_date', { ascending: false });
+      // Obtener todos los gastos directos sin filtrar por fecha (lo haremos después)
+      const { data: allDirectExpenses, error: directError } = await directQuery.order('purchase_date', { ascending: false });
 
       if (directError) throw directError;
+
+      // Filtrar gastos según el tipo de tarjeta y la fecha correspondiente
+      const directExpenses = (allDirectExpenses || []).filter(expense => {
+        const cardType = expense.available_cards?.type;
+        
+        // Para tarjetas de crédito con first_installment_date, usar esa fecha
+        if (cardType === 'Crédito' && expense.first_installment_date) {
+          const installmentDate = new Date(expense.first_installment_date);
+          const startDateObj = new Date(startDate);
+          const endDateObj = new Date(endDate);
+          return installmentDate >= startDateObj && installmentDate < endDateObj;
+        }
+        
+        // Para débito, transferencia o crédito sin first_installment_date, usar purchase_date
+        const purchaseDate = new Date(expense.purchase_date);
+        const startDateObj = new Date(startDate);
+        const endDateObj = new Date(endDate);
+        return purchaseDate >= startDateObj && purchaseDate < endDateObj;
+      });
 
       // Logs de depuración removidos
 
@@ -390,15 +410,34 @@ export class ExpensesService {
       ];
 
       // Validación adicional: filtrar por fecha de manera más estricta
+      // Para gastos directos de crédito, usar first_installment_date si existe
       const filteredResults = combinedResults.filter(item => {
-        const itemDate = item.is_installment ? item.due_date : item.purchase_date;
-        const itemDateObj = new Date(itemDate);
-        const startDateObj = new Date(startDate);
-        const endDateObj = new Date(endDate);
-        
-        const isInRange = itemDateObj >= startDateObj && itemDateObj < endDateObj;
-        
-        return isInRange;
+        if (item.is_installment) {
+          // Para cuotas, usar due_date
+          const itemDate = item.due_date;
+          const itemDateObj = new Date(itemDate);
+          const startDateObj = new Date(startDate);
+          const endDateObj = new Date(endDate);
+          return itemDateObj >= startDateObj && itemDateObj < endDateObj;
+        } else {
+          // Para gastos directos, determinar la fecha según el tipo de tarjeta
+          const cardType = item.available_cards?.type;
+          let itemDate;
+          
+          // Para tarjetas de crédito con first_installment_date, usar esa fecha
+          if (cardType === 'Crédito' && item.first_installment_date) {
+            itemDate = item.first_installment_date;
+          } else {
+            // Para débito, transferencia o crédito sin first_installment_date, usar purchase_date
+            itemDate = item.purchase_date;
+          }
+          
+          const itemDateObj = new Date(itemDate);
+          const startDateObj = new Date(startDate);
+          const endDateObj = new Date(endDate);
+          
+          return itemDateObj >= startDateObj && itemDateObj < endDateObj;
+        }
       });
 
 
@@ -441,17 +480,19 @@ export class ExpensesService {
 
 
       // Obtener gastos directos del mes con información de tarjeta
+      // IMPORTANTE: Para tarjetas de crédito, debemos filtrar por first_installment_date si existe
+      // Para débito/transferencia, filtramos por purchase_date
       let directQuery = supabase
         .from('expenses')
         .select(`
           amount, 
           payment_status(code),
-          available_cards(name, type)
+          available_cards(name, type),
+          first_installment_date,
+          purchase_date
         `)
         .eq('user_id', userId)
-        .eq('installments_count', 1) // Solo gastos directos
-        .gte('purchase_date', startDate)
-        .lt('purchase_date', endDate);
+        .eq('installments_count', 1); // Solo gastos directos
 
       // Aplicar filtros
       if (filters.card_id && filters.card_id !== 'null' && filters.card_id !== null) {
@@ -464,7 +505,29 @@ export class ExpensesService {
         directQuery = directQuery.eq('payment_status_id', filters.payment_status_id);
       }
 
-      const { data: directExpenses, error: directError } = await directQuery;
+      // Obtener todos los gastos directos sin filtrar por fecha (lo haremos después)
+      const { data: allDirectExpenses, error: directError } = await directQuery;
+
+      if (directError) throw directError;
+
+      // Filtrar gastos según el tipo de tarjeta y la fecha correspondiente
+      const directExpenses = (allDirectExpenses || []).filter(expense => {
+        const cardType = expense.available_cards?.type;
+        
+        // Para tarjetas de crédito con first_installment_date, usar esa fecha
+        if (cardType === 'Crédito' && expense.first_installment_date) {
+          const installmentDate = new Date(expense.first_installment_date);
+          const startDateObj = new Date(startDate);
+          const endDateObj = new Date(endDate);
+          return installmentDate >= startDateObj && installmentDate < endDateObj;
+        }
+        
+        // Para débito, transferencia o crédito sin first_installment_date, usar purchase_date
+        const purchaseDate = new Date(expense.purchase_date);
+        const startDateObj = new Date(startDate);
+        const endDateObj = new Date(endDate);
+        return purchaseDate >= startDateObj && purchaseDate < endDateObj;
+      });
 
       if (directError) throw directError;
 
@@ -496,16 +559,30 @@ export class ExpensesService {
       if (installmentsError) throw installmentsError;
 
       // Calcular totales sin filtrar por estado
-      const totalDebitTransfer = directExpenses
-        ?.filter(expense => {
-          // Incluir gastos de débito, transferencia o sin tarjeta (efectivo)
-          const cardType = expense.available_cards?.type;
-          return !cardType || cardType === 'Débito' || cardType === 'Transferencia';
-        })
+      // Separar gastos de débito/transferencia de gastos de crédito
+      const debitTransferExpenses = directExpenses.filter(expense => {
+        // Incluir gastos de débito, transferencia o sin tarjeta (efectivo)
+        const cardType = expense.available_cards?.type;
+        return !cardType || cardType === 'Débito' || cardType === 'Transferencia';
+      });
+      
+      const creditExpenses = directExpenses.filter(expense => {
+        // Incluir solo gastos de crédito
+        const cardType = expense.available_cards?.type;
+        return cardType === 'Crédito';
+      });
+
+      const totalDebitTransfer = debitTransferExpenses
         ?.reduce((sum, expense) => sum + expense.amount, 0) || 0;
 
-      const totalCredit = installments
+      // Total de crédito = gastos directos de crédito + cuotas
+      const totalCreditDirect = creditExpenses
+        ?.reduce((sum, expense) => sum + expense.amount, 0) || 0;
+
+      const totalCreditInstallments = installments
         ?.reduce((sum, installment) => sum + installment.amount, 0) || 0;
+
+      const totalCredit = totalCreditDirect + totalCreditInstallments;
 
       const totalExpenses = totalDebitTransfer + totalCredit;
 
@@ -863,31 +940,14 @@ export class ExpensesService {
   // Actualizar gasto existente
   static async updateExpense(id, updates) {
     try {
-      // IMPORTANTE: Cuando se actualiza un gasto individual (incluso si es parte de un gasto programado),
-      // solo debemos actualizar ese gasto específico, NO todos los gastos programados relacionados.
-      // Para actualizar todos los gastos programados de una serie, se debe usar updateScheduledExpense.
-      
-      // Asegurarse de que solo se actualice el gasto específico por ID
-      // y no otros gastos relacionados, incluso si tienen is_scheduled = true
-      // Usar .eq('id', id) es suficiente para actualizar solo ese gasto específico
       const { data, error } = await supabase
         .from('expenses')
         .update(updates)
-        .eq('id', id)  // Solo actualizar el gasto con este ID específico - esto garantiza que solo se actualice UN gasto
+        .eq('id', id)
         .select()
         .single();
 
-      if (error) {
-        console.error(`Error actualizando gasto ${id}:`, error);
-        throw error;
-      }
-
-      // Verificar que solo se actualizó un gasto
-      if (!data) {
-        throw new Error('No se encontró el gasto a actualizar');
-      }
-
-      console.log(`✅ Gasto ${id} actualizado correctamente (solo este gasto, no otros relacionados)`);
+      if (error) throw error;
 
       return {
         success: true,
@@ -895,7 +955,6 @@ export class ExpensesService {
       };
 
     } catch (error) {
-      console.error(`❌ Error actualizando gasto ${id}:`, error);
       throw error;
     }
   }
@@ -1014,45 +1073,38 @@ export class ExpensesService {
       let startDate, endDate;
       
       if (isAnnual) {
-        // Año: desde enero hasta diciembre del año actual (todo el año completo)
+        // Año: desde enero hasta el mes actual
         startDate = `${currentYear}-01-01`;
-        endDate = `${currentYear + 1}-01-01`; // Primer día del año siguiente (exclusivo)
+        const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
+        endDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-${lastDayOfMonth.toString().padStart(2, '0')}`;
       } else {
-        // Mes: desde el primer día del mes actual hasta el primer día del mes siguiente (exclusivo)
+        // Mes: desde el primer día del mes actual hasta el último día
         startDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`;
         const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
         const nextMonthYear = currentMonth === 12 ? currentYear + 1 : currentYear;
         endDate = `${nextMonthYear}-${nextMonth.toString().padStart(2, '0')}-01`;
       }
 
-      console.log(`📊 getExpensesSummaryByType - isAnnual: ${isAnnual}, startDate: ${startDate}, endDate: ${endDate}`);
-
-      // Obtener gastos directos
+      // Obtener gastos directos agrupados por tipo de tarjeta
       const { data: directExpenses, error: directError } = await supabase
         .from('expenses')
         .select(`
           amount,
-          available_cards(name, type)
+          available_cards(type)
         `)
         .eq('user_id', userId)
         .eq('installments_count', 1) // Solo gastos directos
         .gte('purchase_date', startDate)
         .lt('purchase_date', endDate);
 
-      if (directError) {
-        console.error('Error obteniendo gastos directos:', directError);
-        throw directError;
-      }
+      if (directError) throw directError;
 
-      console.log(`📊 Gastos directos encontrados: ${directExpenses?.length || 0}`);
-
-      // Obtener cuotas
+      // Obtener cuotas agrupadas por tipo de tarjeta
       const { data: installments, error: installmentsError } = await supabase
         .from('installments')
         .select(`
           amount,
           expenses!inner(
-            user_id,
             available_cards(type)
           )
         `)
@@ -1060,52 +1112,38 @@ export class ExpensesService {
         .gte('due_date', startDate)
         .lt('due_date', endDate);
 
-      if (installmentsError) {
-        console.error('Error obteniendo cuotas:', installmentsError);
-        throw installmentsError;
-      }
+      if (installmentsError) throw installmentsError;
 
-      console.log(`📊 Cuotas encontradas: ${installments?.length || 0}`);
-
-      // Agrupar gastos directos por tipo
-      const summaryByType = {
-        'Crédito': 0,
-        'Débito': 0,
-        'Transferencia': 0
-      };
+      // Agrupar por tipo de tarjeta
+      const summaryByType = {};
 
       // Procesar gastos directos
       (directExpenses || []).forEach(expense => {
-        const cardType = expense.available_cards?.type;
-        
-        if (cardType === 'Crédito') {
-          summaryByType['Crédito'] += expense.amount;
-        } else if (cardType === 'Débito') {
-          summaryByType['Débito'] += expense.amount;
-        } else {
-          // Transferencia, Efectivo o sin tarjeta (null/undefined)
-          summaryByType['Transferencia'] += expense.amount;
+        const cardType = expense.available_cards?.type || 'Sin especificar';
+        if (!summaryByType[cardType]) {
+          summaryByType[cardType] = { direct: 0, installments: 0, total: 0 };
         }
+        summaryByType[cardType].direct += expense.amount;
+        summaryByType[cardType].total += expense.amount;
       });
 
-      // Procesar cuotas (todas son de crédito)
+      // Procesar cuotas
       (installments || []).forEach(installment => {
-        summaryByType['Crédito'] += installment.amount;
+        const cardType = installment.expenses?.available_cards?.type || 'Sin especificar';
+        if (!summaryByType[cardType]) {
+          summaryByType[cardType] = { direct: 0, installments: 0, total: 0 };
+        }
+        summaryByType[cardType].installments += installment.amount;
+        summaryByType[cardType].total += installment.amount;
       });
 
-      console.log(`📊 Resumen por tipo:`, summaryByType);
-
-      // Convertir a array
-      const summaryArray = Object.entries(summaryByType)
-        .filter(([type, total]) => total > 0)
-        .map(([type, total]) => ({
-          type,
-          total
-        }))
-        .sort((a, b) => {
-          const order = { 'Crédito': 1, 'Débito': 2, 'Transferencia': 3 };
-          return (order[a.type] || 999) - (order[b.type] || 999);
-        });
+      // Convertir a array y ordenar por tipo
+      const summaryArray = Object.entries(summaryByType).map(([type, amounts]) => ({
+        type,
+        direct: amounts.direct,
+        installments: amounts.installments,
+        total: amounts.total
+      })).sort((a, b) => a.type.localeCompare(b.type));
 
       return {
         success: true,
@@ -1113,7 +1151,6 @@ export class ExpensesService {
       };
 
     } catch (error) {
-      console.error('Error en getExpensesSummaryByType:', error);
       throw error;
     }
   }
@@ -1158,11 +1195,13 @@ export class ExpensesService {
         let startDate, endDate;
         
         if (isAnnual) {
-          // Año: desde enero hasta diciembre del año actual (todo el año completo)
+          // Año: desde enero hasta el mes actual
           startDate = `${currentYear}-01-01`;
-          endDate = `${currentYear + 1}-01-01`; // Primer día del año siguiente (exclusivo)
+          // Calcular el último día del mes actual
+          const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
+          endDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-${lastDayOfMonth.toString().padStart(2, '0')}`;
         } else {
-          // Mes: desde el primer día del mes actual hasta el primer día del mes siguiente (exclusivo)
+          // Mes: desde el primer día del mes actual hasta el último día
           startDate = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`;
           const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
           const nextMonthYear = currentMonth === 12 ? currentYear + 1 : currentYear;
@@ -1200,19 +1239,16 @@ export class ExpensesService {
         const installmentsTotal = (installments || []).reduce((sum, installment) => sum + installment.amount, 0);
         const totalAmount = directTotal + installmentsTotal;
 
-        // Solo incluir tarjetas con monto mayor a 0
-        if (totalAmount > 0) {
-          cardsSummary.push({
-            id: card.id,
-            name: card.name,
-            bank: card.bank,
-            type: card.type,
-            amount: totalAmount,
-            directExpenses: directTotal,
-            installments: installmentsTotal,
-            period: isAnnual ? 'annual' : 'monthly'
-          });
-        }
+        cardsSummary.push({
+          id: card.id,
+          name: card.name,
+          bank: card.bank,
+          type: card.type,
+          amount: totalAmount,
+          directExpenses: directTotal,
+          installments: installmentsTotal,
+          period: isAnnual ? 'annual' : 'monthly'
+        });
       }
 
       // Ordenar por nombre de tarjeta alfabéticamente
@@ -1386,64 +1422,6 @@ export class ExpensesService {
         success: true,
         data: data,
         message: `Se crearon ${data.length} gastos programados`
-      };
-
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Actualizar gasto programado (actualiza los gastos futuros de la serie)
-  static async updateScheduledExpense(userId, scheduledExpenseId, updates) {
-    try {
-      // Obtener el gasto programado original
-      const { data: originalExpense, error: fetchError } = await supabase
-        .from('expenses')
-        .select('*')
-        .eq('id', scheduledExpenseId)
-        .eq('user_id', userId)
-        .eq('is_scheduled', true)
-        .single();
-
-      if (fetchError) {
-        throw new Error('Gasto programado no encontrado');
-      }
-
-      // Obtener todos los gastos futuros de esta serie
-      const currentDate = new Date();
-      const currentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-
-      // Preparar los datos de actualización
-      const updateData = {};
-      if (updates.description !== undefined) updateData.description = updates.description;
-      if (updates.amount !== undefined) updateData.amount = updates.amount;
-      if (updates.card_id !== undefined) updateData.card_id = updates.card_id;
-      if (updates.category_id !== undefined) updateData.category_id = updates.category_id;
-      if (updates.subcategory_id !== undefined) updateData.subcategory_id = updates.subcategory_id;
-      if (updates.payment_status_id !== undefined) updateData.payment_status_id = updates.payment_status_id;
-      if (updates.scheduled_months !== undefined) updateData.scheduled_months = updates.scheduled_months;
-      if (updates.scheduled_start_month !== undefined) updateData.scheduled_start_month = updates.scheduled_start_month;
-
-      // Actualizar todos los gastos futuros de esta serie
-      const { data: updatedExpenses, error: updateError } = await supabase
-        .from('expenses')
-        .update(updateData)
-        .eq('user_id', userId)
-        .eq('is_scheduled', true)
-        .eq('is_active', true)
-        .eq('scheduled_start_month', originalExpense.scheduled_start_month)
-        .eq('description', originalExpense.description)
-        .eq('amount', originalExpense.amount)
-        .eq('card_id', originalExpense.card_id)
-        .gte('purchase_date', currentMonth.toISOString().split('T')[0])
-        .select();
-
-      if (updateError) throw updateError;
-
-      return {
-        success: true,
-        data: updatedExpenses,
-        message: `Se actualizaron ${updatedExpenses.length} gastos programados`
       };
 
     } catch (error) {

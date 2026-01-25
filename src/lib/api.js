@@ -107,7 +107,11 @@ class ApiClient {
   }
 
   async get(endpoint, params = {}) {
-    const queryString = new URLSearchParams(params).toString();
+    // Filtrar valores null/undefined y construir query string
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([_, value]) => value !== null && value !== undefined)
+    );
+    const queryString = new URLSearchParams(cleanParams).toString();
     const url = queryString ? `${endpoint}?${queryString}` : endpoint;
     return this.request(url);
   }

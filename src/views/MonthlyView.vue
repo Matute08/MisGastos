@@ -17,18 +17,7 @@
     </div>
 
     <!-- Selector de mes -->
-    <div v-if="expensesStore.loading || monthlyTotal === null" class="card animate-pulse">
-      <div class="flex items-center justify-between">
-        <div class="space-y-2">
-          <div class="w-32 h-6 bg-gray-200 rounded"></div>
-          <div class="w-40 h-4 bg-gray-200 rounded"></div>
-        </div>
-        <div class="flex items-center space-x-4">
-          <div class="w-32 h-5 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    </div>
-    <div v-else class="card">
+    <div class="card">
       <div class="flex items-center justify-between">
         <div>
           <h3 class="text-lg font-semibold text-gray-900">
@@ -64,7 +53,9 @@
     </div>
 
     <!-- Loading -->
-    <SkeletonList v-if="expensesStore.loading" :count="5" />
+    <div v-if="expensesStore.loading" class="flex justify-center py-8">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+    </div>
 
     <!-- Lista de gastos del mes -->
     <div v-else class="space-y-4">
@@ -254,7 +245,6 @@ import {
 } from 'lucide-vue-next'
 import { format, parseISO, addMonths, subMonths, startOfMonth, endOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
-import SkeletonList from '@/components/SkeletonList.vue'
 
 const expensesStore = useExpensesStore()
 const cardsStore = useCardsStore()

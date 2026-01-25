@@ -1,7 +1,9 @@
 import express from 'express';
 import { ExpensesService } from '../services/expensesService.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { verifyExpenseOwnership, verifyInstallmentOwnership } from '../middleware/ownership.js';
 import { body, validationResult } from 'express-validator';
+import { queryValidators, handleValidationErrors } from '../middleware/validation.js';
 import { supabase } from '../config/database.js';
 
 const router = express.Router();
@@ -56,26 +58,34 @@ const validateScheduledExpense = [
 ];
 
 // GET /api/expenses - Obtener gastos del usuario
-router.get('/', authenticateToken, async (req, res) => {
-  try {
-    const filters = {
-      card_id: req.query.card_id || null,
-      category_id: req.query.category_id || null,
-      month: req.query.month ? parseInt(req.query.month) : null,
-      year: req.query.year ? parseInt(req.query.year) : null
-    };
+router.get('/', 
+  authenticateToken,
+  queryValidators.month,
+  queryValidators.year,
+  queryValidators.uuid('card_id'),
+  queryValidators.uuid('category_id'),
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const filters = {
+        card_id: req.query.card_id && req.query.card_id !== 'null' ? req.query.card_id : null,
+        category_id: req.query.category_id && req.query.category_id !== 'null' ? req.query.category_id : null,
+        month: req.query.month || null,
+        year: req.query.year || null
+      };
 
-    const result = await ExpensesService.getExpenses(req.user.id, filters);
+      const result = await ExpensesService.getExpenses(req.user.id, filters);
 
-    res.json(result);
-  } catch (error) {
-    console.error('Error obteniendo gastos:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+      res.json(result);
+    } catch (error) {
+      console.error('Error obteniendo gastos:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
   }
-});
+);
 
 // GET /api/expenses/monthly - Obtener gastos mensuales con cuotas
 router.get('/monthly', authenticateToken, async (req, res) => {
@@ -126,51 +136,40 @@ router.get('/monthly', authenticateToken, async (req, res) => {
 });
 
 // GET /api/expenses/monthly-total - Obtener total mensual
-router.get('/monthly-total', authenticateToken, async (req, res) => {
-  try {
-    const { month, year } = req.query;
-    
-    if (!month || !year) {
-      return res.status(400).json({
+router.get('/monthly-total',
+  authenticateToken,
+  ...queryValidators.monthYearRequired,
+  queryValidators.uuid('card_id'),
+  queryValidators.uuid('category_id'),
+  queryValidators.paymentStatusId,
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const filters = {
+        card_id: req.query.card_id || null,
+        category_id: req.query.category_id || null,
+        payment_status_id: req.query.payment_status_id && req.query.payment_status_id !== 'null'
+          ? parseInt(req.query.payment_status_id)
+          : null
+      };
+
+      const result = await ExpensesService.getMonthlyTotalWithInstallments(
+        req.user.id,
+        req.query.month,
+        req.query.year,
+        filters
+      );
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error obteniendo total mensual:', error);
+      res.status(500).json({
         success: false,
-        error: 'Mes y año son requeridos'
+        error: error.message
       });
     }
-
-    // Validar que month y year sean números válidos
-    const monthNum = parseInt(month);
-    const yearNum = parseInt(year);
-    
-    if (isNaN(monthNum) || isNaN(yearNum) || monthNum < 1 || monthNum > 12) {
-      return res.status(400).json({
-        success: false,
-        error: 'Mes y año deben ser números válidos (mes: 1-12)'
-      });
-    }
-
-    // Extraer filtros adicionales
-    const filters = {
-      card_id: req.query.card_id || null,
-      category_id: req.query.category_id || null,
-      payment_status_id: req.query.payment_status_id || null
-    };
-
-    const result = await ExpensesService.getMonthlyTotalWithInstallments(
-      req.user.id,
-      monthNum,
-      yearNum,
-      filters
-    );
-
-    res.json(result);
-  } catch (error) {
-    console.error('Error obteniendo total mensual:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
   }
-});
+);
 
 // POST /api/expenses - Crear nuevo gasto
 router.post('/', authenticateToken, validateExpense, async (req, res) => {
@@ -193,21 +192,10 @@ router.post('/', authenticateToken, validateExpense, async (req, res) => {
 });
 
 // PUT /api/expenses/:id - Actualizar gasto
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, verifyExpenseOwnership, async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
-
-    // Verificar que el gasto pertenece al usuario
-    const expenseResult = await ExpensesService.getExpenses(req.user.id, {});
-    const userExpense = expenseResult.data.find(e => e.id === id);
-    
-    if (!userExpense) {
-      return res.status(404).json({
-        success: false,
-        error: 'Gasto no encontrado o no autorizado'
-      });
-    }
 
     // IMPORTANTE: Aunque el gasto sea parte de un gasto programado (is_scheduled = true),
     // cuando se actualiza un gasto individual, solo debemos actualizar ese gasto específico,
@@ -274,20 +262,9 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 });
 
 // GET /api/expenses/:id/installments - Obtener cuotas de un gasto
-router.get('/:id/installments', authenticateToken, async (req, res) => {
+router.get('/:id/installments', authenticateToken, verifyExpenseOwnership, async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Verificar que el gasto pertenece al usuario
-    const expenseResult = await ExpensesService.getExpenses(req.user.id, {});
-    const userExpense = expenseResult.data.find(e => e.id === id);
-    
-    if (!userExpense) {
-      return res.status(404).json({
-        success: false,
-        error: 'Gasto no encontrado o no autorizado'
-      });
-    }
 
     const result = await ExpensesService.getInstallments(id);
 
@@ -302,20 +279,9 @@ router.get('/:id/installments', authenticateToken, async (req, res) => {
 });
 
 // GET /api/expenses/:id/installments-summary - Obtener resumen de cuotas
-router.get('/:id/installments-summary', authenticateToken, async (req, res) => {
+router.get('/:id/installments-summary', authenticateToken, verifyExpenseOwnership, async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Verificar que el gasto pertenece al usuario
-    const expenseResult = await ExpensesService.getExpenses(req.user.id, {});
-    const userExpense = expenseResult.data.find(e => e.id === id);
-    
-    if (!userExpense) {
-      return res.status(404).json({
-        success: false,
-        error: 'Gasto no encontrado o no autorizado'
-      });
-    }
 
     const result = await ExpensesService.getExpenseInstallmentsSummary(id);
 
@@ -330,7 +296,7 @@ router.get('/:id/installments-summary', authenticateToken, async (req, res) => {
 });
 
 // PUT /api/expenses/installments/:id/status - Actualizar estado de cuota
-router.put('/installments/:id/status', authenticateToken, async (req, res) => {
+router.put('/installments/:id/status', authenticateToken, verifyInstallmentOwnership, async (req, res) => {
   try {
     const { id } = req.params;
     const { payment_status_id } = req.body;
@@ -359,6 +325,7 @@ router.put('/:id/mark-as-paid', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { payment_status_id } = req.body;
+    const userId = req.user.id;
 
     if (!payment_status_id) {
       return res.status(400).json({
@@ -372,8 +339,42 @@ router.put('/:id/mark-as-paid', authenticateToken, async (req, res) => {
     // Detectar si es una cuota (prefijo installment-) o un gasto normal
     if (id.startsWith('installment-')) {
       const installmentId = id.replace('installment-', '');
+      
+      // Verificar ownership de la cuota
+      const { data: installment, error: installmentError } = await supabase
+        .from('installments')
+        .select(`
+          id,
+          expenses!inner(user_id)
+        `)
+        .eq('id', installmentId)
+        .eq('expenses.user_id', userId)
+        .single();
+      
+      if (installmentError || !installment) {
+        return res.status(404).json({
+          success: false,
+          error: 'Cuota no encontrada o no autorizada'
+        });
+      }
+      
       result = await ExpensesService.markInstallmentAsPaid(installmentId, payment_status_id);
     } else {
+      // Verificar ownership del gasto
+      const { data: expense, error: expenseError } = await supabase
+        .from('expenses')
+        .select('id, user_id')
+        .eq('id', id)
+        .eq('user_id', userId)
+        .single();
+      
+      if (expenseError || !expense) {
+        return res.status(404).json({
+          success: false,
+          error: 'Gasto no encontrado o no autorizado'
+        });
+      }
+      
       result = await ExpensesService.markAsPaid(id, payment_status_id);
     }
 
@@ -388,45 +389,46 @@ router.put('/:id/mark-as-paid', authenticateToken, async (req, res) => {
 });
 
 // GET /api/expenses/upcoming-installments - Obtener cuotas próximas a vencer
-router.get('/upcoming-installments', authenticateToken, async (req, res) => {
-  try {
-    const limit = req.query.limit ? parseInt(req.query.limit) : 100;
+router.get('/upcoming-installments',
+  authenticateToken,
+  queryValidators.limit,
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const limit = req.query.limit || 100;
 
-    const result = await ExpensesService.getUpcomingInstallments(req.user.id, limit);
+      const result = await ExpensesService.getUpcomingInstallments(req.user.id, limit);
 
-    res.json(result);
-  } catch (error) {
-    console.error('Error obteniendo cuotas próximas:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// GET /api/expenses/payment-status - Obtener estado de pago por código
-router.get('/payment-status', authenticateToken, async (req, res) => {
-  try {
-    const { code } = req.query;
-    
-    if (!code) {
-      return res.status(400).json({
+      res.json(result);
+    } catch (error) {
+      console.error('Error obteniendo cuotas próximas:', error);
+      res.status(500).json({
         success: false,
-        error: 'Código de estado es requerido'
+        error: error.message
       });
     }
-
-    const result = await ExpensesService.getPaymentStatusByCode(code);
-
-    res.json(result);
-  } catch (error) {
-    console.error('Error obteniendo estado de pago:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
   }
-});
+);
+
+// GET /api/expenses/payment-status - Obtener estado de pago por código
+router.get('/payment-status',
+  authenticateToken,
+  queryValidators.code,
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const result = await ExpensesService.getPaymentStatusByCode(req.query.code);
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error obteniendo estado de pago:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+);
 
 // GET /api/expenses/payment-statuses - Obtener todos los estados de pago
 router.get('/payment-statuses', authenticateToken, async (req, res) => {

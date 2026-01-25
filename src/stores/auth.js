@@ -150,62 +150,14 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Función para traducir mensajes de error al español
-  const translateError = (errorMessage) => {
-    if (!errorMessage) return 'Error al iniciar sesión'
-    
-    const errorLower = errorMessage.toLowerCase()
-    
-    // Errores comunes de autenticación
-    if (errorLower.includes('invalid login credentials') || 
-        errorLower.includes('invalid credentials') ||
-        errorLower.includes('credenciales inválidas')) {
-      return 'Usuario o contraseña incorrectos. Por favor, verifica tus datos e intenta nuevamente.'
-    }
-    
-    if (errorLower.includes('user not found') || 
-        errorLower.includes('usuario no encontrado')) {
-      return 'No se encontró una cuenta con este correo electrónico.'
-    }
-    
-    if (errorLower.includes('invalid password') || 
-        errorLower.includes('contraseña incorrecta')) {
-      return 'La contraseña ingresada es incorrecta.'
-    }
-    
-    if (errorLower.includes('email') && errorLower.includes('required')) {
-      return 'El correo electrónico es obligatorio.'
-    }
-    
-    if (errorLower.includes('password') && errorLower.includes('required')) {
-      return 'La contraseña es obligatoria.'
-    }
-    
-    if (errorLower.includes('network') || errorLower.includes('fetch')) {
-      return 'Error de conexión. Por favor, verifica tu internet e intenta nuevamente.'
-    }
-    
-    // Si el mensaje ya está en español, devolverlo tal cual
-    if (errorMessage.includes('incorrect') || 
-        errorMessage.includes('incorrecto') ||
-        errorMessage.includes('invalida') ||
-        errorMessage.includes('inválida')) {
-      return errorMessage
-    }
-    
-    // Por defecto, devolver mensaje genérico en español
-    return errorMessage
-  }
-
   const signIn = async (email, password) => {
     loading.value = true
     error.value = null
     try {
       const response = await auth.signIn(email, password)
       if (!response.success) {
-        const translatedError = translateError(response.error)
-        error.value = translatedError
-        return { success: false, error: translatedError }
+        error.value = response.error || 'Error al iniciar sesión'
+        return { success: false, error: response.error || 'Error al iniciar sesión' }
       }
       
       user.value = response.user
@@ -214,9 +166,8 @@ export const useAuthStore = defineStore('auth', () => {
       
       return { success: true, data: response }
     } catch (err) {
-      const translatedError = translateError(err.message)
-      error.value = translatedError
-      return { success: false, error: translatedError }
+      error.value = err.message
+      return { success: false, error: err.message }
     } finally {
       loading.value = false
     }

@@ -6,6 +6,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { getConfig } from './config/production.js';
+import { logError, getErrorResponse } from './utils/errorHandler.js';
 
 // Rutas
 import authRoutes from './routes/auth.js';
@@ -160,13 +161,18 @@ app.use('/api/user-cards', userCardsRoutes);
 app.use('/api/webauthn', webauthnRoutes);
 
 // 🧯 Error handler
-app.use((err, _req, res, _next) => {
-  console.error('Error no manejado:', err);
-  res.status(err.status || 500).json({
-    success: false,
-    error: process.env.NODE_ENV === 'production' ? 'Error interno del servidor' : err.message,
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+app.use((err, req, res, next) => {
+  // Log seguro del error
+  logError(err, {
+    path: req.path,
+    method: req.method,
+    userId: req.user?.id
   });
+
+  // Obtener respuesta segura
+  const { response, statusCode } = getErrorResponse(err);
+  
+  res.status(statusCode).json(response);
 });
 
 // 404
@@ -188,8 +194,7 @@ const startServer = async () => {
       try {
         await supabase.from('expenses').select('id').limit(1);
       } catch (e) {
-        console.error('❌ Supabase:', e);
-        console.error('🔎 cause:', e?.cause);
+        logError(e, { path: 'startServer', method: 'supabase-check' });
         // No cortamos el proceso para permitir health checks y reinicios controlados
       }
     }
@@ -212,7 +217,7 @@ const startServer = async () => {
       }
     });
   } catch (error) {
-    console.error('❌ Error iniciando el servidor:', error);
+    logError(error, { path: 'startServer', method: 'startServer' });
     process.exit(1);
   }
 };
@@ -220,7 +225,16 @@ const startServer = async () => {
 // Señales
 process.on('SIGTERM', () => { process.exit(0); });
 process.on('SIGINT', () => { process.exit(0); });
-process.on('uncaughtException', (err) => { console.error('❌ Error no capturado:', err); process.exit(1); });
-process.on('unhandledRejection', (reason) => { console.error('❌ Promesa rechazada no manejada:', reason); process.exit(1); });
+// Manejo seguro de errores no capturados
+process.on('uncaughtException', (err) => {
+  logError(err, { path: 'process', method: 'uncaughtException' });
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  const error = reason instanceof Error ? reason : new Error(String(reason));
+  logError(error, { path: 'process', method: 'unhandledRejection' });
+  process.exit(1);
+});
 
 startServer();

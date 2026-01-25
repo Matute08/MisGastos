@@ -20,8 +20,7 @@
             </div>
             
             <!-- Resumen con cuotas y flechas de mes - Solo Desktop -->
-            <SkeletonSummary v-if="expensesStore.loading || !expensesStore.monthlyTotals" :is-mobile="false" />
-            <div v-else class="hidden lg:flex card items-center justify-between">
+            <div class="hidden lg:flex card items-center justify-between">
                 <button
                     @click="previousMonth"
                     class="btn-secondary px-2 py-1 flex items-center justify-center"
@@ -65,8 +64,7 @@
             </div>
 
             <!-- Resumen con cuotas y flechas de mes - Mobile y Tablet -->
-            <SkeletonSummary v-if="expensesStore.loading || !expensesStore.monthlyTotals" :is-mobile="true" />
-            <div v-else class="block lg:hidden card">
+            <div class="block lg:hidden card">
                 <div class="flex items-center justify-between mb-3">
                     <button
                         @click="previousMonth"
@@ -364,7 +362,11 @@
         </div>
 
         <!-- Loading -->
-        <SkeletonList v-if="expensesStore.loading" :count="5" />
+        <div v-if="expensesStore.loading" class="flex justify-center py-8">
+            <div
+                class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"
+            ></div>
+        </div>
 
         <!-- Lista de gastos -->
         <div v-else class="space-y-4 pb-20">
@@ -372,7 +374,7 @@
             <!-- Botón Seleccionar y Barra de acciones múltiples -->
             <div class="space-y-3">
                 <!-- Botón Seleccionar -->
-                <div v-if="filteredExpensesToShow.length > 0" class="flex justify-center">
+                <div class="flex justify-center">
                     <button
                         @click="toggleBulkMode"
                         :class="[
@@ -877,8 +879,7 @@
                                 <!-- Menú de acciones con tres puntitos -->
                                 <div class="relative action-menu-container mb-1">
                                     <button
-                                        type="button"
-                                        @click.stop.prevent="toggleActionMenu(item.id, $event)"
+                                        @click="toggleActionMenu(item.id)"
                                         class="p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
                                         title="Más opciones"
                                     >
@@ -891,31 +892,28 @@
                                         class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[120px]"
                                     >
                                         <button
-                                            type="button"
                                             v-if="!item.is_installment"
-                                            @click.stop.prevent="editExpense(item); activeActionMenu = null"
+                                            @click="editExpense(item)"
                                             class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                                         >
                                             <Edit class="h-4 w-4" />
                                             Editar
                                         </button>
                                         <button
-                                            type="button"
                                             v-if="!item.is_installment"
-                                            @click.stop.prevent="deleteExpense(item.id, item); activeActionMenu = null"
+                                            @click="deleteExpense(item.id, item)"
                                             class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                         >
                                             <Trash2 class="h-4 w-4" />
                                             Eliminar
                                         </button>
                                         <button
-                                            type="button"
                                             v-if="item.is_installment"
-                                            @click.stop.prevent="showInstallments(item.expense_id, item.installment_number); activeActionMenu = null"
-                                            class="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2 whitespace-nowrap"
+                                            @click="showInstallments(item.expense_id, item.installment_number)"
+                                            class="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
                                         >
-                                            <CreditCard class="h-4 w-4 flex-shrink-0" />
-                                            <span>Ver cuota</span>
+                                            <CreditCard class="h-4 w-4" />
+                                            Ver cuota
                                         </button>
                                     </div>
                                 </div>
@@ -1027,8 +1025,7 @@
                                 <!-- Menú de acciones con tres puntitos -->
                                 <div class="relative action-menu-container mb-1">
                                     <button
-                                        type="button"
-                                        @click.stop.prevent="toggleActionMenu(expense.id, $event)"
+                                        @click="toggleActionMenu(expense.id)"
                                         class="p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
                                         title="Más opciones"
                                     >
@@ -1041,16 +1038,14 @@
                                         class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[120px]"
                                     >
                                         <button
-                                            type="button"
-                                            @click.stop.prevent="editExpense(expense); activeActionMenu = null"
+                                            @click="editExpense(expense)"
                                             class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                                         >
                                             <Edit class="h-4 w-4" />
                                             Editar
                                         </button>
                                         <button
-                                            type="button"
-                                            @click.stop.prevent="deleteExpense(expense.id, expense); activeActionMenu = null"
+                                            @click="deleteExpense(expense.id, expense)"
                                             class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                         >
                                             <Trash2 class="h-4 w-4" />
@@ -1171,7 +1166,6 @@
     <!-- Modal para gastos programados -->
     <ScheduledExpenseModal
         v-if="showScheduledModal"
-        :scheduled-expense="editingScheduledExpense"
         @close="closeScheduledModal"
         @save="saveScheduledExpense"
     />
@@ -1227,8 +1221,6 @@ import { useUserCategoriesStore } from "@/stores/userCategories";
 import ExpenseModal from "@/components/ExpenseModal.vue";
 import InstallmentsList from "@/components/InstallmentsList.vue";
 import ScheduledExpenseModal from "@/components/ScheduledExpenseModal.vue";
-import SkeletonList from "@/components/SkeletonList.vue";
-import SkeletonSummary from "@/components/SkeletonSummary.vue";
 import {
     Plus,
     Receipt,
@@ -1265,7 +1257,6 @@ const showModal = ref(false);
 const showScheduledModal = ref(false);
 const showNoCardsAlert = ref(false);
 const editingExpense = ref(null);
-const editingScheduledExpense = ref(null);
 const showExpenseOptions = ref(false);
 const now = new Date();
 const filters = ref({
@@ -1397,38 +1388,23 @@ const bulkChangeStatus = async (newStatusId) => {
                     let isInstallment = false;
                     
                     // Extraer el ID real y determinar si es cuota o gasto
-                    if (typeof expenseId === 'string' && expenseId.startsWith('installment-')) {
+                    if (expenseId.startsWith('installment-')) {
                         actualId = expenseId.replace('installment-', '');
                         isInstallment = true;
-                    } else if (typeof expenseId === 'string' && expenseId.startsWith('expense-')) {
+                    } else if (expenseId.startsWith('expense-')) {
                         actualId = expenseId.replace('expense-', '');
                         isInstallment = false;
-                    } else {
-                        // Si no tiene prefijo (viene de mobile), buscar en los gastos para determinar si es cuota
-                        const foundItem = filteredExpensesToShow.value.find(item => 
-                            (item.is_installment && item.installment_id == expenseId) || 
-                            (!item.is_installment && item.id == expenseId)
-                        );
-                        if (foundItem) {
-                            actualId = expenseId;
-                            isInstallment = foundItem.is_installment;
-                        } else {
-                            // Si no se encuentra, asumir que es un gasto normal
-                            actualId = expenseId;
-                            isInstallment = false;
-                        }
                     }
                     
                     let result;
                     if (isInstallment) {
-                        result = await expensesStore.markInstallmentAsPaid(actualId, newStatusId);
+                        result = await expensesStore.markInstallmentAsPaid(expenseId, newStatusId);
                     } else {
                         result = await expensesStore.markAsPaid(actualId, newStatusId);
                     }
-                    if (result && result.success) {
+                    if (result.success) {
                         successCount++;
                     } else {
-                        console.error(`Error actualizando gasto ${expenseId}:`, result?.error || 'Error desconocido');
                         errorCount++;
                     }
                 } catch (error) {
@@ -1703,8 +1679,6 @@ const clearFilters = () => {
 };
 
 const editExpense = (expense) => {
-    // Siempre editar el gasto individual, incluso si es parte de un gasto programado
-    // Esto permite actualizar solo ese gasto del mes específico
     editingExpense.value = { ...expense };
     showModal.value = true;
 };
@@ -1898,7 +1872,6 @@ const closeModal = () => {
 
 const closeScheduledModal = () => {
   showScheduledModal.value = false;
-  editingScheduledExpense.value = null;
 };
 
 const toggleExpenseOptions = () => {
@@ -2373,11 +2346,7 @@ const goToPage = (page) => {
 
 // Menú de acciones con tres puntitos
 const activeActionMenu = ref(null);
-const toggleActionMenu = (id, event) => {
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
+const toggleActionMenu = (id) => {
     activeActionMenu.value = activeActionMenu.value === id ? null : id;
 };
 
