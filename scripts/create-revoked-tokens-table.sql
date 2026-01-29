@@ -36,3 +36,4 @@ COMMENT ON COLUMN revoked_tokens.created_at IS 'Fecha en que el token fue revoca
 
 
 
+
