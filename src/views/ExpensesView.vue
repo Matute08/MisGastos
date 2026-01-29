@@ -20,6 +20,8 @@
             </div>
             
             <!-- Resumen con cuotas y flechas de mes - Solo Desktop -->
+            <SkeletonExpenseSummary v-if="isLoading" />
+            <template v-else>
             <div class="hidden lg:flex card items-center justify-between">
                 <button
                     @click="previousMonth"
@@ -100,6 +102,7 @@
                     </div>
                 </div>
             </div>
+            </template>
         </div>
 
         <!-- Filtros Desktop -->
@@ -362,10 +365,82 @@
         </div>
 
         <!-- Loading -->
-        <div v-if="expensesStore.loading" class="flex justify-center py-8">
-            <div
-                class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"
-            ></div>
+        <div v-if="isLoading" class="pb-20">
+          <!-- Skeleton para vista desktop (tabla) -->
+          <div class="hidden md:block card">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="w-4 h-4 bg-gray-200 rounded"></div>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="w-16 h-4 bg-gray-200 rounded"></div>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="w-24 h-4 bg-gray-200 rounded"></div>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="w-20 h-4 bg-gray-200 rounded"></div>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="w-20 h-4 bg-gray-200 rounded"></div>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="w-16 h-4 bg-gray-200 rounded"></div>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="w-16 h-4 bg-gray-200 rounded"></div>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="w-16 h-4 bg-gray-200 rounded"></div>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div class="w-16 h-4 bg-gray-200 rounded"></div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <tr v-for="i in 8" :key="i" class="animate-pulse">
+                    <td class="px-6 py-4">
+                      <div class="w-4 h-4 bg-gray-200 rounded"></div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <div class="w-8 h-8 bg-gray-200 rounded-full"></div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <div class="w-32 h-4 bg-gray-200 rounded"></div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <div class="w-24 h-4 bg-gray-200 rounded"></div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <div class="w-20 h-5 bg-gray-200 rounded-full"></div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <div class="w-24 h-4 bg-gray-200 rounded"></div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <div class="w-20 h-4 bg-gray-200 rounded"></div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <div class="w-20 h-6 bg-gray-200 rounded-full"></div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <div class="flex gap-2">
+                        <div class="w-4 h-4 bg-gray-200 rounded"></div>
+                        <div class="w-4 h-4 bg-gray-200 rounded"></div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <!-- Skeleton para vista móvil (tarjetas) -->
+          <SkeletonExpenseCard :count="8" class="block md:hidden" />
         </div>
 
         <!-- Lista de gastos -->
@@ -1221,6 +1296,10 @@ import { useUserCategoriesStore } from "@/stores/userCategories";
 import ExpenseModal from "@/components/ExpenseModal.vue";
 import InstallmentsList from "@/components/InstallmentsList.vue";
 import ScheduledExpenseModal from "@/components/ScheduledExpenseModal.vue";
+import SkeletonSummary from "@/components/SkeletonSummary.vue";
+import SkeletonList from "@/components/SkeletonList.vue";
+import SkeletonExpenseCard from "@/components/SkeletonExpenseCard.vue";
+import SkeletonExpenseSummary from "@/components/SkeletonExpenseSummary.vue";
 import {
     Plus,
     Receipt,
@@ -1258,6 +1337,7 @@ const showScheduledModal = ref(false);
 const showNoCardsAlert = ref(false);
 const editingExpense = ref(null);
 const showExpenseOptions = ref(false);
+const isLoading = ref(true); // Estado de loading local para evitar doble carga
 const now = new Date();
 const filters = ref({
     card_id: "",
@@ -1476,24 +1556,32 @@ const directExpenses = computed(() =>
 );
 
 onMounted(async () => {
-    await Promise.all([
-        expensesStore.loadExpenses(),
-        userCardsStore.loadUserCards(),
-        userCategoriesStore.loadUserCategories(),
-        expensesStore.loadPaymentStatuses(),
-    ]);
+    // Activar loading local al inicio
+    isLoading.value = true
     
-    // Actualizar filtros iniciales en el store
-    expensesStore.updateFilters({
-        card_id: filters.value.card_id || null,
-        category_id: filters.value.category_id || null,
-        month: filters.value.month || null,
-        year: filters.value.year || null
-    });
-    
-    // Si hay mes y año seleccionados, cargar los datos mensuales automáticamente
-    if (filters.value && filters.value.year) {
-        loadMonthlyData();
+    try {
+        await Promise.all([
+            expensesStore.loadExpenses(),
+            userCardsStore.loadUserCards(),
+            userCategoriesStore.loadUserCategories(),
+            expensesStore.loadPaymentStatuses(),
+        ]);
+        
+        // Actualizar filtros iniciales en el store
+        expensesStore.updateFilters({
+            card_id: filters.value.card_id || null,
+            category_id: filters.value.category_id || null,
+            month: filters.value.month || null,
+            year: filters.value.year || null
+        });
+        
+        // Si hay mes y año seleccionados, cargar los datos mensuales automáticamente
+        if (filters.value && filters.value.year) {
+            await loadMonthlyData();
+        }
+    } finally {
+        // Desactivar loading solo cuando TODAS las llamadas terminen
+        isLoading.value = false
     }
 
     // Cerrar menú de acciones cuando se hace clic fuera

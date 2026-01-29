@@ -10,5 +10,18 @@ node_modules/
 
 # Otros
 .DS_Store
-*.log
 *.md
+
+# Archivos de log
+# Logs de Winston (backend)
+*.log
+error.log
+combined.log
+logs/
+*.log.*
+
+# Logs de desarrollo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*

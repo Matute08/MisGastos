@@ -1,6 +1,7 @@
 /**
  * Utilidades para manejo seguro de errores
  */
+import logger from './logger.js';
 
 /**
  * Determina si estamos en producción
@@ -69,27 +70,17 @@ export const logError = (error, context = {}) => {
     includeCause: !isProd 
   });
 
-  if (isProd) {
-    // En producción: log mínimo y seguro
-    console.error('Error:', JSON.stringify({
-      message: sanitized.message,
-      code: sanitized.code,
-      statusCode: sanitized.statusCode,
-      timestamp: sanitized.timestamp,
-      path: context.path,
-      method: context.method
-    }));
-  } else {
-    // En desarrollo: log detallado
-    console.error('Error detallado:', {
-      ...sanitized,
-      context: {
-        path: context.path,
-        method: context.method,
-        userId: context.userId
-      }
-    });
-  }
+  // Usar logger en lugar de console.error
+  logger.error('Error:', {
+    message: sanitized.message,
+    code: sanitized.code,
+    statusCode: sanitized.statusCode,
+    timestamp: sanitized.timestamp,
+    path: context.path,
+    method: context.method,
+    userId: context.userId,
+    ...(isProd ? {} : { stack: sanitized.stack, cause: sanitized.cause })
+  });
 };
 
 /**

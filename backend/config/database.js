@@ -1,6 +1,7 @@
 // config/database.js
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 
@@ -11,7 +12,7 @@ const supabaseSecretKey =
 
 // Si faltan envs, no cortamos el proceso: exportamos null y dejamos log.
 if (!supabaseUrl || !supabaseSecretKey) {
-  console.error('❌ Error crítico: faltan variables SUPABASE_URL o SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY');
+  logger.error('❌ Error crítico: faltan variables SUPABASE_URL o SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY');
 }
 
 // Crear cliente de Supabase solo si hay credenciales

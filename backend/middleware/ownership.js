@@ -1,4 +1,5 @@
 import { supabase } from '../config/database.js';
+import logger from '../utils/logger.js';
 
 /**
  * Middleware para verificar que un gasto pertenece al usuario autenticado
@@ -36,7 +37,7 @@ export const verifyExpenseOwnership = async (req, res, next) => {
     // Ownership verificado, continuar al siguiente middleware/handler
     next();
   } catch (error) {
-    console.error('Error verificando ownership de gasto:', error);
+    logger.error('Error verificando ownership de gasto:', { error: error.message, expenseId, userId });
     res.status(500).json({
       success: false,
       error: 'Error interno del servidor'
@@ -78,7 +79,7 @@ export const verifyUserCardOwnership = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Error verificando ownership de tarjeta:', error);
+    logger.error('Error verificando ownership de tarjeta:', { error: error.message, userCardId, userId });
     res.status(500).json({
       success: false,
       error: 'Error interno del servidor'
@@ -125,7 +126,7 @@ export const verifyInstallmentOwnership = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Error verificando ownership de cuota:', error);
+    logger.error('Error verificando ownership de cuota:', { error: error.message, installmentId, userId });
     res.status(500).json({
       success: false,
       error: 'Error interno del servidor'

@@ -2,6 +2,7 @@ import express from 'express';
 import { CategoriesService } from '../services/categoriesService.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { body, validationResult } from 'express-validator';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo categorías:', error);
+    logger.error('Error obteniendo categorías:', { error: error.message, userId: req.user.id });
     res.status(500).json({
       success: false,
       error: error.message
@@ -58,7 +59,7 @@ router.get('/with-stats', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo categorías con estadísticas:', error);
+    logger.error('Error obteniendo categorías con estadísticas:', { error: error.message, userId: req.user.id, month, year });
     res.status(500).json({
       success: false,
       error: error.message
@@ -73,7 +74,7 @@ router.post('/', authenticateToken, validateCategory, async (req, res) => {
 
     res.status(201).json(result);
   } catch (error) {
-    console.error('Error creando categoría:', error);
+    logger.error('Error creando categoría:', { error: error.message });
     res.status(400).json({
       success: false,
       error: error.message
@@ -91,7 +92,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error actualizando categoría:', error);
+    logger.error('Error actualizando categoría:', { error: error.message, categoryId: id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -108,7 +109,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error eliminando categoría:', error);
+    logger.error('Error eliminando categoría:', { error: error.message, categoryId: id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -125,7 +126,7 @@ router.get('/:id/stats', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo estadísticas de categoría:', error);
+    logger.error('Error obteniendo estadísticas de categoría:', { error: error.message, categoryId: id, userId: req.user.id });
     res.status(500).json({
       success: false,
       error: error.message
@@ -147,7 +148,7 @@ router.get('/:id/expenses', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo gastos de categoría:', error);
+    logger.error('Error obteniendo gastos de categoría:', { error: error.message, categoryId: id, userId: req.user.id, filters });
     res.status(500).json({
       success: false,
       error: error.message

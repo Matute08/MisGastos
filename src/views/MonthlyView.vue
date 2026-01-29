@@ -17,7 +17,8 @@
     </div>
 
     <!-- Selector de mes -->
-    <div class="card">
+    <SkeletonSummary v-if="isLoading" :items="1" />
+    <div v-else class="card">
       <div class="flex items-center justify-between">
         <div>
           <h3 class="text-lg font-semibold text-gray-900">
@@ -53,9 +54,7 @@
     </div>
 
     <!-- Loading -->
-    <div v-if="expensesStore.loading" class="flex justify-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-    </div>
+    <SkeletonList v-if="isLoading" :count="6" />
 
     <!-- Lista de gastos del mes -->
     <div v-else class="space-y-4">
@@ -245,6 +244,8 @@ import {
 } from 'lucide-vue-next'
 import { format, parseISO, addMonths, subMonths, startOfMonth, endOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
+import SkeletonSummary from '@/components/SkeletonSummary.vue'
+import SkeletonList from '@/components/SkeletonList.vue'
 
 const expensesStore = useExpensesStore()
 const cardsStore = useCardsStore()
@@ -253,6 +254,7 @@ const categoriesStore = useCategoriesStore()
 const selectedDate = ref(new Date())
 const showPaid = ref(true)
 const showDirectExpenses = ref(true)
+const isLoading = ref(true) // Estado de loading local para evitar doble carga
 
 // Computed properties
 const currentMonth = computed(() => selectedDate.value.getMonth() + 1)
@@ -402,20 +404,30 @@ const toggleInstallmentPaid = async (installment) => {
 
 // Cargar datos
 const loadData = async () => {
-  await Promise.all([
-    expensesStore.loadExpenses(),
-    cardsStore.loadCards(),
-    categoriesStore.loadCategories()
-  ])
+  isLoading.value = true
+  try {
+    await Promise.all([
+      expensesStore.loadExpenses(),
+      cardsStore.loadCards(),
+      categoriesStore.loadCategories()
+    ])
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // Observar cambios en el mes seleccionado
 watch([currentMonth, currentYear], async () => {
-  await expensesStore.updateFilters({
-    month: currentMonth.value,
-    year: currentYear.value
-  })
-  await expensesStore.loadExpenses()
+  isLoading.value = true
+  try {
+    await expensesStore.updateFilters({
+      month: currentMonth.value,
+      year: currentYear.value
+    })
+    await expensesStore.loadExpenses()
+  } finally {
+    isLoading.value = false
+  }
 })
 
 onMounted(async () => {

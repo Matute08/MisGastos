@@ -1,6 +1,7 @@
 import express from 'express';
 import { UserCardsService } from '../services/userCardsService.js';
 import { authenticateToken } from '../middleware/auth.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ router.get('/', authenticateToken, async (req, res) => {
     const result = await UserCardsService.getUserCards(req.user.id);
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo tarjetas del usuario:', error);
+    logger.error('Error obteniendo tarjetas del usuario:', { error: error.message, userId: req.user.id });
     res.status(500).json({
       success: false,
       error: error.message
@@ -33,7 +34,7 @@ router.post('/', authenticateToken, async (req, res) => {
     const result = await UserCardsService.linkCardToUser(req.user.id, available_card_id);
     res.status(201).json(result);
   } catch (error) {
-    console.error('Error vinculando tarjeta al usuario:', error);
+    logger.error('Error vinculando tarjeta al usuario:', { error: error.message, userId: req.user.id, availableCardId });
     res.status(400).json({
       success: false,
       error: error.message
@@ -48,7 +49,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const result = await UserCardsService.unlinkCardFromUser(req.user.id, id);
     res.json(result);
   } catch (error) {
-    console.error('Error desvinculando tarjeta del usuario:', error);
+    logger.error('Error desvinculando tarjeta del usuario:', { error: error.message, userCardId: id, userId: req.user.id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -62,7 +63,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
     const result = await UserCardsService.getUserCardStats(req.user.id);
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo estadísticas de tarjetas del usuario:', error);
+    logger.error('Error obteniendo estadísticas de tarjetas del usuario:', { error: error.message, userId: req.user.id });
     res.status(500).json({
       success: false,
       error: error.message
@@ -77,7 +78,7 @@ router.get('/check/:availableCardId', authenticateToken, async (req, res) => {
     const result = await UserCardsService.isCardLinkedToUser(req.user.id, availableCardId);
     res.json(result);
   } catch (error) {
-    console.error('Error verificando vinculación de tarjeta:', error);
+    logger.error('Error verificando vinculación de tarjeta:', { error: error.message, userId: req.user.id, availableCardId });
     res.status(500).json({
       success: false,
       error: error.message

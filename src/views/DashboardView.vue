@@ -21,44 +21,51 @@
     </div>
     <!-- Resumen de tarjetas de crédito -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <!-- Skeleton mientras carga -->
+      <template v-if="isLoading">
+        <SkeletonCard v-for="i in 4" :key="`skeleton-card-${i}`" />
+      </template>
       <!-- Tarjetas de crédito -->
-      <div 
-        v-for="card in displayedCreditCards" 
-        :key="card.id" 
-        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200"
-      >
-        <div class="flex items-center justify-between mb-3">
-          <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-            <CreditCard class="h-5 w-5 text-blue-600" />
+      <template v-else>
+        <div 
+          v-for="card in displayedCreditCards" 
+          :key="card.id" 
+          class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200"
+        >
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <CreditCard class="h-5 w-5 text-blue-600" />
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-gray-500">{{ isAnnual ? 'Año' : 'Mes' }}</p>
+            </div>
           </div>
-          <div class="text-right">
-            <p class="text-xs text-gray-500">{{ isAnnual ? 'Año' : 'Mes' }}</p>
+          <div>
+            <h3 class="text-sm font-medium text-gray-900 mb-1">{{ card.name }}</h3>
+            <p class="text-lg font-bold text-gray-900">{{ formatCurrency(card.amount) }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ card.bank }}</p>
           </div>
         </div>
-        <div>
-          <h3 class="text-sm font-medium text-gray-900 mb-1">{{ card.name }}</h3>
-          <p class="text-lg font-bold text-gray-900">{{ formatCurrency(card.amount) }}</p>
-          <p class="text-xs text-gray-500 mt-1">{{ card.bank }}</p>
-        </div>
-      </div>
-      
-      <!-- Botón para agregar más tarjetas si hay más de 4 -->
-      <div 
-        v-if="(expensesStore.creditCardsSummary || []).length > 4" 
-        class="bg-white rounded-lg shadow-sm border-2 border-dashed border-gray-300 p-4 flex items-center justify-center hover:border-blue-400 transition-colors duration-200 cursor-pointer"
-        @click="showAllCards = !showAllCards"
-      >
-        <div class="text-center">
-          <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-            <Plus class="h-5 w-5 text-gray-400" />
+        
+        <!-- Botón para agregar más tarjetas si hay más de 4 -->
+        <div 
+          v-if="(expensesStore.creditCardsSummary || []).length > 4" 
+          class="bg-white rounded-lg shadow-sm border-2 border-dashed border-gray-300 p-4 flex items-center justify-center hover:border-blue-400 transition-colors duration-200 cursor-pointer"
+          @click="showAllCards = !showAllCards"
+        >
+          <div class="text-center">
+            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+              <Plus class="h-5 w-5 text-gray-400" />
+            </div>
+            <p class="text-xs text-gray-500">{{ showAllCards ? 'Ver menos' : `Ver ${(expensesStore.creditCardsSummary || []).length - 4} más` }}</p>
           </div>
-          <p class="text-xs text-gray-500">{{ showAllCards ? 'Ver menos' : `Ver ${(expensesStore.creditCardsSummary || []).length - 4} más` }}</p>
         </div>
-      </div>
+      </template>
     </div>
 
     <!-- Resumen de cuentas detallado -->
-    <div class="bg-white rounded-lg shadow p-4 mb-6">
+    <SkeletonSummary v-if="isLoading" :items="3" class="mb-6" />
+    <div v-else class="bg-white rounded-lg shadow p-4 mb-6">
       <h3 class="text-lg font-semibold text-gray-900 mb-3">Resumen de Cuentas</h3>
       <div class="space-y-3">
         <!-- Filas por tipo de tarjeta -->
@@ -87,7 +94,12 @@
 
          <!-- Gráficos Desktop -->
      <div class="hidden lg:grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <!-- Skeleton mientras carga -->
+      <template v-if="isLoading">
+        <SkeletonChart v-for="i in (isAnnual ? 3 : 2)" :key="`skeleton-chart-${i}`" />
+      </template>
       <!-- Gráfico por categorías -->
+      <template v-else>
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">Gastos por Categoría</h3>
@@ -138,13 +150,16 @@
           </div>
         </div>
       </div>
+      </template>
     </div>
 
     <!-- Carrusel de gráficos para móviles y tablet -->
     <div class="block lg:hidden">
       <div class="relative">
+        <!-- Skeleton mientras carga -->
+        <SkeletonChart v-if="isLoading" />
         <!-- Contenedor del carrusel -->
-        <div class="overflow-hidden">
+        <div v-else class="overflow-hidden">
           <div 
             class="flex transition-transform duration-300 ease-in-out"
             :style="{ transform: `translateX(-${currentChartIndex * 100}%)` }"
@@ -252,7 +267,10 @@
       </div>
     </div>
     <!-- Próximos vencimientos Desktop -->
-    <div class="hidden lg:block card">
+    <div v-if="isLoading" class="hidden lg:block">
+      <SkeletonTable :columns="6" :rows="5" />
+    </div>
+    <div v-else-if="!isLoading && upcomingInstallmentsList.length > 0" class="hidden lg:block card">
       <div class="card-header">
         <h3 class="card-title">Próximos Vencimientos</h3>
         <p class="card-subtitle">Pagos próximos a vencer</p>
@@ -313,7 +331,10 @@
     </div>
 
     <!-- Próximos vencimientos Móvil -->
-    <div class="block lg:hidden">
+    <div v-if="isLoading" class="block lg:hidden">
+      <SkeletonList :count="5" />
+    </div>
+    <div v-else-if="!isLoading && upcomingInstallmentsList.length > 0" class="block lg:hidden">
       <div class="bg-white rounded-lg shadow">
         <div class="px-4 py-3 border-b border-gray-200">
           <h3 class="text-lg font-semibold text-gray-900">Próximos Vencimientos</h3>
@@ -412,6 +433,11 @@ import {
   Plus,
   BarChart3
 } from 'lucide-vue-next'
+import SkeletonCard from '@/components/SkeletonCard.vue'
+import SkeletonSummary from '@/components/SkeletonSummary.vue'
+import SkeletonChart from '@/components/SkeletonChart.vue'
+import SkeletonTable from '@/components/SkeletonTable.vue'
+import SkeletonList from '@/components/SkeletonList.vue'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -432,6 +458,7 @@ const categoriesStore = useCategoriesStore()
 
 const isAnnual = ref(false)
 const showAllCards = ref(false)
+const isLoading = ref(true) // Estado de loading local para evitar doble carga
 
 // Estado para el carrusel de gráficos móviles
 const currentChartIndex = ref(0)
@@ -497,27 +524,42 @@ const upcomingInstallmentsList = computed(() => {
   })
 })
 onMounted(async () => {
+  // Activar loading local al inicio
+  isLoading.value = true
+  
   // Limpiar filtros antes de cargar gastos en el Dashboard
   expensesStore.clearFilters()
   
-  await Promise.all([
-    expensesStore.loadExpenses(),
-    expensesStore.loadUpcomingInstallments(1000), // Traer todas las cuotas posibles
-    expensesStore.loadCreditCardsSummary(isAnnual.value), // Cargar resumen de tarjetas
-    expensesStore.loadExpensesSummaryByType(isAnnual.value), // Cargar resumen por tipo
-    cardsStore.loadCards(),
-    categoriesStore.loadCategories()
-  ])
+  try {
+    await Promise.all([
+      expensesStore.loadExpenses(),
+      expensesStore.loadUpcomingInstallments(1000), // Traer todas las cuotas posibles
+      expensesStore.loadCreditCardsSummary(isAnnual.value), // Cargar resumen de tarjetas
+      expensesStore.loadExpensesSummaryByType(isAnnual.value), // Cargar resumen por tipo
+      cardsStore.loadCards(),
+      categoriesStore.loadCategories()
+    ])
+  } finally {
+    // Desactivar loading solo cuando TODAS las llamadas terminen
+    isLoading.value = false
+  }
 })
 
 // Resetear índice del carrusel cuando cambie la vista anual/mensual
 watch(isAnnual, async () => {
   currentChartIndex.value = 0
-  // Recargar resumen de tarjetas y por tipo cuando cambie el período
-  await Promise.all([
-    expensesStore.loadCreditCardsSummary(isAnnual.value),
-    expensesStore.loadExpensesSummaryByType(isAnnual.value)
-  ])
+  // Activar loading local al cambiar período
+  isLoading.value = true
+  try {
+    // Recargar resumen de tarjetas y por tipo cuando cambie el período
+    await Promise.all([
+      expensesStore.loadCreditCardsSummary(isAnnual.value),
+      expensesStore.loadExpensesSummaryByType(isAnnual.value)
+    ])
+  } finally {
+    // Desactivar loading solo cuando ambas llamadas terminen
+    isLoading.value = false
+  }
 })
 
 // Gastos del mes actual

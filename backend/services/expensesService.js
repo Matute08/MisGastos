@@ -1,4 +1,5 @@
 import { supabase } from '../config/database.js';
+import logger from '../utils/logger.js';
 
 export class ExpensesService {
   // Obtener gastos del usuario
@@ -187,7 +188,7 @@ export class ExpensesService {
           expense.first_installment_date === 'null' || 
           expense.first_installment_date === '' ||
           expense.first_installment_date === undefined) {
-        console.error('🔍 Backend - ❌ ERROR: El gasto no tiene fecha de primera cuota');
+        logger.error('El gasto no tiene fecha de primera cuota', { expenseId });
         throw new Error('El gasto debe tener fecha de primera cuota para crear cuotas');
       }
       
@@ -221,13 +222,13 @@ export class ExpensesService {
         .insert(installmentsData);
       
       if (installmentsError) {
-        console.error('🔍 Backend - Error insertando cuotas:', installmentsError);
+        logger.error('Error insertando cuotas:', { error: installmentsError.message, expenseId });
         throw installmentsError;
       }
       
       
     } catch (error) {
-      console.error('🔍 Backend - Error en createInstallmentsForExpense:', error);
+      logger.error('Error en createInstallmentsForExpense:', { error: error.message, expenseId });
       throw error;
     }
   }
@@ -448,7 +449,7 @@ export class ExpensesService {
       };
 
     } catch (error) {
-      console.error('🔍 Backend - Error en getMonthlyExpensesWithInstallments:', error);
+      logger.error('Error en getMonthlyExpensesWithInstallments:', { error: error.message, userId, month, year });
       throw error;
     }
   }
@@ -600,7 +601,7 @@ export class ExpensesService {
       };
 
     } catch (error) {
-      console.error('🔍 Backend - Error en getMonthlyTotalWithInstallments:', error);
+      logger.error('Error en getMonthlyTotalWithInstallments:', { error: error.message, userId, month, year });
       throw error;
     }
   }
@@ -841,7 +842,7 @@ export class ExpensesService {
         .single();
 
       if (updateError) {
-        console.error('🔍 Backend - Error actualizando cuota:', updateError);
+        logger.error('Error actualizando cuota:', { error: updateError.message, installmentId });
         throw updateError;
       }
 
@@ -858,7 +859,7 @@ export class ExpensesService {
       };
 
     } catch (error) {
-      console.error('🔍 Backend - Error en updateInstallmentStatus:', error);
+      logger.error('Error en updateInstallmentStatus:', { error: error.message, installmentId, paymentStatusId });
       throw error;
     }
   }
@@ -932,7 +933,7 @@ export class ExpensesService {
       } 
 
     } catch (error) {
-      console.error('🔍 Backend - Error actualizando estado del gasto:', error);
+      logger.error('Error actualizando estado del gasto:', { error: error.message, expenseId, paymentStatusId });
       throw error;
     }
   }
@@ -1040,7 +1041,7 @@ export class ExpensesService {
           .eq('expense_id', id);
 
         if (installmentsError) {
-          console.error('Error eliminando cuotas:', installmentsError);
+          logger.error('Error eliminando cuotas:', { error: installmentsError.message, expenseId });
         }
 
         // Luego eliminar el gasto

@@ -3,6 +3,7 @@ import express from 'express';
 import { supabase } from '../config/database.js';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import logger from '../utils/logger.js';
 import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -63,7 +64,7 @@ router.post('/generate-registration-options', async (req, res) => {
 
     res.json({ success: true, options });
   } catch (error) {
-    console.error('Error generando opciones de registro:', error);
+    logger.error('Error generando opciones de registro:', { error: error.message });
     res.status(500).json({ success: false, error: 'Error interno del servidor' });
   }
 });
@@ -125,7 +126,7 @@ router.post('/verify-registration', async (req, res) => {
       });
 
     if (error) {
-      console.error('Error guardando credencial:', error);
+      logger.error('Error guardando credencial:', { error: error.message });
       return res.status(500).json({
         success: false,
         error: 'Error guardando credencial'
@@ -136,7 +137,7 @@ router.post('/verify-registration', async (req, res) => {
 
     res.json({ success: true, message: 'Credencial registrada exitosamente' });
   } catch (error) {
-    console.error('Error verificando registro:', error);
+    logger.error('Error verificando registro:', { error: error.message });
     res.status(500).json({ success: false, error: 'Error interno del servidor' });
   }
 });
@@ -189,7 +190,7 @@ router.post('/generate-authentication-options', async (req, res) => {
 
     res.json({ success: true, options });
   } catch (error) {
-    console.error('Error generando opciones de autenticación:', error);
+    logger.error('Error generando opciones de autenticación:', { error: error.message });
     res.status(500).json({ success: false, error: 'Error interno del servidor' });
   }
 });
@@ -270,7 +271,7 @@ router.post('/verify-authentication', async (req, res) => {
       .eq('credential_id', storedCredential.credential_id);
 
     if (error) {
-      console.error('Error actualizando sign count:', error);
+      logger.error('Error actualizando sign count:', { error: error.message });
     }
 
     challenges.delete(userId);
@@ -284,7 +285,7 @@ router.post('/verify-authentication', async (req, res) => {
       message: 'Autenticación exitosa'
     });
   } catch (error) {
-    console.error('Error verificando autenticación:', error);
+    logger.error('Error verificando autenticación:', { error: error.message });
     res.status(500).json({ success: false, error: 'Error interno del servidor' });
   }
 });
@@ -318,7 +319,7 @@ router.get('/check-credentials/:userId', async (req, res) => {
       .limit(1);
 
     if (error) {
-      console.error('Error verificando credenciales:', error);
+      logger.error('Error verificando credenciales:', { error: error.message });
       return res.status(500).json({ success: false, error: 'Error interno del servidor' });
     }
 
@@ -327,7 +328,7 @@ router.get('/check-credentials/:userId', async (req, res) => {
       hasCredentials: credentials && credentials.length > 0
     });
   } catch (error) {
-    console.error('Error verificando credenciales:', error);
+    logger.error('Error verificando credenciales:', { error: error.message });
     res.status(500).json({ success: false, error: 'Error interno del servidor' });
   }
 });

@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { supabase } from '../config/database.js';
+import logger from '../utils/logger.js';
 
 export class AuthService {
   /**
@@ -40,7 +41,7 @@ export class AuthService {
       const expiresAt = this.getTokenExpiration(token);
 
       if (!expiresAt) {
-        console.error('No se pudo obtener la fecha de expiración del token');
+        logger.error('No se pudo obtener la fecha de expiración del token');
         return false;
       }
 
@@ -56,14 +57,14 @@ export class AuthService {
       if (error) {
         // Si el token ya está en la blacklist, no es un error crítico
         if (error.code !== '23505') { // 23505 = unique violation
-          console.error('Error revocando token:', error);
+          logger.error('Error revocando token:', { error: error.message });
           return false;
         }
       }
 
       return true;
     } catch (error) {
-      console.error('Error en revokeToken:', error);
+      logger.error('Error en revokeToken:', { error: error.message });
       return false;
     }
   }
@@ -88,14 +89,14 @@ export class AuthService {
         if (error.code === 'PGRST116') {
           return false;
         }
-        console.error('Error verificando token revocado:', error);
+        logger.error('Error verificando token revocado:', { error: error.message });
         return false;
       }
 
       // Si se encuentra, el token ESTÁ revocado
       return !!data;
     } catch (error) {
-      console.error('Error en isTokenRevoked:', error);
+      logger.error('Error en isTokenRevoked:', { error: error.message });
       return false;
     }
   }
@@ -113,13 +114,13 @@ export class AuthService {
         .select();
 
       if (error) {
-        console.error('Error limpiando tokens expirados:', error);
+        logger.error('Error limpiando tokens expirados:', { error: error.message });
         return 0;
       }
 
       return data?.length || 0;
     } catch (error) {
-      console.error('Error en cleanupExpiredTokens:', error);
+      logger.error('Error en cleanupExpiredTokens:', { error: error.message });
       return 0;
     }
   }
@@ -224,7 +225,7 @@ export class AuthService {
         user: userData
       };
     } catch (error) {
-      console.error('Error renovando token:', error);
+      logger.error('Error renovando token:', { error: error.message });
       return {
         success: false,
         error: 'Error renovando token'

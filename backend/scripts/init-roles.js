@@ -1,4 +1,5 @@
 import { supabase } from '../config/database.js';
+import logger from '../utils/logger.js';
 
 async function initRoles() {
   try {
@@ -7,7 +8,7 @@ async function initRoles() {
       .select('nombre');
 
     if (checkError) {
-      console.error('Error verificando roles existentes:', checkError);
+      logger.error('Error verificando roles existentes:', { error: checkError.message });
       return;
     }
 
@@ -35,12 +36,12 @@ async function initRoles() {
           .insert(role);
 
         if (insertError) {
-          console.error(`Error insertando rol ${role.nombre}:`, insertError);
+          logger.error(`Error insertando rol ${role.nombre}:`, { error: insertError.message, role: role.nombre });
         }
       }
     }
   } catch (error) {
-    console.error('Error en inicialización de roles:', error);
+    logger.error('Error en inicialización de roles:', { error: error.message });
   }
 }
 

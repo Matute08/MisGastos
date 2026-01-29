@@ -2,6 +2,7 @@ import express from 'express';
 import { CardsService } from '../services/cardsService.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { body, validationResult } from 'express-validator';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -32,7 +33,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo tarjetas:', error);
+      logger.error('Error obteniendo tarjetas:', { error: error.message, userId: req.user.id });
     res.status(500).json({
       success: false,
       error: error.message
@@ -52,7 +53,7 @@ router.post('/', authenticateToken, validateCard, async (req, res) => {
 
     res.status(201).json(result);
   } catch (error) {
-    console.error('Error creando tarjeta:', error);
+      logger.error('Error creando tarjeta:', { error: error.message, userId: req.user.id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -70,7 +71,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error actualizando tarjeta:', error);
+      logger.error('Error actualizando tarjeta:', { error: error.message, cardId: id, userId: req.user.id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -87,7 +88,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error eliminando tarjeta:', error);
+      logger.error('Error eliminando tarjeta:', { error: error.message, cardId: id, userId: req.user.id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -104,7 +105,7 @@ router.get('/:id/stats', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo estadísticas de tarjeta:', error);
+      logger.error('Error obteniendo estadísticas de tarjeta:', { error: error.message, cardId: id, userId: req.user.id });
     res.status(500).json({
       success: false,
       error: error.message
@@ -126,7 +127,7 @@ router.get('/:id/expenses', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo gastos de tarjeta:', error);
+      logger.error('Error obteniendo gastos de tarjeta:', { error: error.message, cardId: id, userId: req.user.id, filters });
     res.status(500).json({
       success: false,
       error: error.message

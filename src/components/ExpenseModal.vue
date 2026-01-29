@@ -1,19 +1,38 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @wheel.prevent @touchmove.prevent @scroll.prevent>
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" @wheel.stop @touchmove.stop @scroll.stop>
+  <div 
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" 
+    @wheel.prevent 
+    @touchmove.prevent 
+    @scroll.prevent
+    @keydown.esc="handleEscape"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="expense-modal-title"
+  >
+    <div 
+      class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" 
+      @wheel.stop 
+      @touchmove.stop 
+      @scroll.stop
+      role="document"
+      ref="modalRef"
+      tabindex="-1"
+    >
       <div class="flex justify-between items-center p-6 border-b border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900">
+        <h3 id="expense-modal-title" class="text-lg font-semibold text-gray-900">
           {{ expense ? 'Editar Gasto' : 'Nuevo Gasto' }}
         </h3>
         <button
           @click="$emit('close')"
           class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          aria-label="Cerrar modal"
+          type="button"
         >
-          <X class="h-5 w-5" />
+          <X class="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
 
-      <form @submit.prevent="handleSubmit" class="p-6 space-y-4">
+      <form @submit.prevent="handleSubmit" class="p-6 space-y-4" novalidate>
         <div>
           <label for="description" class="block text-sm font-medium text-gray-700">
             Descripción
@@ -25,7 +44,10 @@
             required
             class="input-field mt-1"
             placeholder="Ej: Compras en el supermercado"
+            aria-required="true"
+            aria-describedby="description-help"
           />
+          <p id="description-help" class="sr-only">Ingresa una descripción para el gasto</p>
         </div>
 
         <div>
@@ -246,9 +268,9 @@
           </div>
         </div>
 
-        <div v-if="error" class="bg-danger-50 border border-danger-200 rounded-md p-4">
+        <div v-if="error" class="bg-danger-50 border border-danger-200 rounded-md p-4" role="alert">
           <div class="flex">
-            <AlertCircle class="h-5 w-5 text-danger-400" />
+            <AlertCircle class="h-5 w-5 text-danger-400" aria-hidden="true" />
             <div class="ml-3">
               <p class="text-sm text-danger-700">{{ error }}</p>
             </div>
@@ -260,6 +282,7 @@
             type="button"
             @click="$emit('close')"
             class="btn-secondary"
+            aria-label="Cancelar y cerrar modal"
           >
             Cancelar
           </button>
@@ -267,8 +290,9 @@
             type="submit"
             :disabled="loading"
             class="btn-primary inline-flex items-center justify-center min-w-[120px]"
+            :aria-label="loading ? 'Guardando gasto...' : (expense ? 'Actualizar gasto' : 'Crear gasto')"
           >
-            <div v-if="loading" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            <div v-if="loading" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" aria-hidden="true"></div>
             <span>{{ loading ? 'Guardando...' : (expense ? 'Actualizar' : 'Crear') }}</span>
           </button>
         </div>
@@ -278,7 +302,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, watch, onBeforeUnmount, nextTick } from 'vue'
 import { useUserCardsStore } from '@/stores/userCards'
 import { useCategoriesStore } from '@/stores/categories'
 import { useSubcategoriesStore } from '@/stores/subcategories'
@@ -337,6 +361,14 @@ const loading = ref(false)
 const error = ref('')
 const firstInstallmentDateManual = ref('')
 const singleInstallmentDate = ref('')
+const modalRef = ref(null)
+
+// Manejar tecla Escape
+const handleEscape = (event) => {
+  if (event.key === 'Escape') {
+    emit('close')
+  }
+}
 
 const resetForm = () => {
   form.value = {
@@ -618,6 +650,10 @@ onMounted(async () => {
     subcategoriesStore.loadSubcategories(),
     expensesStore.loadPaymentStatuses()
   ])
+  await nextTick()
+  if (modalRef.value) {
+    modalRef.value.focus()
+  }
 })
 
 onBeforeUnmount(() => {

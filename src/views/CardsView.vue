@@ -19,9 +19,7 @@
     </div>
 
     <!-- Loading -->
-    <div v-if="userCardsStore.loading" class="flex justify-center py-6 sm:py-8">
-      <div class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary-600"></div>
-    </div>
+    <SkeletonGrid v-if="isLoading" :count="6" />
 
     <!-- Lista de cuentas vinculadas -->
     <div v-else class="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
@@ -395,6 +393,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useUserCardsStore } from '@/stores/userCards'
 import { useAvailableCardsStore } from '@/stores/availableCards'
 import Swal from 'sweetalert2'
+import SkeletonGrid from '@/components/SkeletonGrid.vue'
 import {
   CreditCard,
   Plus,
@@ -411,6 +410,7 @@ const linkingCard = ref(null)
 const searchQuery = ref('')
 const selectedBank = ref('')
 const currentPage = ref(1)
+const isLoading = ref(true) // Estado de loading local para evitar doble carga
 const itemsPerPage = 5
 
 // Paginación para desktop
@@ -539,10 +539,15 @@ const goToNextPageDesktop = () => {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    userCardsStore.loadUserCards(),
-    availableCardsStore.loadAvailableCards()
-  ])
+  isLoading.value = true
+  try {
+    await Promise.all([
+      userCardsStore.loadUserCards(),
+      availableCardsStore.loadAvailableCards()
+    ])
+  } finally {
+    isLoading.value = false
+  }
 })
 
 // Watcher para resetear la página cuando cambie la búsqueda o el filtro de banco

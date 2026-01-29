@@ -1,21 +1,40 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @wheel.prevent @touchmove.prevent @scroll.prevent>
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" @wheel.stop @touchmove.stop @scroll.stop>
+  <div 
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" 
+    @wheel.prevent 
+    @touchmove.prevent 
+    @scroll.prevent
+    @keydown.esc="handleEscape"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+  >
+    <div 
+      class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" 
+      @wheel.stop 
+      @touchmove.stop 
+      @scroll.stop
+      role="document"
+      ref="modalRef"
+      tabindex="-1"
+    >
       <!-- Header -->
       <div class="flex justify-between items-center p-6 border-b border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900">
+        <h3 id="modal-title" class="text-lg font-semibold text-gray-900">
           {{ card ? 'Editar Tarjeta' : 'Nueva Tarjeta' }}
         </h3>
         <button
           @click="$emit('close')"
           class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          aria-label="Cerrar modal"
+          type="button"
         >
           <X class="h-5 w-5" />
         </button>
       </div>
 
       <!-- Formulario -->
-      <form @submit.prevent="handleSubmit" class="p-6 space-y-4">
+      <form @submit.prevent="onSubmit" class="p-6 space-y-4" novalidate>
         <!-- Nombre -->
         <div>
           <label for="name" class="block text-sm font-medium text-gray-700">
@@ -23,12 +42,18 @@
           </label>
           <input
             id="name"
-            v-model="form.name"
+            v-model="name"
             type="text"
-            required
             class="input-field mt-1"
+            :class="{ 'border-red-500': errors.name }"
             placeholder="Ej: Visa Galicia"
+            aria-describedby="name-error"
+            aria-invalid="true"
+            v-bind="nameAttrs"
           />
+          <p v-if="errors.name" id="name-error" class="mt-1 text-sm text-red-600" role="alert">
+            {{ errors.name }}
+          </p>
         </div>
 
         <!-- Tipo -->
@@ -38,14 +63,20 @@
           </label>
           <select
             id="type"
-            v-model="form.type"
-            required
+            v-model="type"
             class="input-field mt-1"
+            :class="{ 'border-red-500': errors.type }"
+            aria-describedby="type-error"
+            aria-invalid="true"
+            v-bind="typeAttrs"
           >
             <option value="">Seleccionar tipo</option>
             <option value="Crédito">Crédito</option>
             <option value="Débito">Débito</option>
           </select>
+          <p v-if="errors.type" id="type-error" class="mt-1 text-sm text-red-600" role="alert">
+            {{ errors.type }}
+          </p>
         </div>
 
         <!-- Banco -->
@@ -55,20 +86,26 @@
           </label>
           <input
             id="bank"
-            v-model="form.bank"
+            v-model="bank"
             type="text"
-            required
             class="input-field mt-1"
+            :class="{ 'border-red-500': errors.bank }"
             placeholder="Ej: Galicia, Santander, etc."
+            aria-describedby="bank-error"
+            aria-invalid="true"
+            v-bind="bankAttrs"
           />
+          <p v-if="errors.bank" id="bank-error" class="mt-1 text-sm text-red-600" role="alert">
+            {{ errors.bank }}
+          </p>
         </div>
 
-        <!-- Error -->
-        <div v-if="error" class="bg-danger-50 border border-danger-200 rounded-md p-4">
+        <!-- Error general -->
+        <div v-if="submitError" class="bg-danger-50 border border-danger-200 rounded-md p-4" role="alert">
           <div class="flex">
-            <AlertCircle class="h-5 w-5 text-danger-400" />
+            <AlertCircle class="h-5 w-5 text-danger-400" aria-hidden="true" />
             <div class="ml-3">
-              <p class="text-sm text-danger-700">{{ error }}</p>
+              <p class="text-sm text-danger-700">{{ submitError }}</p>
             </div>
           </div>
         </div>
@@ -79,16 +116,18 @@
             type="button"
             @click="$emit('close')"
             class="btn-secondary"
+            aria-label="Cancelar y cerrar modal"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            :disabled="loading"
+            :disabled="loading || isSubmitting"
             class="btn-primary"
+            aria-label="Guardar tarjeta"
           >
-            <div v-if="loading" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-            {{ loading ? 'Guardando...' : (card ? 'Actualizar' : 'Crear') }}
+            <div v-if="loading || isSubmitting" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" aria-hidden="true"></div>
+            {{ loading || isSubmitting ? 'Guardando...' : (card ? 'Actualizar' : 'Crear') }}
           </button>
         </div>
       </form>
@@ -97,8 +136,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, watch, onBeforeUnmount, nextTick } from 'vue'
+import { useForm, useField } from 'vee-validate'
+import * as yup from 'yup'
 import { X, AlertCircle } from 'lucide-vue-next'
+import { getUserFriendlyError } from '@/utils/errorMessages.js'
 
 const props = defineProps({
   card: {
@@ -109,61 +151,108 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'save'])
 
-const form = ref({
-  name: '',
-  type: '',
-  bank: ''
+// Esquema de validación
+const schema = yup.object({
+  name: yup
+    .string()
+    .required('El nombre de la tarjeta es obligatorio')
+    .min(2, 'El nombre debe tener al menos 2 caracteres')
+    .max(100, 'El nombre no puede exceder 100 caracteres'),
+  type: yup
+    .string()
+    .required('Debes seleccionar un tipo de tarjeta')
+    .oneOf(['Crédito', 'Débito'], 'El tipo debe ser Crédito o Débito'),
+  bank: yup
+    .string()
+    .required('El banco es obligatorio')
+    .min(2, 'El nombre del banco debe tener al menos 2 caracteres')
+    .max(100, 'El nombre del banco no puede exceder 100 caracteres')
 })
 
-const loading = ref(false)
-const error = ref('')
-
-// Mover resetForm antes del watcher
-const resetForm = () => {
-  form.value = {
+// Configurar formulario con vee-validate
+const { handleSubmit, errors, isSubmitting, resetForm } = useForm({
+  validationSchema: schema,
+  initialValues: {
     name: '',
     type: '',
     bank: ''
   }
-  error.value = ''
+})
+
+// Campos del formulario
+const { value: name, handleBlur: nameBlur, handleChange: nameChange } = useField('name')
+const { value: type, handleBlur: typeBlur, handleChange: typeChange } = useField('type')
+const { value: bank, handleBlur: bankBlur, handleChange: bankChange } = useField('bank')
+
+// Atributos para accesibilidad
+const nameAttrs = computed(() => ({
+  onBlur: nameBlur,
+  onInput: nameChange
+}))
+
+const typeAttrs = computed(() => ({
+  onBlur: typeBlur,
+  onChange: typeChange
+}))
+
+const bankAttrs = computed(() => ({
+  onBlur: bankBlur,
+  onInput: bankChange
+}))
+
+const loading = ref(false)
+const submitError = ref('')
+const modalRef = ref(null)
+
+// Manejar tecla Escape
+const handleEscape = (event) => {
+  if (event.key === 'Escape') {
+    emit('close')
+  }
 }
 
 // Inicializar formulario cuando se edita una tarjeta
 watch(() => props.card, (newCard) => {
   if (newCard) {
-    form.value = {
-      name: newCard.name,
-      type: newCard.type,
-      bank: newCard.bank
-    }
+    resetForm({
+      values: {
+        name: newCard.name || '',
+        type: newCard.type || '',
+        bank: newCard.bank || ''
+      }
+    })
   } else {
     resetForm()
   }
+  submitError.value = ''
 }, { immediate: true })
 
-const handleSubmit = async () => {
+// Manejar envío del formulario
+const onSubmit = handleSubmit(async (values) => {
   loading.value = true
-  error.value = ''
+  submitError.value = ''
 
   try {
-    // Preparar datos
     const cardData = {
-      name: form.value.name,
-      type: form.value.type,
-      bank: form.value.bank
+      name: values.name.trim(),
+      type: values.type,
+      bank: values.bank.trim()
     }
 
-    emit('save', cardData)
+    await emit('save', cardData)
   } catch (err) {
-    error.value = err.message
+    submitError.value = getUserFriendlyError(err)
   } finally {
     loading.value = false
   }
-}
+})
 
-onMounted(() => {
+onMounted(async () => {
   document.body.style.overflow = 'hidden'
-  resetForm()
+  await nextTick()
+  if (modalRef.value) {
+    modalRef.value.focus()
+  }
 })
 
 onBeforeUnmount(() => {

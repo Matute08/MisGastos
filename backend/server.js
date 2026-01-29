@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { getConfig } from './config/production.js';
 import { logError, getErrorResponse } from './utils/errorHandler.js';
+import logger from './utils/logger.js';
 
 // Rutas
 import authRoutes from './routes/auth.js';
@@ -39,7 +40,7 @@ if (Array.isArray(cfg.CORS_ORIGIN)) cfg.CORS_ORIGIN.forEach(o => corsOrigins.add
 if (process.env.CORS_ORIGIN && typeof process.env.CORS_ORIGIN === 'string') corsOrigins.add(process.env.CORS_ORIGIN);
 
 const allowedOrigins = [...corsOrigins];
-console.log('🚀 CORS Origins permitidos:', allowedOrigins);
+logger.info('🚀 CORS Origins permitidos:', { origins: allowedOrigins });
 
 app.use(cors({
   origin: allowedOrigins,
@@ -54,7 +55,10 @@ app.options('*', cors());
 
 // Log mínimo
 app.use((req, _res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - Origin: ${req.headers.origin || '-'}`);
+  logger.info(`${req.method} ${req.path}`, { 
+    origin: req.headers.origin || '-',
+    timestamp: new Date().toISOString()
+  });
   next();
 });
 
@@ -182,14 +186,14 @@ app.use('*', (req, res) => {
 
 const startServer = async () => {
   try {
-    console.log('🚀 Iniciando servidor MisGastos...');
-    console.log('📊 Puerto:', PORT);
-    console.log('🌍 Entorno:', process.env.NODE_ENV || 'development');
+    logger.info('🚀 Iniciando servidor MisGastos...');
+    logger.info('📊 Puerto:', { port: PORT });
+    logger.info('🌍 Entorno:', { environment: process.env.NODE_ENV || 'development' });
 
     // Verificación no-bloqueante de Supabase
     const { supabase } = await import('./config/database.js');
     if (!supabase) {
-      console.warn('⚠️ Supabase no configurado (faltan envs). El servidor arranca igual para health checks.');
+      logger.warn('⚠️ Supabase no configurado (faltan envs). El servidor arranca igual para health checks.');
     } else {
       try {
         await supabase.from('expenses').select('id').limit(1);
@@ -206,14 +210,14 @@ const startServer = async () => {
     } catch (_) { /* silencioso */ }
 
     app.listen(PORT, '0.0.0.0', () => {
-      console.log('✅ Servidor iniciado correctamente en puerto:', PORT);
+      logger.info('✅ Servidor iniciado correctamente', { port: PORT });
       if (PUBLIC_URL) {
-        console.log('🔗 Health check:', `${PUBLIC_URL}/health`);
-        console.log('🔗 API base:', PUBLIC_URL);
+        logger.info('🔗 Health check:', { url: `${PUBLIC_URL}/health` });
+        logger.info('🔗 API base:', { url: PUBLIC_URL });
       } else {
-        console.log('🔗 Tip: setea PUBLIC_URL para loguear el dominio público.');
-        console.log('🔗 Health local:', `http://localhost:${PORT}/health`);
-        console.log('🔗 API local:', `http://localhost:${PORT}`);
+        logger.info('🔗 Tip: setea PUBLIC_URL para loguear el dominio público.');
+        logger.info('🔗 Health local:', { url: `http://localhost:${PORT}/health` });
+        logger.info('🔗 API local:', { url: `http://localhost:${PORT}` });
       }
     });
   } catch (error) {

@@ -5,6 +5,7 @@ import { verifyExpenseOwnership, verifyInstallmentOwnership } from '../middlewar
 import { body, validationResult } from 'express-validator';
 import { queryValidators, handleValidationErrors } from '../middleware/validation.js';
 import { supabase } from '../config/database.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -78,7 +79,7 @@ router.get('/',
 
       res.json(result);
     } catch (error) {
-      console.error('Error obteniendo gastos:', error);
+      logger.error('Error obteniendo gastos:', { error: error.message, userId: req.user.id });
       res.status(500).json({
         success: false,
         error: error.message
@@ -127,7 +128,7 @@ router.get('/monthly', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo gastos mensuales:', error);
+    logger.error('Error obteniendo gastos mensuales:', { error: error.message, userId: req.user.id });
     res.status(500).json({
       success: false,
       error: error.message
@@ -162,7 +163,7 @@ router.get('/monthly-total',
 
       res.json(result);
     } catch (error) {
-      console.error('Error obteniendo total mensual:', error);
+      logger.error('Error obteniendo total mensual:', { error: error.message, userId: req.user.id });
       res.status(500).json({
         success: false,
         error: error.message
@@ -183,7 +184,7 @@ router.post('/', authenticateToken, validateExpense, async (req, res) => {
 
     res.status(201).json(result);
   } catch (error) {
-    console.error('Error creando gasto:', error);
+    logger.error('Error creando gasto:', { error: error.message, userId: req.user.id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -205,7 +206,7 @@ router.put('/:id', authenticateToken, verifyExpenseOwnership, async (req, res) =
 
     res.json(result);
   } catch (error) {
-    console.error('Error actualizando gasto:', error);
+    logger.error('Error actualizando gasto:', { error: error.message, expenseId: id, userId: req.user.id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -216,11 +217,10 @@ router.put('/:id', authenticateToken, verifyExpenseOwnership, async (req, res) =
 // DELETE /api/expenses/:id/scheduled - Eliminar gasto programado con opciones (DEBE IR ANTES DE /:id)
 router.delete('/:id/scheduled', authenticateToken, async (req, res) => {
   try {
-    console.log('🔍 DEBUG - Ruta de eliminación programada llamada');
-    console.log('📋 Parámetros:', { id: req.params.id, body: req.body });
+    logger.debug('Ruta de eliminación programada llamada', { id: req.params.id, body: req.body });
     
     const { deleteOption } = req.body; // 'current' o 'future'
-    console.log('🔍 DeleteOption recibido:', deleteOption);
+    logger.debug('DeleteOption recibido', { deleteOption });
     
     const result = await ExpensesService.deleteScheduledExpense(
       req.user.id, 
@@ -228,10 +228,10 @@ router.delete('/:id/scheduled', authenticateToken, async (req, res) => {
       deleteOption || 'current'
     );
     
-    console.log('✅ Resultado de eliminación:', result);
+    logger.info('Gasto programado eliminado exitosamente', { expenseId: req.params.id, deleteOption, userId: req.user.id });
     res.json(result);
   } catch (error) {
-    console.error('❌ Error eliminando gasto programado:', error);
+    logger.error('Error eliminando gasto programado:', { error: error.message, expenseId: req.params.id, userId: req.user.id });
     res.status(500).json({
       success: false,
       error: error.message || 'Error interno del servidor'
@@ -245,15 +245,13 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { deleteOption } = req.body; // Puede ser 'future' para gastos programados
 
-    console.log('🔍 DEBUG - Eliminando gasto ID:', id, 'deleteOption:', deleteOption);
-    console.log('🔍 DEBUG - Cuerpo de la petición:', req.body);
-    console.log('🔍 DEBUG - Tipo de deleteOption:', typeof deleteOption);
+    logger.debug('Eliminando gasto', { expenseId: id, deleteOption, body: req.body });
 
     const result = await ExpensesService.deleteExpense(id, req.user.id, deleteOption);
 
     res.json(result);
   } catch (error) {
-    console.error('Error eliminando gasto:', error);
+    logger.error('Error eliminando gasto:', { error: error.message, expenseId: id, userId: req.user.id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -270,7 +268,7 @@ router.get('/:id/installments', authenticateToken, verifyExpenseOwnership, async
 
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo cuotas:', error);
+    logger.error('Error obteniendo cuotas:', { error: error.message, expenseId: id, userId: req.user.id });
     res.status(500).json({
       success: false,
       error: error.message
@@ -287,7 +285,7 @@ router.get('/:id/installments-summary', authenticateToken, verifyExpenseOwnershi
 
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo resumen de cuotas:', error);
+    logger.error('Error obteniendo resumen de cuotas:', { error: error.message, expenseId: id, userId: req.user.id });
     res.status(500).json({
       success: false,
       error: error.message
@@ -312,7 +310,7 @@ router.put('/installments/:id/status', authenticateToken, verifyInstallmentOwner
 
     res.json(result);
   } catch (error) {
-    console.error('Error actualizando estado de cuota:', error);
+    logger.error('Error actualizando estado de cuota:', { error: error.message, installmentId: id, userId: req.user.id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -380,7 +378,7 @@ router.put('/:id/mark-as-paid', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error marcando gasto como pagado:', error);
+    logger.error('Error marcando gasto como pagado:', { error: error.message, id, userId: req.user.id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -401,7 +399,7 @@ router.get('/upcoming-installments',
 
       res.json(result);
     } catch (error) {
-      console.error('Error obteniendo cuotas próximas:', error);
+      logger.error('Error obteniendo cuotas próximas:', { error: error.message, userId: req.user.id, limit });
       res.status(500).json({
         success: false,
         error: error.message
@@ -421,7 +419,7 @@ router.get('/payment-status',
 
       res.json(result);
     } catch (error) {
-      console.error('Error obteniendo estado de pago:', error);
+      logger.error('Error obteniendo estado de pago:', { error: error.message, code: req.query.code });
       res.status(500).json({
         success: false,
         error: error.message
@@ -437,7 +435,7 @@ router.get('/payment-statuses', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo estados de pago:', error);
+    logger.error('Error obteniendo estados de pago:', { error: error.message });
     res.status(500).json({
       success: false,
       error: error.message
@@ -461,7 +459,7 @@ router.post('/installments', authenticateToken, async (req, res) => {
 
     res.status(201).json(result);
   } catch (error) {
-    console.error('Error creando cuotas:', error);
+    logger.error('Error creando cuotas:', { error: error.message, userId: req.user.id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -515,7 +513,7 @@ router.get('/user-categories', authenticateToken, async (req, res) => {
       categories: categories || []
     });
   } catch (error) {
-    console.error('Error obteniendo categorías del usuario:', error);
+    logger.error('Error obteniendo categorías del usuario:', { error: error.message, userId });
     res.status(500).json({
       success: false,
       error: 'Error interno del servidor'
@@ -570,7 +568,7 @@ router.get('/user-cards', authenticateToken, async (req, res) => {
           .limit(1);
         
         if (expensesError) {
-          console.error('Error verificando gastos para tarjeta:', expensesError);
+          logger.error('Error verificando gastos para tarjeta:', { error: expensesError.message, cardId: userCard.available_card_id, userId });
           continue;
         }
         
@@ -586,7 +584,7 @@ router.get('/user-cards', authenticateToken, async (req, res) => {
       cards: cardsWithExpenses
     });
   } catch (error) {
-    console.error('Error obteniendo tarjetas del usuario:', error);
+    logger.error('Error obteniendo tarjetas del usuario:', { error: error.message, userId });
     res.status(500).json({
       success: false,
       error: 'Error interno del servidor'
@@ -603,7 +601,7 @@ router.get('/credit-cards-summary', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo resumen de tarjetas:', error);
+    logger.error('Error obteniendo resumen de tarjetas:', { error: error.message, userId: req.user.id, isAnnual });
     res.status(500).json({
       success: false,
       error: error.message
@@ -617,13 +615,13 @@ router.get('/summary-by-type', authenticateToken, async (req, res) => {
     const period = req.query.period;
     const isAnnual = period === 'annual';
     
-    console.log(`📊 Request recibido - period: "${period}", isAnnual: ${isAnnual}`);
+    logger.debug('Request recibido para resumen por tipo', { period, isAnnual, userId: req.user.id });
     
     const result = await ExpensesService.getExpensesSummaryByType(req.user.id, isAnnual);
 
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo resumen por tipo:', error);
+    logger.error('Error obteniendo resumen por tipo:', { error: error.message, userId: req.user.id, period, isAnnual });
     res.status(500).json({
       success: false,
       error: error.message
@@ -640,7 +638,7 @@ router.get('/scheduled', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo gastos programados:', error);
+    logger.error('Error obteniendo gastos programados:', { error: error.message, userId: req.user.id });
     res.status(500).json({
       success: false,
       error: error.message
@@ -661,7 +659,7 @@ router.post('/scheduled', authenticateToken, validateScheduledExpense, async (re
 
     res.status(201).json(result);
   } catch (error) {
-    console.error('Error creando gasto programado:', error);
+    logger.error('Error creando gasto programado:', { error: error.message, userId: req.user.id });
     res.status(500).json({
       success: false,
       error: error.message
@@ -676,7 +674,7 @@ router.put('/scheduled/:id', authenticateToken, validateScheduledExpense, async 
 
     res.json(result);
   } catch (error) {
-    console.error('Error actualizando gasto programado:', error);
+    logger.error('Error actualizando gasto programado:', { error: error.message, expenseId: req.params.id, userId: req.user.id });
     res.status(500).json({
       success: false,
       error: error.message
@@ -691,7 +689,7 @@ router.delete('/scheduled/:id', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error cancelando gasto programado:', error);
+    logger.error('Error cancelando gasto programado:', { error: error.message, expenseId: req.params.id, userId: req.user.id });
     res.status(500).json({
       success: false,
       error: error.message

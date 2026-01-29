@@ -2,6 +2,7 @@ import express from 'express';
 import { AvailableCardsService } from '../services/availableCardsService.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { body, validationResult } from 'express-validator';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -43,7 +44,7 @@ router.get('/', async (req, res) => {
     const result = await AvailableCardsService.getAllAvailableCards();
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo tarjetas disponibles:', error);
+    logger.error('Error obteniendo tarjetas disponibles:', { error: error.message });
     res.status(500).json({
       success: false,
       error: error.message
@@ -57,7 +58,7 @@ router.post('/', authenticateToken, requireAdmin, validateAvailableCard, async (
     const result = await AvailableCardsService.createAvailableCard(req.body);
     res.status(201).json(result);
   } catch (error) {
-    console.error('Error creando tarjeta disponible:', error);
+    logger.error('Error creando tarjeta disponible:', { error: error.message });
     res.status(400).json({
       success: false,
       error: error.message
@@ -72,7 +73,7 @@ router.put('/:id', authenticateToken, requireAdmin, validateAvailableCard, async
     const result = await AvailableCardsService.updateAvailableCard(id, req.body);
     res.json(result);
   } catch (error) {
-    console.error('Error actualizando tarjeta disponible:', error);
+    logger.error('Error actualizando tarjeta disponible:', { error: error.message, cardId: id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -87,7 +88,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     const result = await AvailableCardsService.deleteAvailableCard(id);
     res.json(result);
   } catch (error) {
-    console.error('Error eliminando tarjeta disponible:', error);
+    logger.error('Error eliminando tarjeta disponible:', { error: error.message, cardId: id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -102,7 +103,7 @@ router.get('/:id', async (req, res) => {
     const result = await AvailableCardsService.getAvailableCardById(id);
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo tarjeta disponible:', error);
+    logger.error('Error obteniendo tarjeta disponible:', { error: error.message, cardId: id });
     res.status(500).json({
       success: false,
       error: error.message

@@ -1,4 +1,5 @@
 import { config } from '../config/environment.js'
+import { getUserFriendlyError } from '../utils/errorMessages.js'
 
 const API_BASE_URL = config.API_BASE_URL;
 
@@ -40,7 +41,12 @@ class ApiClient {
           const retryData = await retryResponse.json();
           
           if (!retryResponse.ok) {
-            throw new Error(retryData.error || `Error ${retryResponse.status}: ${retryResponse.statusText}`);
+            const apiError = new Error(getUserFriendlyError({ 
+              message: retryData.error, 
+              statusCode: retryResponse.status 
+            }));
+            apiError.statusCode = retryResponse.status;
+            throw apiError;
           }
           return retryData;
         } else {
@@ -51,13 +57,20 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+        const apiError = new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+        apiError.statusCode = response.status;
+        apiError.code = response.status;
+        throw apiError;
       }
 
       return data;
     } catch (error) {
       console.error('Error en petición API:', error);
-      throw error;
+      // Convertir error técnico a mensaje amigable
+      const friendlyError = new Error(getUserFriendlyError(error));
+      friendlyError.originalError = error;
+      friendlyError.statusCode = error.statusCode || error.status;
+      throw friendlyError;
     }
   }
 
@@ -210,6 +223,7 @@ export const auth = {
       return response.data;
     } catch (error) {
       console.error('Error obteniendo perfil:', error);
+      // No retornar error aquí, getUser maneja el error internamente
       return null;
     }
   },
@@ -255,7 +269,7 @@ export const availableCards = {
       return response;
     } catch (error) {
       console.error('Error en getAllAvailableCards:', error);
-      return { error: error.message };
+      return { error: getUserFriendlyError(error) };
     }
   },
 
@@ -265,7 +279,7 @@ export const availableCards = {
       return response;
     } catch (error) {
       console.error('Error en createAvailableCard:', error);
-      return { error: error.message };
+      return { error: getUserFriendlyError(error) };
     }
   },
 
@@ -275,7 +289,7 @@ export const availableCards = {
       return response;
     } catch (error) {
       console.error('Error en updateAvailableCard:', error);
-      return { error: error.message };
+      return { error: getUserFriendlyError(error) };
     }
   },
 
@@ -285,7 +299,7 @@ export const availableCards = {
       return response;
     } catch (error) {
       console.error('Error en deleteAvailableCard:', error);
-      return { error: error.message };
+      return { error: getUserFriendlyError(error) };
     }
   },
 
@@ -295,7 +309,7 @@ export const availableCards = {
       return response;
     } catch (error) {
       console.error('Error en getAvailableCardById:', error);
-      return { error: error.message };
+      return { error: getUserFriendlyError(error) };
     }
   }
 };
@@ -307,7 +321,7 @@ export const userCards = {
       return response;
     } catch (error) {
       console.error('Error en getUserCards:', error);
-      return { error: error.message };
+      return { error: getUserFriendlyError(error) };
     }
   },
 
@@ -319,7 +333,7 @@ export const userCards = {
       return response;
     } catch (error) {
       console.error('Error en linkCardToUser:', error);
-      return { error: error.message };
+      return { error: getUserFriendlyError(error) };
     }
   },
 
@@ -329,7 +343,7 @@ export const userCards = {
       return response;
     } catch (error) {
       console.error('Error en unlinkCardFromUser:', error);
-      return { error: error.message };
+      return { error: getUserFriendlyError(error) };
     }
   },
 
@@ -339,7 +353,7 @@ export const userCards = {
       return response;
     } catch (error) {
       console.error('Error en isCardLinkedToUser:', error);
-      return { error: error.message };
+      return { error: getUserFriendlyError(error) };
     }
   },
 
@@ -349,7 +363,7 @@ export const userCards = {
       return response;
     } catch (error) {
       console.error('Error en getUserCardStats:', error);
-      return { error: error.message };
+      return { error: getUserFriendlyError(error) };
     }
   }
 };
@@ -361,7 +375,7 @@ export const cards = {
       return response;
     } catch (error) {
       console.error('Error en getCards:', error);
-      return { error: error.message };
+      return { error: getUserFriendlyError(error) };
     }
   },
 
@@ -371,7 +385,7 @@ export const cards = {
       return response;
     } catch (error) {
       console.error('Error en createCard:', error);
-      return { error: error.message };
+      return { error: getUserFriendlyError(error) };
     }
   },
 

@@ -1,6 +1,7 @@
 import express from 'express';
 import { AuthService } from '../services/authService.js';
 import { validateLogin, validateRegister, authenticateToken } from '../middleware/auth.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.post('/register', validateRegister, async (req, res) => {
 
     res.status(201).json(result);
   } catch (error) {
-    console.error('Error en registro:', error);
+    logger.error('Error en registro:', { error: error.message, email });
     res.status(400).json({
       success: false,
       error: error.message
@@ -34,7 +35,7 @@ router.post('/login', validateLogin, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error en login:', error);
+    logger.error('Error en login:', { error: error.message, email });
     res.status(401).json({
       success: false,
       error: error.message
@@ -62,7 +63,7 @@ router.post('/refresh', async (req, res) => {
       res.status(401).json(result);
     }
   } catch (error) {
-    console.error('Error renovando token:', error);
+    logger.error('Error renovando token:', { error: error.message });
     res.status(401).json({
       success: false,
       error: 'Token inválido o expirado'
@@ -79,7 +80,7 @@ router.get('/validate', authenticateToken, async (req, res) => {
       message: 'Token válido'
     });
   } catch (error) {
-    console.error('Error validando token:', error);
+    logger.error('Error validando token:', { error: error.message });
     res.status(401).json({
       success: false,
       error: 'Token inválido'
@@ -97,7 +98,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
       data: profile
     });
   } catch (error) {
-    console.error('Error obteniendo perfil:', error);
+    logger.error('Error obteniendo perfil:', { error: error.message, userId: req.user.id });
     res.status(404).json({
       success: false,
       error: error.message
@@ -124,7 +125,7 @@ router.put('/change-role/:userId', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error cambiando rol:', error);
+    logger.error('Error cambiando rol:', { error: error.message, userId, newRoleName, adminId: req.user.id });
     res.status(400).json({
       success: false,
       error: error.message

@@ -54,14 +54,7 @@
         </div>
 
         <!-- Loading -->
-        <div
-            v-if="categoriesStore.loading"
-            class="flex justify-center py-6 sm:py-8"
-        >
-            <div
-                class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary-600"
-            ></div>
-        </div>
+        <SkeletonGrid v-if="isLoading" :count="8" />
 
         <!-- Grid de categorías simplificado -->
         <div
@@ -301,6 +294,7 @@ import { useAuthStore } from "@/stores/auth";
 import CategoryModal from "@/components/CategoryModal.vue";
 import SubcategoryModal from "@/components/SubcategoryModal.vue";
 import Swal from "sweetalert2";
+import SkeletonGrid from "@/components/SkeletonGrid.vue";
 import "sweetalert2/dist/sweetalert2.min.css";
 import {
     Tag,
@@ -330,13 +324,19 @@ const activeCategoryMenu = ref(null);
 const activeSubcategoryMenu = ref(null);
 const selectedCategoryForSubcategory = ref(null);
 const expandedCategories = ref([]);
+const isLoading = ref(true); // Estado de loading local para evitar doble carga
 
 onMounted(async () => {
-    await Promise.all([
-        categoriesStore.loadCategories(),
-        subcategoriesStore.loadCategoriesWithSubcategories(),
-        expensesStore.loadExpenses(),
-    ]);
+    isLoading.value = true
+    try {
+        await Promise.all([
+            categoriesStore.loadCategories(),
+            subcategoriesStore.loadCategoriesWithSubcategories(),
+            expensesStore.loadExpenses(),
+        ]);
+    } finally {
+        isLoading.value = false
+    }
 });
 
 // Bloqueo de scroll del body cuando hay cualquier modal abierto

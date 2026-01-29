@@ -1,5 +1,6 @@
 import { supabase } from '../config/database.js';
 import { SubcategoriesService } from './subcategoriesService.js';
+import logger from '../utils/logger.js';
 
 export class CategoriesService {
   // Obtener todas las categorías del usuario
@@ -46,7 +47,7 @@ export class CategoriesService {
               color: subcategoryData.color
             });
           } catch (subcategoryError) {
-            console.error('Error creando subcategoría:', subcategoryError);
+            logger.error('Error creando subcategoría:', { error: subcategoryError.message, categoryId: data.id });
             // No fallar la creación de la categoría si falla una subcategoría
           }
         }

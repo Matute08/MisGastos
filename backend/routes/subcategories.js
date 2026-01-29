@@ -2,6 +2,7 @@ import express from 'express';
 import { SubcategoriesService } from '../services/subcategoriesService.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { body, validationResult } from 'express-validator';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -29,7 +30,7 @@ router.get('/', authenticateToken, async (req, res) => {
     const result = await SubcategoriesService.getSubcategories();
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo subcategorías:', error);
+    logger.error('Error obteniendo subcategorías:', { error: error.message });
     res.status(500).json({
       success: false,
       error: error.message
@@ -44,7 +45,7 @@ router.get('/category/:categoryId', authenticateToken, async (req, res) => {
     const result = await SubcategoriesService.getSubcategoriesByCategory(categoryId);
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo subcategorías por categoría:', error);
+    logger.error('Error obteniendo subcategorías por categoría:', { error: error.message, categoryId });
     res.status(500).json({
       success: false,
       error: error.message
@@ -58,7 +59,7 @@ router.get('/with-categories', authenticateToken, async (req, res) => {
     const result = await SubcategoriesService.getCategoriesWithSubcategories();
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo categorías con subcategorías:', error);
+    logger.error('Error obteniendo categorías con subcategorías:', { error: error.message });
     res.status(500).json({
       success: false,
       error: error.message
@@ -72,7 +73,7 @@ router.post('/', authenticateToken, validateSubcategory, async (req, res) => {
     const result = await SubcategoriesService.createSubcategory(req.body);
     res.status(201).json(result);
   } catch (error) {
-    console.error('Error creando subcategoría:', error);
+    logger.error('Error creando subcategoría:', { error: error.message });
     res.status(400).json({
       success: false,
       error: error.message
@@ -89,7 +90,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     const result = await SubcategoriesService.updateSubcategory(id, updates);
     res.json(result);
   } catch (error) {
-    console.error('Error actualizando subcategoría:', error);
+    logger.error('Error actualizando subcategoría:', { error: error.message, subcategoryId: id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -104,7 +105,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const result = await SubcategoriesService.deleteSubcategory(id);
     res.json(result);
   } catch (error) {
-    console.error('Error eliminando subcategoría:', error);
+    logger.error('Error eliminando subcategoría:', { error: error.message, subcategoryId: id });
     res.status(400).json({
       success: false,
       error: error.message
@@ -119,7 +120,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     const result = await SubcategoriesService.getSubcategoryById(id);
     res.json(result);
   } catch (error) {
-    console.error('Error obteniendo subcategoría por ID:', error);
+    logger.error('Error obteniendo subcategoría por ID:', { error: error.message, subcategoryId: id });
     res.status(500).json({
       success: false,
       error: error.message
