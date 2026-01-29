@@ -18,7 +18,7 @@ router.post('/register', validateRegister, async (req, res) => {
 
     res.status(201).json(result);
   } catch (error) {
-    logger.error('Error en registro:', { error: error.message, email });
+    logger.error('Error en registro:', { error: error.message, email: req.body?.email });
     res.status(400).json({
       success: false,
       error: error.message
@@ -35,7 +35,7 @@ router.post('/login', validateLogin, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    logger.error('Error en login:', { error: error.message, email });
+    logger.error('Error en login:', { error: error.message, email: req.body?.email });
     res.status(401).json({
       success: false,
       error: error.message
@@ -47,7 +47,7 @@ router.post('/login', validateLogin, async (req, res) => {
 router.post('/refresh', async (req, res) => {
   try {
     const { token } = req.body;
-    
+
     if (!token) {
       return res.status(400).json({
         success: false,
@@ -56,7 +56,7 @@ router.post('/refresh', async (req, res) => {
     }
 
     const result = await AuthService.refreshToken(token);
-    
+
     if (result.success) {
       res.json(result);
     } else {
@@ -125,7 +125,7 @@ router.put('/change-role/:userId', authenticateToken, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    logger.error('Error cambiando rol:', { error: error.message, userId, newRoleName, adminId: req.user.id });
+    logger.error('Error cambiando rol:', { error: error.message, userId: req.params?.userId, newRoleName: req.body?.newRoleName, adminId: req.user?.id });
     res.status(400).json({
       success: false,
       error: error.message
