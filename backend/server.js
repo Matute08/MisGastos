@@ -17,7 +17,6 @@ import categoriesRoutes from './routes/categories.js';
 import subcategoriesRoutes from './routes/subcategories.js';
 import availableCardsRoutes from './routes/availableCards.js';
 import userCardsRoutes from './routes/userCards.js';
-import webauthnRoutes from './routes/webauthn.js';
 
 dotenv.config();
 
@@ -149,7 +148,6 @@ app.get('/', (_req, res) => {
       subcategories: '/api/subcategories',
       availableCards: '/api/available-cards',
       userCards: '/api/user-cards',
-      webauthn: '/api/webauthn',
     }
   });
 });
@@ -162,7 +160,6 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/subcategories', subcategoriesRoutes);
 app.use('/api/available-cards', availableCardsRoutes);
 app.use('/api/user-cards', userCardsRoutes);
-app.use('/api/webauthn', webauthnRoutes);
 
 // 🧯 Error handler
 app.use((err, req, res, next) => {
