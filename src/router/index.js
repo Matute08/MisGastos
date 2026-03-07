@@ -1,17 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { watch } from 'vue'
 
-// Vistas
-import LoginView from '@/views/LoginView.vue'
-import RegisterView from '@/views/RegisterView.vue'
-import DashboardView from '@/views/DashboardView.vue'
-import CardsView from '@/views/CardsView.vue'
-import AdminCardsView from '@/views/AdminCardsView.vue'
-import ExpensesView from '@/views/ExpensesView.vue'
-import CategoriesView from '@/views/CategoriesView.vue'
-import MonthlyView from '@/views/MonthlyView.vue'
-import NotificationSettingsView from '@/views/NotificationSettingsView.vue'
-
 const routes = [
   {
     path: '/',
@@ -20,55 +9,61 @@ const routes = [
   {
     path: '/login',
     name: 'login',
-    component: LoginView,
+    component: () => import('@/views/LoginView.vue'),
     meta: { requiresGuest: true }
   },
   {
     path: '/register',
     name: 'register',
-    component: RegisterView,
+    component: () => import('@/views/RegisterView.vue'),
     meta: { requiresGuest: true }
   },
   {
     path: '/dashboard',
     name: 'dashboard',
-    component: DashboardView,
+    component: () => import('@/views/DashboardView.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/cuentas',
     name: 'cuentas',
-    component: CardsView,
+    component: () => import('@/views/CardsView.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/admin/cuentas',
     name: 'admin-cuentas',
-    component: AdminCardsView,
+    component: () => import('@/views/AdminCardsView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
     path: '/expenses',
     name: 'expenses',
-    component: ExpensesView,
+    component: () => import('@/views/ExpensesView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/incomes',
+    name: 'incomes',
+    component: () => import('@/views/IncomesView.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/categories',
     name: 'categories',
-    component: CategoriesView,
+    component: () => import('@/views/CategoriesView.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/monthly',
     name: 'monthly',
-    component: MonthlyView,
+    component: () => import('@/views/MonthlyView.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/notificaciones',
-    name: 'notificaciones',
-    component: NotificationSettingsView,
+    path: '/perfil',
+    name: 'perfil',
+    component: () => import('@/views/ProfileView.vue'),
     meta: { requiresAuth: true }
   }
 ]
@@ -78,67 +73,44 @@ const router = createRouter({
   routes
 })
 
-// Guardia de navegación mejorado
 router.beforeEach(async (to, from) => {
-  // Espera a que la app esté montada y Pinia inicializado
   if (!window.__appMounted) {
     await new Promise(resolve => {
       const check = () => {
-        if (window.__appMounted) {
-          resolve();
-        } else {
-          setTimeout(check, 10);
-        }
-      };
-      check();
-    });
+        if (window.__appMounted) resolve()
+        else setTimeout(check, 10)
+      }
+      check()
+    })
   }
 
-  // Importa dinámicamente el store para asegurar la instancia correcta
-  const { useAuthStore } = await import('@/stores/auth');
-  const authStore = useAuthStore();
+  const { useAuthStore } = await import('@/stores/auth')
+  const authStore = useAuthStore()
 
-  // Esperar a que la autenticación esté lista
   if (!authStore.isAuthReady) {
     await new Promise(resolve => {
       const stop = watch(
         () => authStore.isAuthReady,
         (ready) => {
-          if (ready) {
-            stop();
-            resolve();
-          }
+          if (ready) { stop(); resolve() }
         }
-      );
-    });
+      )
+    })
   }
 
-  // Si está inicializando, permitir la navegación
-  if (authStore.isInitializing) {
-    return true;
-  }
-
-  // Rutas que requieren autenticación
+  if (authStore.isInitializing) return true
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return { path: '/login', query: { redirect: to.fullPath } };
+    return { path: '/login', query: { redirect: to.fullPath } }
   }
-
-  // Rutas que requieren ser invitado (no autenticado)
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    return { path: '/dashboard' };
+    return { path: '/dashboard' }
   }
-
-  // Rutas que requieren ser administrador
   if (to.meta.requiresAdmin) {
-    if (!authStore.isAuthReady || authStore.isInitializing) {
-      return false;
-    }
-    if (!authStore.isAdmin) {
-      return { path: '/dashboard' };
-    }
+    if (!authStore.isAuthReady || authStore.isInitializing) return false
+    if (!authStore.isAdmin) return { path: '/dashboard' }
   }
 
-  return true;
-});
+  return true
+})
 
-export default router 
+export default router

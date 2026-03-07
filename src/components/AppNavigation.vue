@@ -1,260 +1,225 @@
 <template>
-  <nav v-if="authStore.isAuthenticated && authStore.isAuthReady" class="bg-white shadow-sm border-b border-gray-200">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between h-16">
-        <!-- Logo y título -->
-        <div class="flex items-center mr-4">
-          <div class="flex-shrink-0 flex items-center">
-            <img src="/miwalletlogo.png" alt="MiWallet Logo" class="h-14 w-10" />
-            <span class="ml-2 text-xl font-semibold text-gray-900">MisGastos</span>
-          </div>
-        </div>
-
-        <!-- Navegación principal - Solo visible en desktop (lg+) -->
-        <div class="hidden lg:flex items-center space-x-8">
-          <router-link
-            v-for="item in navigationItems"
-            :key="item.name"
-            :to="item.path"
-            :class="[
-              'px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200',
-              $route.name === item.name
-                ? 'bg-primary-100 text-primary-700'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            ]"
-          >
-            <component :is="item.icon" class="h-4 w-4 inline mr-2" />
-            {{ item.label }}
-          </router-link>
-        </div>
-
-       
-
-        <!-- Menú de usuario -->
-        <div class="flex items-center space-x-4">
-          <!-- Menú desplegable del usuario -->
-          <div class="relative" ref="userMenuRef">
-            <button
-              @click="toggleUserMenu"
-              class="flex items-center space-x-2 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors duration-200"
-            >
-              <User class="h-5 w-5" />
-              <div class="hidden lg:block text-left">
-                <div class="text-sm font-medium">{{ userName }}</div>
-                <div class="text-xs text-gray-500">{{ userRoleDisplay }}</div>
-              </div>
-              <ChevronDown class="h-4 w-4" />
-            </button>
-
-            <!-- Menú desplegable -->
-            <div
-              v-if="showUserMenu"
-              class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
-            >
-              <div class="px-4 py-2 border-b border-gray-100">
-                <div class="text-sm font-medium text-gray-900">{{ userName }}</div>
-                <div class="text-xs text-gray-500">{{ userRoleDisplay }}</div>
-              </div>
-              <button
-                @click="goToSettings"
-                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 flex items-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 10c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z" /></svg>
-                Configuración
-              </button>
-              
-              <!-- Botón Admin Tarjetas solo para administradores -->
-              <button
-                v-if="authStore.isAdmin"
-                @click="goToAdminCards"
-                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 flex items-center gap-2"
-              >
-                <CreditCard class="h-4 w-4" />
-                Admin Cuentas
-              </button>
-              
-              <!-- Separador -->
-              <div v-if="authStore.isAdmin" class="border-t border-gray-100 my-1"></div>
-              
-              <button
-                @click="signOut"
-                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
-              >
-                <LogOut class="h-4 w-4 inline mr-2" />
-                Cerrar sesión
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Menú móvil - Visible en móvil y tablet -->
-      <div
-        v-show="showMobileMenu"
-        class="lg:hidden border-t border-gray-200 py-4 transition-all duration-300 ease-in-out"
-        ref="mobileMenuRef"
-      >
-        <div class="space-y-2">
-          <router-link
-            v-for="item in navigationItems"
-            :key="item.name"
-            :to="item.path"
-            @click="closeMobileMenu"
-            :class="[
-              'block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200',
-              $route.name === item.name
-                ? 'bg-primary-100 text-primary-700'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            ]"
-          >
-            <component :is="item.icon" class="h-4 w-4 inline mr-2" />
-            {{ item.label }}
-          </router-link>
-        </div>
-      </div>
+  <!-- Desktop Sidebar (lg+) -->
+  <aside
+    v-if="authStore.isAuthenticated && authStore.isAuthReady"
+    class="hidden lg:flex lg:flex-col fixed inset-y-0 left-0 w-60 bg-white border-r border-gray-200/80 z-40"
+  >
+    <!-- Logo -->
+    <div class="flex items-center gap-3 px-6 h-16 border-b border-gray-100">
+      <img src="/miwalletlogo.png" alt="MisGastos" class="h-9 w-7" />
+      <span class="text-lg font-bold tracking-tight text-gray-900">MisGastos</span>
     </div>
-  </nav>
 
-  <!-- Navegación inferior - Solo visible en móvil y tablet -->
-  <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-    <div class="flex justify-around items-center py-2">
+    <!-- Nav Items -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
       <router-link
-        v-for="item in navigationItems"
+        v-for="item in sidebarItems"
         :key="item.name"
         :to="item.path"
         :class="[
-          'flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-colors duration-200 min-w-0 flex-1',
-          $route.name === item.name
-            ? 'text-primary-600 bg-primary-50'
-            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+          isActive(item.name)
+            ? 'bg-primary-50 text-primary-600 border-l-[3px] border-primary-600 pl-[9px]'
+            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
         ]"
       >
-        <component :is="item.icon" class="h-5 w-5 mb-1" />
-        <span class="text-xs font-medium text-center">{{ item.label }}</span>
+        <component
+          :is="item.icon"
+          :class="[
+            'h-5 w-5 shrink-0 transition-colors duration-200',
+            isActive(item.name) ? 'text-primary-600' : 'text-gray-400 group-hover:text-gray-600'
+          ]"
+        />
+        {{ item.label }}
+      </router-link>
+    </nav>
+
+    <!-- User Section -->
+    <div class="border-t border-gray-100 p-3">
+      <div class="relative" ref="userMenuRef">
+        <button
+          @click="toggleUserMenu"
+          class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left hover:bg-gray-50 transition-colors duration-200"
+        >
+          <div class="h-9 w-9 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-sm font-semibold shrink-0">
+            {{ userInitials }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium text-gray-900 truncate">{{ userName }}</div>
+            <div class="text-xs text-gray-500 truncate">{{ userRoleDisplay }}</div>
+          </div>
+          <ChevronDown
+            :class="[
+              'h-4 w-4 text-gray-400 transition-transform duration-200',
+              showUserMenu ? 'rotate-180' : ''
+            ]"
+          />
+        </button>
+
+        <!-- User Dropdown -->
+        <Transition
+          enter-active-class="transition ease-out duration-150"
+          enter-from-class="opacity-0 translate-y-1"
+          enter-to-class="opacity-100 translate-y-0"
+          leave-active-class="transition ease-in duration-100"
+          leave-from-class="opacity-100 translate-y-0"
+          leave-to-class="opacity-0 translate-y-1"
+        >
+          <div
+            v-if="showUserMenu"
+            class="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-xl shadow-soft-lg border border-gray-200 py-1 z-50"
+          >
+            <button
+              @click="goToProfile"
+              class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+            >
+              <UserCircle class="h-4 w-4 text-gray-400" />
+              Mi Perfil
+            </button>
+
+            <button
+              v-if="authStore.isAdmin"
+              @click="goToAdminCards"
+              class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+            >
+              <CreditCard class="h-4 w-4 text-gray-400" />
+              Admin Cuentas
+            </button>
+
+            <div class="border-t border-gray-100 my-1"></div>
+
+            <button
+              @click="signOut"
+              class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-danger-600 hover:bg-danger-50 transition-colors duration-150"
+            >
+              <LogOut class="h-4 w-4" />
+              Cerrar sesión
+            </button>
+          </div>
+        </Transition>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Bottom Navigation (< lg) -->
+  <nav
+    v-if="authStore.isAuthenticated && authStore.isAuthReady"
+    class="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-200/80 shadow-[0_-2px_10px_-3px_rgba(0,0,0,0.06)] z-50"
+  >
+    <div class="flex items-center justify-around h-16 px-1">
+      <router-link
+        v-for="item in mobileItems"
+        :key="item.name"
+        :to="item.path"
+        class="flex flex-col items-center justify-center flex-1 min-w-0 py-1"
+      >
+        <div
+          :class="[
+            'flex items-center justify-center rounded-full transition-all duration-200 mb-0.5',
+            isActive(item.name)
+              ? 'bg-primary-100 h-8 w-12'
+              : 'h-8 w-8'
+          ]"
+        >
+          <component
+            :is="item.icon"
+            :class="[
+              'transition-all duration-200',
+              isActive(item.name)
+                ? 'h-[22px] w-[22px] text-primary-600'
+                : 'h-5 w-5 text-gray-400'
+            ]"
+          />
+        </div>
+        <span
+          :class="[
+            'text-[10px] font-medium transition-colors duration-200 leading-tight',
+            isActive(item.name) ? 'text-primary-600' : 'text-gray-500'
+          ]"
+        >
+          {{ item.label }}
+        </span>
       </router-link>
     </div>
-  </div>
+  </nav>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import {
-  CreditCard,
   BarChart3,
   Receipt,
-  CreditCard as CardsIcon,
+  Wallet,
+  CreditCard,
   Tag,
-  Calendar,
-  Bell,
-  User,
+  UserCircle,
   ChevronDown,
-  Menu,
   LogOut
 } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const showUserMenu = ref(false)
-const showMobileMenu = ref(false)
 const userMenuRef = ref(null)
-const mobileMenuRef = ref(null)
-const mobileMenuButton = ref(null)
 
 const userName = computed(() => {
-  return authStore.userProfile?.nombre_perfil || authStore.user?.nombre_perfil || authStore.user?.email?.split('@')[0] || 'Usuario'
+  return authStore.userProfile?.nombre_perfil || authStore.user?.email?.split('@')[0] || 'Usuario'
+})
+
+const userInitials = computed(() => {
+  const name = userName.value
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  return name.slice(0, 2).toUpperCase()
 })
 
 const userRoleDisplay = computed(() => {
-  const role = authStore.userProfile?.role_nombre;
-  if (role === 'admin') return 'Administrador';
-  if (role === 'moderator') return 'Moderador';
-  if (role === 'user') return 'Usuario';
-  return 'Usuario';
+  const role = authStore.userProfile?.role_nombre
+  if (role === 'admin') return 'Administrador'
+  if (role === 'moderator') return 'Moderador'
+  return 'Usuario'
 })
 
-const navigationItems = computed(() => {
-  const items = [
-    {
-      name: 'dashboard',
-      label: 'Dashboard',
-      path: '/dashboard',
-      icon: BarChart3
-    },
-    {
-      name: 'expenses',
-      label: 'Gastos',
-      path: '/expenses',
-      icon: Receipt
-    },
-    {
-      name: 'cuentas',
-      label: 'Cuentas',
-      path: '/cuentas',
-      icon: CardsIcon
-    },
-    {
-      name: 'categories',
-      label: 'Categorías',
-      path: '/categories',
-      icon: Tag
-    }
-  ]
+const sidebarItems = computed(() => [
+  { name: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: BarChart3 },
+  { name: 'expenses', label: 'Gastos', path: '/expenses', icon: Receipt },
+  { name: 'incomes', label: 'Ingresos', path: '/incomes', icon: Wallet },
+  { name: 'cuentas', label: 'Cuentas', path: '/cuentas', icon: CreditCard },
+  { name: 'categories', label: 'Categorías', path: '/categories', icon: Tag }
+])
 
-  // Si el usuario no es admin, mostrar mensaje especial en categorías
-  if (!authStore.isAdmin) {
-    const categoriesItem = items.find(item => item.name === 'categories')
-    if (categoriesItem) {
-      categoriesItem.label = 'Categorías'
-    }
-  }
+const mobileItems = computed(() => [
+  { name: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: BarChart3 },
+  { name: 'expenses', label: 'Gastos', path: '/expenses', icon: Receipt },
+  { name: 'incomes', label: 'Ingresos', path: '/incomes', icon: Wallet },
+  { name: 'cuentas', label: 'Cuentas', path: '/cuentas', icon: CreditCard },
+  { name: 'categories', label: 'Categorías', path: '/categories', icon: Tag },
+  { name: 'perfil', label: 'Perfil', path: '/perfil', icon: UserCircle }
+])
 
-  return items
-})
+const isActive = (name) => route.name === name
 
 const toggleUserMenu = () => {
   showUserMenu.value = !showUserMenu.value
-  // Cerrar menú móvil si está abierto
-  if (showMobileMenu.value) {
-    showMobileMenu.value = false
-  }
-}
-
-const toggleMobileMenu = () => {
-  showMobileMenu.value = !showMobileMenu.value
-  // Cerrar menú de usuario si está abierto
-  if (showUserMenu.value) {
-    showUserMenu.value = false
-  }
-}
-
-const closeMobileMenu = () => {
-  showMobileMenu.value = false
-}
-
-const closeUserMenu = () => {
-  showUserMenu.value = false
-}
-
-const closeAllMenus = () => {
-  showUserMenu.value = false
-  showMobileMenu.value = false
 }
 
 const signOut = async () => {
+  showUserMenu.value = false
   const { success } = await authStore.signOut()
   if (success) {
     router.push('/login')
-    window.location.reload() // Forzar recarga para limpiar el estado
+    window.location.reload()
   }
-  showUserMenu.value = false
 }
 
-const goToSettings = () => {
+const goToProfile = () => {
   showUserMenu.value = false
-  router.push('/notificaciones')
+  router.push('/perfil')
 }
 
 const goToAdminCards = () => {
@@ -262,42 +227,23 @@ const goToAdminCards = () => {
   router.push('/admin/cuentas')
 }
 
-// Cerrar menús al hacer clic fuera
 const handleClickOutside = (event) => {
-  // Verificar si el clic fue fuera del menú de usuario
   if (userMenuRef.value && !userMenuRef.value.contains(event.target)) {
-    closeUserMenu()
-  }
-  
-  // Verificar si el clic fue fuera del menú móvil y su botón
-  if (mobileMenuRef.value && mobileMenuButton.value) {
-    const isClickInsideMobileMenu = mobileMenuRef.value.contains(event.target)
-    const isClickOnMobileButton = mobileMenuButton.value.contains(event.target)
-    
-    if (!isClickInsideMobileMenu && !isClickOnMobileButton) {
-      closeMobileMenu()
-    }
+    showUserMenu.value = false
   }
 }
 
-// Cerrar menú móvil al cambiar de ruta
-watch(() => router.currentRoute.value, () => {
-  if (showMobileMenu.value) {
-    closeMobileMenu()
-  }
-})
+const handleEscape = (e) => {
+  if (e.key === 'Escape') showUserMenu.value = false
+}
 
-// Escuchar clics fuera de los menús
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      closeAllMenus()
-    }
-  })
+  document.addEventListener('keydown', handleEscape)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('keydown', handleEscape)
 })
-</script> 
+</script>

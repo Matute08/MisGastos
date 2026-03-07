@@ -10,7 +10,7 @@
     aria-labelledby="category-modal-title"
   >
     <div 
-      class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" 
+      class="bg-white rounded-2xl shadow-soft max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-100" 
       @wheel.stop 
       @touchmove.stop 
       @scroll.stop
@@ -18,13 +18,13 @@
       ref="modalRef"
     >
       <!-- Header -->
-      <div class="flex justify-between items-center p-6 border-b border-gray-200">
-        <h3 id="category-modal-title" class="text-lg font-semibold text-gray-900">
+      <div class="flex justify-between items-center p-6 border-b border-slate-200">
+        <h3 id="category-modal-title" class="text-lg font-semibold text-slate-900">
           {{ category ? 'Editar Categoría' : 'Nueva Categoría' }}
         </h3>
         <button
           @click="$emit('close')"
-          class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          class="text-slate-400 hover:text-slate-600 transition-colors duration-200"
           aria-label="Cerrar modal"
           type="button"
         >
@@ -36,7 +36,7 @@
       <form @submit.prevent="onSubmit" class="p-6 space-y-4" novalidate>
         <!-- Nombre -->
         <div>
-          <label for="name" class="block text-sm font-medium text-gray-700">
+          <label for="name" class="block text-sm font-medium text-slate-700">
             Nombre de la categoría
           </label>
           <input
@@ -44,20 +44,20 @@
             v-model="name"
             type="text"
             class="input-field mt-1"
-            :class="{ 'border-red-500': errors.name }"
+            :class="{ 'border-danger-500': errors.name }"
             placeholder="Ej: Supermercado, Transporte, etc."
             aria-describedby="name-error"
             :aria-invalid="!!errors.name"
             v-bind="nameAttrs"
           />
-          <p v-if="errors.name" id="name-error" class="mt-1 text-sm text-red-600" role="alert">
+          <p v-if="errors.name" id="name-error" class="mt-1 text-sm text-danger-600" role="alert">
             {{ errors.name }}
           </p>
         </div>
 
         <!-- Color -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="block text-sm font-medium text-slate-700 mb-2">
             Color
           </label>
           <div class="grid grid-cols-6 gap-2" role="radiogroup" aria-label="Seleccionar color">
@@ -67,22 +67,22 @@
               type="button"
               @click="handleColorSelect(color)"
               :class="[
-                'w-8 h-8 rounded-full border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-                colorValue === color ? 'border-gray-900 scale-110' : 'border-gray-300 hover:scale-105'
+                'w-8 h-8 rounded-full border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                colorValue === color ? 'border-slate-900 scale-110' : 'border-slate-300 hover:scale-105'
               ]"
               :style="{ backgroundColor: color }"
               :aria-label="`Seleccionar color ${color}`"
               :aria-pressed="colorValue === color"
             ></button>
           </div>
-          <p v-if="errors.color" class="mt-1 text-sm text-red-600" role="alert">
+          <p v-if="errors.color" class="mt-1 text-sm text-danger-600" role="alert">
             {{ errors.color }}
           </p>
         </div>
 
         <!-- Vista previa -->
-        <div v-if="name && colorValue" class="p-3 bg-gray-50 rounded-lg" role="region" aria-label="Vista previa de la categoría">
-          <p class="text-sm text-gray-600 mb-2">Vista previa:</p>
+        <div v-if="name && colorValue" class="p-3 bg-slate-50 rounded-lg" role="region" aria-label="Vista previa de la categoría">
+          <p class="text-sm text-slate-600 mb-2">Vista previa:</p>
           <span
             class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
             :style="{ backgroundColor: colorValue + '20', color: colorValue }"
@@ -94,18 +94,18 @@
         <!-- Subcategorías (solo para nuevas categorías) -->
         <div v-if="!category && form.name && form.color" class="border-t pt-4">
           <div class="flex items-center justify-between mb-3">
-            <h4 class="text-sm font-medium text-gray-700">Subcategorías (opcional)</h4>
+            <h4 class="text-sm font-medium text-slate-700">Subcategorías (opcional)</h4>
             <button
               type="button"
               @click="showSubcategoryInput = true"
-              class="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              class="text-sm text-primary-600 hover:text-primary-700 font-medium"
             >
               + Agregar subcategoría
             </button>
           </div>
           
           <!-- Input para nueva subcategoría -->
-          <div v-if="showSubcategoryInput" class="mb-3 p-3 bg-gray-50 rounded-lg">
+          <div v-if="showSubcategoryInput" class="mb-3 p-3 bg-slate-50 rounded-lg">
             <div class="flex items-center space-x-2">
               <input
                 v-model="newSubcategoryName"
@@ -118,21 +118,21 @@
                 type="button"
                 @click="addSubcategory"
                 :disabled="!newSubcategoryName.trim()"
-                class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="btn-primary text-xs !px-3 !py-1"
               >
                 Agregar
               </button>
               <button
                 type="button"
                 @click="cancelSubcategoryInput"
-                class="px-3 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
+                class="btn-secondary text-xs !px-3 !py-1"
               >
                 Cancelar
               </button>
             </div>
           </div>
           
-          <div v-if="subcategories.length === 0" class="text-sm text-gray-500 italic">
+          <div v-if="subcategories.length === 0" class="text-sm text-slate-500 italic">
             Sin subcategorías
           </div>
           
@@ -140,17 +140,17 @@
             <div
               v-for="(subcategory, index) in subcategories"
               :key="index"
-              class="flex items-center space-x-2 p-2 bg-gray-50 rounded"
+              class="flex items-center space-x-2 p-2 bg-slate-50 rounded"
             >
               <div
-                class="w-4 h-4 rounded-full border border-gray-300"
+                class="w-4 h-4 rounded-full border border-slate-300"
                 :style="{ backgroundColor: form.color }"
               ></div>
               <span class="text-sm flex-1">{{ subcategory.name }}</span>
               <button
                 type="button"
                 @click="removeSubcategory(index)"
-                class="text-red-500 hover:text-red-700 text-sm"
+                class="text-danger-500 hover:text-danger-700 text-sm"
               >
                 Eliminar
               </button>
@@ -364,4 +364,4 @@ const onSubmit = handleSubmit(async (values) => {
 onBeforeUnmount(() => {
   document.body.style.overflow = ''
 })
-</script> 
+</script>

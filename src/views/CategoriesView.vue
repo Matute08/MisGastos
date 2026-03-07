@@ -1,14 +1,12 @@
 <template>
-    <div class="space-y-4 sm:space-y-6">
+    <div class="space-y-6 sm:space-y-8">
         <!-- Header -->
-        <div
-            class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4"
-        >
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
-                <h1 class="text-xl sm:text-2xl font-bold text-gray-900">
+                <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">
                     Categorías
                 </h1>
-                <p class="text-sm sm:text-base text-gray-600">
+                <p class="text-sm sm:text-base text-slate-500 mt-1">
                     {{
                         authStore.isAdmin
                             ? "Administra las categorías del sistema"
@@ -19,7 +17,7 @@
             <button
                 v-if="categoriesStore.canCreateCategory()"
                 @click="showModal = true"
-                class="flex items-center justify-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-semibold shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                class="btn-primary flex items-center justify-center gap-2 text-sm sm:text-base"
             >
                 <Plus class="h-4 w-4 sm:h-5 sm:w-5" />
                 <span>Nueva Categoría</span>
@@ -33,67 +31,66 @@
                 !isPermisoError(categoriesStore.error) &&
                 categoriesStore.categories.length > 0
             "
-            class="bg-danger-50 border border-danger-200 rounded-md p-3 sm:p-4"
+            class="bg-danger-50 border border-danger-200 rounded-2xl p-4"
         >
-            <div class="flex">
-                <AlertCircle
-                    class="h-4 w-4 sm:h-5 sm:w-5 text-danger-400 flex-shrink-0"
-                />
-                <div class="ml-2 sm:ml-3">
-                    <p class="text-xs sm:text-sm text-danger-700">
-                        {{
-                            categoriesStore.error.includes(
-                                "Cannot read properties"
-                            )
-                                ? "Ocurrió un error al cargar las categorías. Intenta recargar la página."
-                                : categoriesStore.error
-                        }}
-                    </p>
-                </div>
+            <div class="flex items-start gap-3">
+                <AlertCircle class="h-5 w-5 text-danger-500 flex-shrink-0 mt-0.5" />
+                <p class="text-sm text-danger-700">
+                    {{
+                        categoriesStore.error.includes("Cannot read properties")
+                            ? "Ocurrió un error al cargar las categorías. Intenta recargar la página."
+                            : categoriesStore.error
+                    }}
+                </p>
             </div>
         </div>
 
         <!-- Loading -->
         <SkeletonGrid v-if="isLoading" :count="8" />
 
-        <!-- Grid de categorías simplificado -->
+        <!-- Grid de categorías -->
         <div
             v-else
-            class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6"
+            class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6"
         >
             <div
                 v-for="category in categoriesStore.categories.filter(c => c && c.id)"
                 :key="category.id"
-                class="group relative bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200 cursor-pointer overflow-visible"
+                class="group relative bg-white rounded-2xl shadow-soft border border-slate-100 hover:shadow-soft-lg hover:border-slate-200 transition-all duration-300 cursor-pointer overflow-visible"
                 @click="toggleCategory(category)"
             >
-                <!-- Color de fondo de la categoría -->
-                <div
-                    class="h-2 w-full"
-                    :style="{ backgroundColor: category.color }"
-                ></div>
-
                 <!-- Contenido de la categoría -->
-                <div class="p-3 sm:p-4 md:p-6">
-                    <!-- Nombre de la categoría -->
-                    <h3
-                        class="text-base sm:text-lg md:text-xl font-semibold text-gray-900 mb-2 text-center"
+                <div class="p-4 sm:p-5 md:p-6 flex flex-col items-center text-center">
+                    <!-- Icono circular con color de categoría -->
+                    <div
+                        class="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center mb-3 sm:mb-4 transition-transform duration-300 group-hover:scale-110"
+                        :style="{ backgroundColor: category.color + '20' }"
                     >
+                        <component
+                            :is="getCategoryIcon(category.name)"
+                            class="h-6 w-6 sm:h-7 sm:w-7"
+                            :style="{ color: category.color }"
+                        />
+                    </div>
+
+                    <!-- Nombre de la categoría -->
+                    <h3 class="text-sm sm:text-base md:text-lg font-bold text-slate-900 mb-2 leading-tight">
                         {{ category.name }}
                     </h3>
-                    
-                    <!-- Cantidad de subcategorías -->
-                    <div class="text-center">
-                        <span class="text-sm text-gray-500">
-                            {{ getSubcategoriesForCategory(category.id).length }} 
-                            {{ getSubcategoriesForCategory(category.id).length === 1 ? 'subcategoría' : 'subcategorías' }}
-                        </span>
-                    </div>
+
+                    <!-- Badge de subcategorías -->
+                    <span
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600"
+                    >
+                        <Folder class="h-3 w-3" />
+                        {{ getSubcategoriesForCategory(category.id).length }}
+                        {{ getSubcategoriesForCategory(category.id).length === 1 ? 'sub' : 'subs' }}
+                    </span>
                 </div>
 
-                <!-- Botón de acciones -->
+                <!-- Botón de acciones admin -->
                 <div
-                    class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    class="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                 >
                     <div
                         v-if="
@@ -105,7 +102,7 @@
                     >
                         <button
                             @click.stop="toggleCategoryMenu(category.id)"
-                            class="p-2 bg-white/90 rounded-full text-gray-600 hover:text-gray-800 hover:bg-white transition-all duration-200 shadow-sm"
+                            class="p-2 bg-white/90 backdrop-blur-sm rounded-xl text-slate-500 hover:text-slate-700 hover:bg-white transition-all duration-200 shadow-sm border border-slate-100"
                         >
                             <MoreVertical class="h-4 w-4" />
                         </button>
@@ -113,23 +110,23 @@
                         <!-- Menú desplegable -->
                         <div
                             v-if="activeCategoryMenu === category.id"
-                            class="absolute right-0 w-28 bg-white rounded-md shadow-lg py-1 z-[9999] border border-gray-200"
-                            style="top: calc(100% + 4px)"
+                            class="absolute right-0 w-36 bg-white rounded-xl shadow-soft-lg py-1.5 z-[9999] border border-slate-100"
+                            style="top: calc(100% + 6px)"
                         >
                             <button
                                 v-if="categoriesStore.canEditCategory()"
                                 @click="editCategory(category)"
-                                class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                                class="flex items-center gap-2.5 w-full text-left px-3.5 py-2.5 text-sm text-slate-700 hover:bg-slate-50 rounded-lg mx-auto transition-colors duration-200"
                             >
-                                <Edit class="h-4 w-4 inline mr-2" />
+                                <Edit class="h-4 w-4 text-slate-400" />
                                 Editar
                             </button>
                             <button
                                 v-if="categoriesStore.canDeleteCategory()"
                                 @click="deleteCategory(category.id)"
-                                class="block w-full text-left px-3 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors duration-200"
+                                class="flex items-center gap-2.5 w-full text-left px-3.5 py-2.5 text-sm text-danger-600 hover:bg-danger-50 rounded-lg mx-auto transition-colors duration-200"
                             >
-                                <Trash2 class="h-4 w-4 inline mr-2" />
+                                <Trash2 class="h-4 w-4" />
                                 Eliminar
                             </button>
                         </div>
@@ -137,118 +134,22 @@
                 </div>
             </div>
 
-            <!-- Modal para mostrar subcategorías -->
-            <div
-                v-if="showSubcategoriesModal"
-                class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 px-4"
-                @wheel.prevent @touchmove.prevent @scroll.prevent
-            >
-                <div
-                    class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[75vh] overflow-y-auto"
-                    @wheel.stop @touchmove.stop @scroll.stop
-                >
-                    <div
-                        class="flex justify-between items-center p-4 border-b border-gray-200"
-                    >
-                        <h3 class="text-lg font-semibold text-gray-900">
-                            Subcategorías de
-                            {{ selectedCategoryForSubcategory?.name }}
-                        </h3>
-                        <button
-                            @click="closeSubcategoriesModal"
-                            class="text-gray-400 hover:text-gray-600"
-                        >
-                            <X class="h-5 w-5" />
-                        </button>
-                    </div>
-
-                    <div class="p-4 space-y-3">
-                        <div
-                            v-for="subcategory in getSubcategoriesForCategory(
-                                selectedCategoryForSubcategory?.id
-                            ).filter(s => s && s.id)"
-                            :key="subcategory.id"
-                            class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                        >
-                            <div class="flex items-center space-x-3">
-                                <div
-                                    class="w-3 h-3 rounded-full"
-                                    :style="{
-                                        backgroundColor: subcategory.color,
-                                    }"
-                                ></div>
-                                <span
-                                    class="text-sm font-medium text-gray-700"
-                                    >{{ subcategory.name }}</span
-                                >
-                            </div>
-
-                            <div class="flex items-center space-x-2">
-                                <button
-                                    v-if="
-                                        subcategoriesStore.canEditSubcategory() && subcategory && subcategory.id
-                                    "
-                                    @click="editSubcategory(subcategory)"
-                                    class="p-1 text-gray-400 hover:text-gray-600"
-                                >
-                                    <Edit class="h-4 w-4" />
-                                </button>
-                                <button
-                                    v-if="
-                                        subcategoriesStore.canDeleteSubcategory() && subcategory && subcategory.id
-                                    "
-                                    @click="deleteSubcategory(subcategory.id)"
-                                    class="p-1 text-red-400 hover:text-red-600"
-                                >
-                                    <Trash2 class="h-4 w-4" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div
-                            v-if="
-                                getSubcategoriesForCategory(
-                                    selectedCategoryForSubcategory?.id
-                                ).length === 0
-                            "
-                            class="text-center py-6 text-gray-500"
-                        >
-                            <Folder
-                                class="mx-auto h-8 w-8 text-gray-300 mb-2"
-                            />
-                            <p class="text-sm">Sin subcategorías</p>
-                        </div>
-
-                        <button
-                            v-if="subcategoriesStore.canCreateSubcategory() && selectedCategoryForSubcategory"
-                            @click="
-                                addSubcategory(selectedCategoryForSubcategory)
-                            "
-                            class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
-                        >
-                            <FolderPlus class="h-4 w-4" />
-                            Agregar Subcategoría
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             <!-- Estado vacío -->
             <div
                 v-if="categoriesStore.categories.length === 0"
-                class="text-center py-8 sm:py-12"
+                class="col-span-full flex flex-col items-center justify-center py-16 sm:py-20"
             >
-                <Tag class="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
-                <h3
-                    class="mt-3 sm:mt-4 text-base sm:text-lg font-medium text-gray-900"
-                >
+                <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-100 flex items-center justify-center mb-5">
+                    <Tag class="h-8 w-8 sm:h-10 sm:w-10 text-slate-400" />
+                </div>
+                <h3 class="text-lg sm:text-xl font-bold text-slate-900">
                     {{
                         authStore.isAdmin
                             ? "No hay categorías"
                             : "No hay categorías disponibles"
                     }}
                 </h3>
-                <p class="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
+                <p class="mt-2 text-sm sm:text-base text-slate-500 text-center max-w-sm">
                     {{
                         authStore.isAdmin
                             ? "Comienza agregando tu primera categoría"
@@ -258,11 +159,118 @@
                 <button
                     v-if="categoriesStore.canCreateCategory()"
                     @click="showModal = true"
-                    class="flex items-center justify-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-semibold shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 mt-3 sm:mt-4 mx-auto"
+                    class="btn-primary flex items-center gap-2 mt-5 text-sm sm:text-base"
                 >
                     <Plus class="h-4 w-4 sm:h-5 sm:w-5" />
                     <span>Agregar Categoría</span>
                 </button>
+            </div>
+        </div>
+
+        <!-- Modal para mostrar subcategorías -->
+        <div
+            v-if="showSubcategoriesModal"
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4"
+            @click.self="closeSubcategoriesModal"
+            @wheel.prevent @touchmove.prevent @scroll.prevent
+        >
+            <div
+                class="bg-white rounded-2xl shadow-soft-lg max-w-md w-full max-h-[75vh] overflow-hidden animate-fade-in"
+                @wheel.stop @touchmove.stop @scroll.stop
+            >
+                <!-- Header del modal -->
+                <div class="flex justify-between items-center p-5 sm:p-6 border-b border-slate-100">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-full flex items-center justify-center"
+                            :style="{ backgroundColor: (selectedCategoryForSubcategory?.color || '#6366F1') + '20' }"
+                        >
+                            <component
+                                :is="getCategoryIcon(selectedCategoryForSubcategory?.name)"
+                                class="h-5 w-5"
+                                :style="{ color: selectedCategoryForSubcategory?.color || '#6366F1' }"
+                            />
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">
+                                {{ selectedCategoryForSubcategory?.name }}
+                            </h3>
+                            <p class="text-xs text-slate-500">Subcategorías</p>
+                        </div>
+                    </div>
+                    <button
+                        @click="closeSubcategoriesModal"
+                        class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all duration-200"
+                    >
+                        <X class="h-5 w-5" />
+                    </button>
+                </div>
+
+                <!-- Lista de subcategorías -->
+                <div class="p-5 sm:p-6 space-y-3 overflow-y-auto max-h-[calc(75vh-140px)]">
+                    <div
+                        v-for="subcategory in getSubcategoriesForCategory(
+                            selectedCategoryForSubcategory?.id
+                        ).filter(s => s && s.id)"
+                        :key="subcategory.id"
+                        class="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors duration-200"
+                    >
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-3 h-3 rounded-full ring-2 ring-offset-1"
+                                :style="{
+                                    backgroundColor: subcategory.color,
+                                    ringColor: subcategory.color + '40',
+                                }"
+                            ></div>
+                            <span class="text-sm font-medium text-slate-700">
+                                {{ subcategory.name }}
+                            </span>
+                        </div>
+
+                        <div class="flex items-center gap-1.5">
+                            <button
+                                v-if="subcategoriesStore.canEditSubcategory() && subcategory && subcategory.id"
+                                @click="editSubcategory(subcategory)"
+                                class="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200"
+                            >
+                                <Edit class="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                                v-if="subcategoriesStore.canDeleteSubcategory() && subcategory && subcategory.id"
+                                @click="deleteSubcategory(subcategory.id)"
+                                class="p-1.5 text-slate-400 hover:text-danger-600 hover:bg-danger-50 rounded-lg transition-all duration-200"
+                            >
+                                <Trash2 class="h-3.5 w-3.5" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Estado vacío subcategorías -->
+                    <div
+                        v-if="
+                            getSubcategoriesForCategory(
+                                selectedCategoryForSubcategory?.id
+                            ).length === 0
+                        "
+                        class="text-center py-10"
+                    >
+                        <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                            <Folder class="h-6 w-6 text-slate-300" />
+                        </div>
+                        <p class="text-sm text-slate-500">Sin subcategorías</p>
+                    </div>
+
+                    <!-- Botón agregar subcategoría -->
+                    <button
+                        v-if="subcategoriesStore.canCreateSubcategory() && selectedCategoryForSubcategory"
+                        @click="addSubcategory(selectedCategoryForSubcategory)"
+                        class="btn-primary w-full flex items-center justify-center gap-2 text-sm"
+                    >
+                        <FolderPlus class="h-4 w-4" />
+                        Agregar Subcategoría
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -286,7 +294,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, onUnmounted, watch } from "vue";
 import { useCategoriesStore } from "@/stores/categories";
 import { useSubcategoriesStore } from "@/stores/subcategories";
 import { useExpensesStore } from "@/stores/expenses";
@@ -308,7 +316,47 @@ import {
     ChevronUp,
     Folder,
     X,
+    UtensilsCrossed,
+    Car,
+    Gamepad2,
+    Home,
+    GraduationCap,
+    Shirt,
+    ShoppingCart,
+    Tv,
+    Dumbbell,
+    PawPrint,
+    Plane,
+    Laptop,
+    Heart,
+    Landmark,
+    ShoppingBag,
+    MoreHorizontal,
 } from "lucide-vue-next";
+
+const categoryIconMap = {
+    'Comida': UtensilsCrossed,
+    'Transporte': Car,
+    'Entretenimiento': Gamepad2,
+    'Vivienda': Home,
+    'Educación': GraduationCap,
+    'Ropa': Shirt,
+    'Supermercado': ShoppingCart,
+    'Streaming/TV': Tv,
+    'Deporte': Dumbbell,
+    'Mascotas': PawPrint,
+    'Viajes/Ocio': Plane,
+    'Electronico/PC': Laptop,
+    'Bienestar': Heart,
+    'Gastos Financieros': Landmark,
+    'Compras': ShoppingBag,
+    'Otros': MoreHorizontal,
+};
+
+const getCategoryIcon = (name) => {
+    if (!name) return Tag;
+    return categoryIconMap[name] || Tag;
+};
 
 const categoriesStore = useCategoriesStore();
 const subcategoriesStore = useSubcategoriesStore();
@@ -324,22 +372,32 @@ const activeCategoryMenu = ref(null);
 const activeSubcategoryMenu = ref(null);
 const selectedCategoryForSubcategory = ref(null);
 const expandedCategories = ref([]);
-const isLoading = ref(true); // Estado de loading local para evitar doble carga
+const isLoading = ref(true);
 
+let _mounted = true;
 onMounted(async () => {
-    isLoading.value = true
+    isLoading.value = true;
+    const safetyTimer = setTimeout(() => {
+        if (_mounted) isLoading.value = false;
+    }, 12000);
     try {
         await Promise.all([
             categoriesStore.loadCategories(),
             subcategoriesStore.loadCategoriesWithSubcategories(),
             expensesStore.loadExpenses(),
         ]);
+    } catch {
+        // Error ya manejado por los stores
     } finally {
-        isLoading.value = false
+        clearTimeout(safetyTimer);
+        if (_mounted) isLoading.value = false;
     }
 });
 
-// Bloqueo de scroll del body cuando hay cualquier modal abierto
+onUnmounted(() => {
+    _mounted = false;
+});
+
 watch(
     [showModal, showSubcategoryModal, showSubcategoriesModal],
     ([catOpen, subOpen, listOpen]) => {
@@ -353,38 +411,24 @@ watch(
     { immediate: true }
 );
 
-// Función para expandir automáticamente categorías con subcategorías (comentada)
-// const expandCategoriesWithSubcategories = () => {
-//   categoriesStore.categories.forEach(category => {
-//     const subcategories = getSubcategoriesForCategory(category.id)
-//     if (subcategories.length > 0 && !expandedCategories.value.includes(category.id)) {
-//       expandedCategories.value.push(category.id)
-//     }
-//   })
-// }
-
 const toggleCategory = (category) => {
     if (!category || !category.id) {
         console.error('Error: category is null or undefined in toggleCategory');
         return;
     }
-    
+
     selectedCategoryForSubcategory.value = category;
     showSubcategoriesModal.value = true;
 };
 
 const toggleCategoryMenu = (categoryId) => {
-    // Cerrar menú de subcategorías si está abierto
     activeSubcategoryMenu.value = null;
-    // Toggle menú de categorías
     activeCategoryMenu.value =
         activeCategoryMenu.value === categoryId ? null : categoryId;
 };
 
 const toggleSubcategoryMenu = (subcategoryId) => {
-    // Cerrar menú de categorías si está abierto
     activeCategoryMenu.value = null;
-    // Toggle menú de subcategorías
     activeSubcategoryMenu.value =
         activeSubcategoryMenu.value === subcategoryId ? null : subcategoryId;
 };
@@ -409,13 +453,10 @@ const deleteCategory = async (categoryId) => {
 
     if (result.isConfirmed) {
         try {
-            const deleteResult = await categoriesStore.deleteCategory(
-                categoryId
-            );
+            const deleteResult = await categoriesStore.deleteCategory(categoryId);
 
             if (deleteResult.success) {
                 activeCategoryMenu.value = null;
-                // Remover de expandedCategories si estaba expandida
                 const index = expandedCategories.value.indexOf(categoryId);
                 if (index > -1) {
                     expandedCategories.value.splice(index, 1);
@@ -433,18 +474,14 @@ const deleteCategory = async (categoryId) => {
                 await Swal.fire({
                     icon: "error",
                     title: "Error al eliminar",
-                    text:
-                        deleteResult.error ||
-                        "No se pudo eliminar la categoría.",
+                    text: deleteResult.error || "No se pudo eliminar la categoría.",
                 });
             }
         } catch (error) {
             await Swal.fire({
                 icon: "error",
                 title: "Error inesperado",
-                text:
-                    error.message ||
-                    "Ocurrió un error al eliminar la categoría.",
+                text: error.message || "Ocurrió un error al eliminar la categoría.",
             });
         }
     }
@@ -455,12 +492,11 @@ const addSubcategory = (category) => {
         console.error('Error: category is null or undefined in addSubcategory');
         return;
     }
-    
+
     selectedCategoryForSubcategory.value = category;
     editingSubcategory.value = null;
     showSubcategoryModal.value = true;
     activeSubcategoryMenu.value = null;
-    // Expandir la categoría si no está expandida
     if (!expandedCategories.value.includes(category.id)) {
         expandedCategories.value.push(category.id);
     }
@@ -471,7 +507,7 @@ const editSubcategory = (subcategory) => {
         console.error('Error: subcategory is null or undefined in editSubcategory');
         return;
     }
-    
+
     editingSubcategory.value = { ...subcategory };
     showSubcategoryModal.value = true;
     activeSubcategoryMenu.value = null;
@@ -487,7 +523,7 @@ const deleteSubcategory = async (subcategoryId) => {
         });
         return;
     }
-    
+
     const result = await Swal.fire({
         title: "¿Estás seguro de que quieres eliminar esta subcategoría?",
         text: "Esta acción no se puede deshacer.",
@@ -501,9 +537,7 @@ const deleteSubcategory = async (subcategoryId) => {
 
     if (result.isConfirmed) {
         try {
-            const deleteResult = await subcategoriesStore.deleteSubcategory(
-                subcategoryId
-            );
+            const deleteResult = await subcategoriesStore.deleteSubcategory(subcategoryId);
 
             if (deleteResult.success) {
                 activeSubcategoryMenu.value = null;
@@ -519,18 +553,14 @@ const deleteSubcategory = async (subcategoryId) => {
                 await Swal.fire({
                     icon: "error",
                     title: "Error al eliminar",
-                    text:
-                        deleteResult.error ||
-                        "No se pudo eliminar la subcategoría.",
+                    text: deleteResult.error || "No se pudo eliminar la subcategoría.",
                 });
             }
         } catch (error) {
             await Swal.fire({
                 icon: "error",
                 title: "Error inesperado",
-                text:
-                    error.message ||
-                    "Ocurrió un error al eliminar la subcategoría.",
+                text: error.message || "Ocurrió un error al eliminar la subcategoría.",
             });
         }
     }
@@ -545,14 +575,12 @@ const closeSubcategoryModal = () => {
     showSubcategoryModal.value = false;
     editingSubcategory.value = null;
     selectedCategoryForSubcategory.value = null;
-    // Restaurar scroll del body
     document.body.style.overflow = '';
 };
 
 const closeSubcategoriesModal = () => {
     showSubcategoriesModal.value = false;
     selectedCategoryForSubcategory.value = null;
-    // Restaurar scroll del body
     document.body.style.overflow = '';
 };
 
@@ -585,8 +613,8 @@ const saveCategory = async (categoryData) => {
         }
 
         await Promise.all([
-            categoriesStore.loadCategories(), // Recarga la lista de categorías
-            subcategoriesStore.loadCategoriesWithSubcategories(), // Recarga las subcategorías
+            categoriesStore.loadCategories(),
+            subcategoriesStore.loadCategoriesWithSubcategories(),
         ]);
 
         await Swal.fire({
@@ -635,9 +663,7 @@ const saveSubcategory = async (subcategoryData) => {
             });
             return;
         } else {
-            result = await subcategoriesStore.createSubcategory(
-                subcategoryData
-            );
+            result = await subcategoriesStore.createSubcategory(subcategoryData);
             if (!result.success) {
                 await Swal.fire({
                     icon: "error",
@@ -648,7 +674,7 @@ const saveSubcategory = async (subcategoryData) => {
             }
         }
 
-        await subcategoriesStore.loadCategoriesWithSubcategories(); // Recarga la lista después de crear/editar
+        await subcategoriesStore.loadCategoriesWithSubcategories();
 
         await Swal.fire({
             icon: "success",
@@ -662,13 +688,8 @@ const saveSubcategory = async (subcategoryData) => {
             showConfirmButton: false,
         });
 
-        // Cerrar modal de edición/creación pero mantener el modal de subcategorías abierto
         showSubcategoryModal.value = false;
         editingSubcategory.value = null;
-        // NO limpiar selectedCategoryForSubcategory para mantener el modal de subcategorías abierto
-        // selectedCategoryForSubcategory.value = null;
-        // NO restaurar scroll del body porque el modal de subcategorías sigue abierto
-        // document.body.style.overflow = '';
     } catch (error) {
         await Swal.fire({
             icon: "error",
@@ -678,11 +699,9 @@ const saveSubcategory = async (subcategoryData) => {
     }
 };
 
-// Obtener subcategorías para una categoría específica
 const getSubcategoriesForCategory = (categoryId) => {
     if (!categoryId) return [];
-    
-    // Buscar en categoriesWithSubcategories que tiene la estructura correcta
+
     const categoryData = subcategoriesStore.categoriesWithSubcategories.find(
         (cat) => cat.id === categoryId
     );
@@ -691,13 +710,11 @@ const getSubcategoriesForCategory = (categoryId) => {
         return categoryData.subcategories;
     }
 
-    // Fallback: buscar en subcategories directo
     return subcategoriesStore.subcategories.filter(
         (subcategory) => subcategory && subcategory.category_id === categoryId
     );
 };
 
-// Funciones de utilidad
 const getCategoryTotal = (categoryId) => {
     return expensesStore.expenses
         .filter((expense) => expense.category_id === categoryId)
@@ -717,14 +734,10 @@ const formatCurrency = (amount) => {
     }).format(amount);
 };
 
-// Cerrar menús al hacer clic fuera
 onMounted(() => {
     document.addEventListener("click", (e) => {
-        // Verificar si el clic fue fuera de los menús
         const isOutsideCategoryMenu = !e.target.closest("[data-category-menu]");
-        const isOutsideSubcategoryMenu = !e.target.closest(
-            "[data-subcategory-menu]"
-        );
+        const isOutsideSubcategoryMenu = !e.target.closest("[data-subcategory-menu]");
 
         if (isOutsideCategoryMenu) {
             activeCategoryMenu.value = null;
@@ -736,7 +749,6 @@ onMounted(() => {
     });
 });
 
-// Ocultar errores de permisos o RLS
 function isPermisoError(error) {
     if (!error) return false;
     const msg = error.toLowerCase();

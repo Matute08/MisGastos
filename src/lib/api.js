@@ -228,6 +228,11 @@ export const auth = {
     }
   },
 
+  async updateProfile(data) {
+    const response = await apiClient.put('/auth/profile', data);
+    return response;
+  },
+
   async validateToken() {
     return await apiClient.validateToken();
   },
@@ -241,24 +246,25 @@ export const auth = {
   },
 
   onAuthStateChange(callback) {
-    const checkAuth = () => {
-      const token = localStorage.getItem('token');
+    const handler = (e) => {
+      if (e.key !== 'token') return
+      const token = e.newValue
       if (token) {
-        callback('SIGNED_IN', { user: { token } });
+        callback('SIGNED_IN', null)
       } else {
-        callback('SIGNED_OUT', null);
+        callback('SIGNED_OUT', null)
       }
-    };
+    }
 
-    checkAuth();
+    window.addEventListener('storage', handler)
 
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'token') {
-        checkAuth();
+    return {
+      data: {
+        subscription: {
+          unsubscribe: () => window.removeEventListener('storage', handler)
+        }
       }
-    });
-
-    return { data: { subscription: { unsubscribe: () => {} } } };
+    }
   }
 };
 
@@ -599,6 +605,24 @@ export const subcategories = {
   async getSubcategoryById(id) {
     const response = await apiClient.get(`/subcategories/${id}`);
     return response;
+  }
+};
+
+export const incomes = {
+  async getIncomes(filters = {}) {
+    return await apiClient.get('/incomes', filters);
+  },
+  async createIncome(data) {
+    return await apiClient.post('/incomes', data);
+  },
+  async updateIncome(id, data) {
+    return await apiClient.put(`/incomes/${id}`, data);
+  },
+  async deleteIncome(id) {
+    return await apiClient.delete(`/incomes/${id}`);
+  },
+  async getSummary(params = {}) {
+    return await apiClient.get('/incomes/summary', params);
   }
 };
 

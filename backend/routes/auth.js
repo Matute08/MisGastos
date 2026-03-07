@@ -133,4 +133,27 @@ router.put('/change-role/:userId', authenticateToken, async (req, res) => {
   }
 });
 
+// PUT /api/auth/profile - Actualizar perfil
+router.put('/profile', authenticateToken, async (req, res) => {
+  try {
+    const { nombre_perfil } = req.body;
+
+    if (!nombre_perfil || nombre_perfil.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        error: 'El nombre debe tener al menos 2 caracteres'
+      });
+    }
+
+    const result = await AuthService.updateProfile(req.user.id, { nombre_perfil: nombre_perfil.trim() });
+    res.json(result);
+  } catch (error) {
+    logger.error('Error actualizando perfil:', { error: error.message, userId: req.user.id });
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 export default router; 

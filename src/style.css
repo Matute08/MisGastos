@@ -2,54 +2,104 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* Estilos personalizados */
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  
+
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-slate-50 text-slate-900;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 px-5 rounded-xl
+           transition-all duration-200 ease-out
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+           active:scale-[0.98] shadow-sm hover:shadow-md
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
   }
-  
+
   .btn-secondary {
-    @apply bg-gray-200 hover:bg-gray-300 text-gray-900 font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+    @apply bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2.5 px-5 rounded-xl
+           border border-slate-200 hover:border-slate-300
+           transition-all duration-200 ease-out
+           focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2
+           active:scale-[0.98] shadow-sm;
   }
-  
+
   .btn-danger {
-    @apply bg-danger-600 hover:bg-danger-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-danger-500 focus:ring-offset-2;
+    @apply bg-danger-600 hover:bg-danger-700 text-white font-semibold py-2.5 px-5 rounded-xl
+           transition-all duration-200 ease-out
+           focus:outline-none focus:ring-2 focus:ring-danger-500 focus:ring-offset-2
+           active:scale-[0.98] shadow-sm hover:shadow-md
+           disabled:opacity-50 disabled:cursor-not-allowed;
   }
-  
+
+  .btn-ghost {
+    @apply text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium py-2 px-4 rounded-xl
+           transition-all duration-200 ease-out
+           focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2;
+  }
+
+  .btn-success {
+    @apply bg-success-600 hover:bg-success-700 text-white font-semibold py-2.5 px-5 rounded-xl
+           transition-all duration-200 ease-out
+           focus:outline-none focus:ring-2 focus:ring-success-500 focus:ring-offset-2
+           active:scale-[0.98] shadow-sm hover:shadow-md;
+  }
+
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200;
+    @apply w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl
+           text-slate-900 placeholder-slate-400
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
+           transition-all duration-200 ease-out
+           hover:border-slate-300;
   }
-  
+
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6;
+    @apply bg-white rounded-2xl shadow-soft border border-slate-100 p-6;
   }
-  
+
   .card-header {
-    @apply border-b border-gray-200 pb-4 mb-4;
+    @apply border-b border-slate-100 pb-4 mb-4;
   }
-  
+
   .card-title {
-    @apply text-xl font-semibold text-gray-900;
+    @apply text-lg font-bold text-slate-900;
   }
-  
+
   .card-subtitle {
-    @apply text-sm text-gray-600 mt-1;
+    @apply text-sm text-slate-500 mt-0.5;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold;
+  }
+
+  .badge-success {
+    @apply badge bg-success-50 text-success-700 ring-1 ring-inset ring-success-200;
+  }
+
+  .badge-warning {
+    @apply badge bg-warning-50 text-warning-700 ring-1 ring-inset ring-warning-200;
+  }
+
+  .badge-danger {
+    @apply badge bg-danger-50 text-danger-700 ring-1 ring-inset ring-danger-200;
+  }
+
+  .skeleton {
+    @apply bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_100%] animate-shimmer rounded-xl;
   }
 }
 
-/* Estilos para PWA */
+/* PWA safe area */
 @media (display-mode: standalone) {
   body {
     padding-top: env(safe-area-inset-top);
@@ -57,198 +107,51 @@
   }
 }
 
-/* Scrollbar personalizada */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100;
+  @apply bg-transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 rounded-full;
+  @apply bg-slate-300 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400;
+  @apply bg-slate-400;
 }
 
-/* Estilos para checkboxes */
+/* Modal transitions */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-active .modal-content,
+.modal-leave-active .modal-content {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.modal-enter-from .modal-content {
+  transform: scale(0.95) translateY(10px);
+  opacity: 0;
+}
+
+.modal-leave-to .modal-content {
+  transform: scale(0.95);
+  opacity: 0;
+}
+
+/* Checkbox styles */
 input[type="checkbox"] {
-  appearance: auto !important;
-  -webkit-appearance: auto !important;
-  -moz-appearance: auto !important;
-  display: inline-block !important;
-  width: 16px !important;
-  height: 16px !important;
-  margin: 0 !important;
-  border: 2px solid #d1d5db !important;
-  border-radius: 4px !important;
-  background-color: white !important;
-  cursor: pointer !important;
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-input[type="checkbox"]:checked {
-  background-color: #3b82f6 !important;
-  border-color: #3b82f6 !important;
-  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e") !important;
-  background-size: 12px !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
-}
-
-input[type="checkbox"]:focus {
-  outline: none !important;
-  ring: 2px !important;
-  ring-color: #3b82f6 !important;
-}
-
-/* Asegurar que los checkboxes sean visibles */
-.checkbox-container {
-  position: relative !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  padding: 8px 12px !important;
-  background-color: white !important;
-  border: 1px solid #e5e7eb !important;
-  border-radius: 8px !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Estilos específicos para tablet */
-@media (min-width: 768px) and (max-width: 1023px) {
-  /* Mejoras de espaciado para tablet */
-  .space-y-6 > * + * {
-    margin-top: 1.75rem;
-  }
-  
-  .space-y-4 > * + * {
-    margin-top: 1.25rem;
-  }
-  
-  /* Mejoras de tipografía para tablet */
-  h1 {
-    font-size: 1.875rem;
-    line-height: 2.25rem;
-  }
-  
-  h2 {
-    font-size: 1.5rem;
-    line-height: 2rem;
-  }
-  
-  /* Mejoras de cards para tablet */
-  .card {
-    border-radius: 1rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-  
-  /* Mejoras de botones para tablet */
-  .btn-primary,
-  .btn-secondary,
-  .btn-danger {
-    padding: 0.75rem 1.5rem;
-    font-size: 0.875rem;
-    border-radius: 0.75rem;
-  }
-  
-  /* Mejoras de inputs para tablet */
-  .input-field {
-    padding: 0.75rem 1rem;
-    border-radius: 0.75rem;
-    font-size: 0.875rem;
-  }
-  
-  /* Mejoras de navegación inferior para tablet */
-  .fixed.bottom-0 {
-    padding-bottom: env(safe-area-inset-bottom);
-    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-  
-  /* Mejoras de modales para tablet */
-  .fixed.inset-0 > div {
-    border-radius: 1rem;
-    margin: 1rem;
-    max-height: calc(100vh - 2rem);
-  }
-  
-  /* Mejoras de paginación para tablet */
-  .flex.justify-center.items-center.gap-2 {
-    gap: 0.75rem;
-  }
-  
-  .flex.justify-center.items-center.gap-2 button {
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-  }
-  
-  /* Mejoras de filtros para tablet */
-  .grid.grid-cols-2.gap-3 {
-    gap: 1rem;
-  }
-  
-  /* Mejoras de iconos para tablet */
-  .h-4.w-4 {
-    height: 1.25rem;
-    width: 1.25rem;
-  }
-  
-  .h-5.w-5 {
-    height: 1.5rem;
-    width: 1.5rem;
-  }
-  
-  /* Mejoras de espaciado general para tablet */
-  .p-4 {
-    padding: 1.5rem;
-  }
-  
-  .p-6 {
-    padding: 2rem;
-  }
-  
-  .py-4 {
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
-  }
-  
-  .px-4 {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
-  
-  /* Mejoras de sombras para tablet */
-  .shadow-sm {
-    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
-  }
-  
-  .shadow {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-  
-  .shadow-lg {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  }
-}
-
-/* Animaciones suaves para tablet */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .transition-all {
-    transition-property: all;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 200ms;
-  }
-  
-  .hover\:shadow-md:hover {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  }
-  
-  .hover\:scale-105:hover {
-    transform: scale(1.02);
-  }
+  @apply h-4 w-4 rounded border-slate-300 text-primary-600 
+         focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 cursor-pointer;
 }

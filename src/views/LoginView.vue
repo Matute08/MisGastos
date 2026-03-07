@@ -1,195 +1,206 @@
 <template>
-  <div class="fixed inset-0 flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-gray-50 overflow-hidden">
-    <div class="max-w-md w-full space-y-5">
-      <!-- Header -->
-      <div class="text-center">
-        <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-primary-100">
-          <CreditCard class="h-8 w-8 text-primary-600" />
+  <div class="min-h-screen flex">
+    <!-- Left Panel - Branding (desktop only) -->
+    <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 relative overflow-hidden items-center justify-center p-12">
+      <div class="absolute top-20 -left-16 w-72 h-72 bg-white opacity-10 rounded-full"></div>
+      <div class="absolute bottom-32 right-10 w-48 h-48 bg-white opacity-10 rounded-full"></div>
+      <div class="absolute top-1/2 left-1/3 w-24 h-24 bg-white opacity-5 rounded-full"></div>
+
+      <div class="relative z-10 text-center max-w-md">
+        <div class="mx-auto mb-8 h-20 w-20 flex items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">
+          <Wallet class="h-10 w-10 text-white" />
         </div>
-        <h2 class="mt-4 text-3xl font-bold text-gray-900">
-          Iniciar sesión
-        </h2>
-        <p class="mt-1 text-sm text-gray-600">
-          Accede a tu cuenta de Control Gastos
+        <h1 class="text-4xl font-bold text-white tracking-tight">MisGastos</h1>
+        <p class="mt-4 text-lg text-primary-100 leading-relaxed">
+          Controla tus finanzas de forma inteligente
         </p>
+        <div class="mt-10 flex items-center justify-center gap-3">
+          <div class="h-1 w-8 rounded-full bg-white/40"></div>
+          <div class="h-1 w-8 rounded-full bg-white/20"></div>
+          <div class="h-1 w-8 rounded-full bg-white/20"></div>
+        </div>
       </div>
+    </div>
 
-      <!-- Formulario -->
-      <form @submit.prevent="handleLogin" class="space-y-5">
-        <!-- Email -->
-        <div>
-          <label for="email" class="block text-sm font-medium text-gray-700">
-            Correo electrónico
-          </label>
-          <input
-            id="email"
-            v-model="form.email"
-            type="email"
-            required
-            class="input-field mt-1"
-            placeholder="tu@email.com"
-          />
-        </div>
-
-        <!-- Contraseña -->
-        <div>
-          <label for="password" class="block text-sm font-medium text-gray-700">
-            Contraseña
-          </label>
-          <div class="relative mt-1">
-            <input
-              id="password"
-              v-model="form.password"
-              :type="showPassword ? 'text' : 'password'"
-              required
-              class="input-field pr-10"
-              placeholder="••••••••"
-            />
-            <button
-              type="button"
-              @click="showPassword = !showPassword"
-              class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
-              tabindex="-1"
-            >
-              <Eye v-if="!showPassword" class="h-5 w-5" />
-              <EyeOff v-else class="h-5 w-5" />
-            </button>
+    <!-- Right Panel - Form -->
+    <div class="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-12 bg-white">
+      <div class="w-full max-w-md">
+        <!-- Mobile logo -->
+        <div class="lg:hidden text-center mb-8">
+          <div class="mx-auto h-14 w-14 flex items-center justify-center rounded-full bg-primary-50">
+            <Wallet class="h-7 w-7 text-primary-600" />
           </div>
+          <h1 class="mt-3 text-xl font-bold text-primary-700">MisGastos</h1>
         </div>
 
-        <!-- Checkbox Recordar mis datos -->
-        <div class="flex items-center">
-          <input
-            id="rememberMe"
-            v-model="rememberMe"
-            type="checkbox"
-            class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-          />
-          <label for="rememberMe" class="ml-2 block text-sm text-gray-700">
-            Recordar mis datos
-          </label>
+        <!-- Heading -->
+        <div class="text-center lg:text-left">
+          <div class="hidden lg:flex mb-6 h-12 w-12 items-center justify-center rounded-full bg-primary-50">
+            <Wallet class="h-6 w-6 text-primary-600" />
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Bienvenido de vuelta</h2>
+          <p class="mt-2 text-sm text-gray-500">Ingresa a tu cuenta</p>
         </div>
 
-        <!-- Error -->
-        <div v-if="authStore.error" class="bg-danger-50 border border-danger-200 rounded-md p-4">
-          <div class="flex">
-            <AlertCircle class="h-5 w-5 text-danger-400" />
-            <div class="ml-3">
-              <p class="text-sm text-danger-700">
-                {{ authStore.error }}
-              </p>
+        <!-- Form -->
+        <form @submit.prevent="handleLogin" class="mt-8 space-y-5">
+          <!-- Email -->
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700">Correo electrónico</label>
+            <div class="relative mt-1.5">
+              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <Mail class="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                id="email"
+                v-model="form.email"
+                type="email"
+                required
+                autocomplete="email"
+                class="input-field pl-10"
+                placeholder="tu@email.com"
+              />
             </div>
           </div>
-        </div>
 
-        <!-- Botón de envío -->
-        <button
-          type="submit"
-          :disabled="authStore.loading"
-          class="btn-primary w-full flex justify-center"
-        >
-          <div v-if="authStore.loading" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-          {{ authStore.loading ? 'Iniciando sesión...' : 'Iniciar sesión' }}
-        </button>
+          <!-- Password -->
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
+            <div class="relative mt-1.5">
+              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <Lock class="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                id="password"
+                v-model="form.password"
+                :type="showPassword ? 'text' : 'password'"
+                required
+                autocomplete="current-password"
+                class="input-field pl-10 pr-10"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                @click="showPassword = !showPassword"
+                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors"
+                tabindex="-1"
+              >
+                <Eye v-if="!showPassword" class="h-5 w-5" />
+                <EyeOff v-else class="h-5 w-5" />
+              </button>
+            </div>
+          </div>
 
-        <!-- Enlaces adicionales -->
-        <div class="text-center">
-          <p class="text-sm text-gray-600">
-            ¿No tienes una cuenta?
-            <router-link to="/register" class="font-medium text-primary-600 hover:text-primary-500">
+          <!-- Remember me -->
+          <div class="flex items-center">
+            <input
+              id="rememberMe"
+              v-model="rememberMe"
+              type="checkbox"
+              class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <label for="rememberMe" class="ml-2 block text-sm text-gray-600">
+              Recordar mis datos
+            </label>
+          </div>
+
+          <!-- Error -->
+          <div
+            v-if="authStore.error"
+            class="flex items-start gap-3 rounded-lg bg-danger-50 border border-danger-200 p-4"
+          >
+            <AlertCircle class="h-5 w-5 text-danger-500 shrink-0 mt-0.5" />
+            <p class="text-sm text-danger-700">{{ authStore.error }}</p>
+          </div>
+
+          <!-- Submit -->
+          <button
+            type="submit"
+            :disabled="authStore.loading"
+            class="btn-primary w-full flex items-center justify-center gap-2"
+          >
+            <div
+              v-if="authStore.loading"
+              class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+            ></div>
+            {{ authStore.loading ? 'Iniciando sesión...' : 'Iniciar sesión' }}
+          </button>
+
+          <!-- Register link -->
+          <p class="text-center text-sm text-gray-500">
+            ¿No tienes cuenta?
+            <router-link to="/register" class="font-semibold text-primary-600 hover:text-primary-500 transition-colors">
               Regístrate aquí
             </router-link>
           </p>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { CreditCard, AlertCircle, Eye, EyeOff } from 'lucide-vue-next'
+import { Wallet, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
-const form = ref({
-  email: '',
-  password: ''
-})
-
+const form = ref({ email: '', password: '' })
 const rememberMe = ref(false)
 const showPassword = ref(false)
 
-// Función para guardar credenciales
+const CREDENTIALS_KEY = 'mg_saved_credentials'
+
 const saveCredentials = () => {
   if (rememberMe.value) {
-    localStorage.setItem('rememberedCredentials', JSON.stringify({
+    const payload = JSON.stringify({
       email: form.value.email,
-      rememberMe: true
-    }))
+      p: btoa(form.value.password)
+    })
+    localStorage.setItem(CREDENTIALS_KEY, payload)
   } else {
-    localStorage.removeItem('rememberedCredentials')
+    localStorage.removeItem(CREDENTIALS_KEY)
   }
 }
 
-// Función para cargar credenciales guardadas
 const loadSavedCredentials = () => {
-  const saved = localStorage.getItem('rememberedCredentials')
+  const saved = localStorage.getItem(CREDENTIALS_KEY)
   if (saved) {
-    const credentials = JSON.parse(saved)
-    form.value.email = credentials.email
-    rememberMe.value = credentials.rememberMe
+    try {
+      const credentials = JSON.parse(saved)
+      form.value.email = credentials.email || ''
+      form.value.password = credentials.p ? atob(credentials.p) : ''
+      rememberMe.value = true
+    } catch {
+      localStorage.removeItem(CREDENTIALS_KEY)
+    }
   }
-}
-
-// Función para limpiar credenciales
-const clearCredentials = () => {
-  localStorage.removeItem('rememberedCredentials')
 }
 
 const handleLogin = async () => {
   const { success } = await authStore.signIn(form.value.email, form.value.password)
-  
+
   if (success) {
-    // Guardar credenciales si está marcado "Recordar mis datos"
     saveCredentials()
-    
-    // Redirigir a la página original o al dashboard
     const redirectTo = route.query.redirect || '/dashboard'
     router.push(redirectTo)
   }
 }
 
-
-// Watcher para limpiar credenciales si se desmarca "Recordar mis datos"
-watch(rememberMe, (newValue) => {
-  if (!newValue) {
-    clearCredentials()
-  }
+watch(rememberMe, (val) => {
+  if (!val) localStorage.removeItem(CREDENTIALS_KEY)
 })
 
-onMounted(async () => {
+onMounted(() => {
   authStore.clearError()
-  
-  // Prevenir scroll en el body
-  document.body.style.overflow = 'hidden'
-  
-  // Cargar credenciales guardadas
   loadSavedCredentials()
-  
-  // Si ya está autenticado, redirigir
+
   if (authStore.isAuthenticated) {
-    const redirectTo = route.query.redirect || '/dashboard'
-    router.push(redirectTo)
+    router.push(route.query.redirect || '/dashboard')
   }
 })
-
-// Restaurar scroll al desmontar
-onUnmounted(() => {
-  document.body.style.overflow = ''
-})
-</script> 
+</script>

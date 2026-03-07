@@ -3,13 +3,13 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Gestión de Cuentas Disponibles</h1>
-        <p class="text-sm sm:text-base text-gray-600">Administra las cuentas que los usuarios pueden vincular</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-900">Gestión de Cuentas Disponibles</h1>
+        <p class="text-sm sm:text-base text-slate-600">Administra las cuentas que los usuarios pueden vincular</p>
       </div>
       <button 
         v-if="isAdmin"
         @click="showModal = true"
-        class="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 text-sm sm:text-base"
+        class="btn-primary"
       >
         <Plus class="h-4 w-4 sm:h-5 sm:w-5" />
         <span>Nueva Cuenta</span>
@@ -41,17 +41,17 @@
         <!-- Header de la cuenta -->
         <div class="flex justify-between items-start mb-4">
           <div class="flex items-center space-x-3">
-            <div class="p-2 bg-blue-100 rounded-lg">
-              <CreditCard class="h-5 w-5 text-blue-600" />
+            <div class="p-2 bg-primary-100 rounded-lg">
+              <CreditCard class="h-5 w-5 text-primary-600" />
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-gray-900">{{ card.name }}</h3>
+              <h3 class="text-lg font-semibold text-slate-900">{{ card.name }}</h3>
                              <span class="px-2 py-1 text-xs rounded-full" 
                      :class="{
-                       'bg-green-100 text-green-800': card.type === 'Crédito',
-                       'bg-blue-100 text-blue-800': card.type === 'Débito',
+                       'bg-success-100 text-success-800': card.type === 'Crédito',
+                       'bg-primary-100 text-primary-800': card.type === 'Débito',
                        'bg-purple-100 text-purple-800': card.type === 'Transferencia',
-                       'bg-gray-100 text-gray-800': card.type === 'Ninguna'
+                       'bg-slate-100 text-slate-800': card.type === 'Ninguna'
                      }">
                  {{ card.type }}
                </span>
@@ -62,7 +62,7 @@
           <div class="relative flex-shrink-0">
             <button
               @click="toggleCardMenu(card.id)"
-              class="p-1.5 text-gray-400 hover:text-gray-600 transition-colors duration-200 rounded"
+              class="p-1.5 text-slate-400 hover:text-slate-600 transition-colors duration-200 rounded"
             >
               <MoreVertical class="h-4 w-4" />
             </button>
@@ -70,11 +70,11 @@
             <!-- Menú desplegable -->
             <div
               v-if="activeCardMenu === card.id"
-              class="absolute right-0 mt-2 w-32 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200"
+              class="absolute right-0 mt-2 w-32 bg-white rounded-md shadow-lg py-1 z-10 border border-slate-200"
             >
               <button
                 @click="editCard(card)"
-                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                class="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors duration-200"
               >
                 <Edit class="h-4 w-4 inline mr-2" />
                 Editar
@@ -93,23 +93,23 @@
         <!-- Información de la cuenta -->
         <div class="space-y-3">
           <div class="flex justify-between items-center">
-            <span class="text-gray-500 text-sm">Banco:</span>
-            <span class="font-medium text-gray-700">{{ card.bank }}</span>
+            <span class="text-slate-500 text-sm">Banco:</span>
+            <span class="font-medium text-slate-700">{{ card.bank }}</span>
           </div>
           
           <div v-if="card.payment_day" class="flex justify-between items-center">
-            <span class="text-gray-500 text-sm">Día de pago:</span>
-            <span class="font-medium text-gray-700">Día {{ card.payment_day }}</span>
+            <span class="text-slate-500 text-sm">Día de pago:</span>
+            <span class="font-medium text-slate-700">Día {{ card.payment_day }}</span>
           </div>
           
           <div v-if="card.credit_limit" class="flex justify-between items-center">
-            <span class="text-gray-500 text-sm">Límite de crédito:</span>
-            <span class="font-medium text-gray-700">${{ formatNumber(card.credit_limit) }}</span>
+            <span class="text-slate-500 text-sm">Límite de crédito:</span>
+            <span class="font-medium text-slate-700">${{ formatNumber(card.credit_limit) }}</span>
           </div>
           
           <div class="flex justify-between items-center">
-            <span class="text-gray-500 text-sm">Creada:</span>
-            <span class="font-medium text-gray-700 text-xs">{{ formatDate(card.created_at) }}</span>
+            <span class="text-slate-500 text-sm">Creada:</span>
+            <span class="font-medium text-slate-700 text-xs">{{ formatDate(card.created_at) }}</span>
           </div>
         </div>
       </div>
@@ -120,13 +120,13 @@
       v-if="availableCardsStore.availableCards.length === 0"
       class="text-center py-8 sm:py-12"
     >
-      <CreditCard class="mx-auto h-12 w-12 text-gray-400" />
-      <h3 class="mt-4 text-lg font-medium text-gray-900">No hay cuentas disponibles</h3>
-      <p class="mt-2 text-gray-600">Comienza creando la primera cuenta disponible</p>
+      <CreditCard class="mx-auto h-12 w-12 text-slate-400" />
+      <h3 class="mt-4 text-lg font-medium text-slate-900">No hay cuentas disponibles</h3>
+      <p class="mt-2 text-slate-600">Comienza creando la primera cuenta disponible</p>
       <button
         v-if="isAdmin"
         @click="showModal = true"
-        class="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 mt-4 mx-auto text-sm sm:text-base"
+        class="btn-primary mt-4 mx-auto"
       >
         <Plus class="h-4 w-4 sm:h-5 sm:w-5" />
         <span>Crear Primera Cuenta</span>

@@ -22,6 +22,25 @@ export const useAuthStore = defineStore('auth', () => {
   })
   const hasModeratorAccess = computed(() => isAdmin.value || isModerator.value)
   
+  const CACHED_USER_KEY = 'cachedUser'
+
+  const persistUser = (userData) => {
+    if (userData) {
+      sessionStorage.setItem(CACHED_USER_KEY, JSON.stringify(userData))
+    } else {
+      sessionStorage.removeItem(CACHED_USER_KEY)
+    }
+  }
+
+  const getCachedUser = () => {
+    try {
+      const raw = sessionStorage.getItem(CACHED_USER_KEY)
+      return raw ? JSON.parse(raw) : null
+    } catch {
+      return null
+    }
+  }
+
   const init = async () => {
     loading.value = true
     isAuthReady.value = false
@@ -32,13 +51,21 @@ export const useAuthStore = defineStore('auth', () => {
       if (!token) {
         user.value = null
         userProfile.value = null
+        persistUser(null)
         return
+      }
+
+      const cached = getCachedUser()
+      if (cached?.id) {
+        user.value = cached
+        await loadUserProfile()
       }
       
       const isValid = await auth.validateToken()
       if (!isValid) {
         user.value = null
         userProfile.value = null
+        persistUser(null)
         localStorage.removeItem('token')
         localStorage.removeItem('tokenExpiresAt')
         return
@@ -48,21 +75,29 @@ export const useAuthStore = defineStore('auth', () => {
         const currentUser = await auth.getUser()
         if (currentUser) {
           user.value = currentUser
+          persistUser(currentUser)
           await loadUserProfile()
           setupAutoRefresh()
         } else {
-          throw new Error('No se pudo obtener el usuario')
+          if (!cached?.id) {
+            throw new Error('No se pudo obtener el usuario')
+          }
+          setupAutoRefresh()
         }
       } catch (profileError) {
-        user.value = null
-        userProfile.value = null
-        localStorage.removeItem('token')
-        localStorage.removeItem('tokenExpiresAt')
+        if (!cached?.id) {
+          user.value = null
+          userProfile.value = null
+          persistUser(null)
+          localStorage.removeItem('token')
+          localStorage.removeItem('tokenExpiresAt')
+        }
       }
     } catch (err) {
       console.error('Error al inicializar autenticación:', err)
       user.value = null
       userProfile.value = null
+      persistUser(null)
       localStorage.removeItem('token')
       localStorage.removeItem('tokenExpiresAt')
     } finally {
@@ -101,6 +136,7 @@ export const useAuthStore = defineStore('auth', () => {
         id: user.value.id,
         email: user.value.email,
         nombre_perfil: user.value.nombre_perfil || user.value.email,
+        creado: user.value.creado,
         role_nombre: user.value.role || user.value.role_nombre || 'user',
         role_descripcion: user.value.role_descripcion || 'Usuario regular'
       }
@@ -138,6 +174,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
       
       user.value = response.user
+      persistUser(response.user)
       await loadUserProfile()
       setupAutoRefresh()
       
@@ -161,6 +198,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
       
       user.value = response.user
+      persistUser(response.user)
       await loadUserProfile()
       setupAutoRefresh()
       
@@ -182,6 +220,7 @@ export const useAuthStore = defineStore('auth', () => {
       
       user.value = null
       userProfile.value = null
+      persistUser(null)
       localStorage.removeItem('rememberedCredentials')
       
       return { success: true }
@@ -197,12 +236,16 @@ export const useAuthStore = defineStore('auth', () => {
     if (!user.value) return { success: false, error: 'Usuario no autenticado' }
     
     try {
-      userProfile.value = {
-        ...userProfile.value,
-        ...updates
+      const response = await auth.updateProfile(updates)
+      if (response.success) {
+        if (updates.nombre_perfil) {
+          user.value = { ...user.value, nombre_perfil: updates.nombre_perfil }
+          persistUser(user.value)
+        }
+        await loadUserProfile()
+        return { success: true, data: response.data }
       }
-
-      return { success: true, data: userProfile.value }
+      return { success: false, error: response.error || 'Error al actualizar perfil' }
     } catch (err) {
       console.error('Error al actualizar perfil:', err)
       return { success: false, error: err.message }
@@ -234,11 +277,17 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const setupAuthListener = () => {
-    auth.onAuthStateChange(async (event, session) => {
+    auth.onAuthStateChange(async (event) => {
       if (event === 'SIGNED_IN') {
-        user.value = session?.user || null
-        if (session?.user) {
-          await loadUserProfile()
+        if (user.value?.id) return
+        try {
+          const currentUser = await auth.getUser()
+          if (currentUser) {
+            user.value = currentUser
+            await loadUserProfile()
+          }
+        } catch {
+          // Silently ignore – init() already handles the initial load
         }
       } else if (event === 'SIGNED_OUT') {
         user.value = null

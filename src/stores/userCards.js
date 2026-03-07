@@ -1,122 +1,101 @@
 import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
 import { apiClient } from '@/lib/api'
 
-export const useUserCardsStore = defineStore('userCards', {
-  state: () => ({
-    cards: [],
-    loading: false,
-    error: null
-  }),
+export const useUserCardsStore = defineStore('userCards', () => {
+  const cards = ref([])
+  const loading = ref(false)
+  const error = ref(null)
 
-  getters: {
-    // Obtener tarjetas ordenadas por nombre
-    sortedCards: (state) => {
-      return [...state.cards].sort((a, b) => a.name.localeCompare(b.name))
-    },
+  const sortedCards = computed(() =>
+    [...cards.value].sort((a, b) => a.name?.localeCompare(b.name))
+  )
 
-    // Obtener tarjetas por tipo
-    cardsByType: (state) => {
-      return (type) => state.cards.filter(card => card.type === type)
-    },
+  const cardsByType = computed(() =>
+    (type) => cards.value.filter(card => card.type === type)
+  )
 
-    // Nuevo: Obtener tarjetas ordenadas por banco
-    sortedCardsByBank: (state) => {
-      return [...state.cards].sort((a, b) => {
-        const bankA = a.available_card?.bank || 'ZZZ' // 'ZZZ' para que 'Sin banco' vaya al final
-        const bankB = b.available_card?.bank || 'ZZZ'
-        return bankA.localeCompare(bankB)
-      })
+  const sortedCardsByBank = computed(() =>
+    [...cards.value].sort((a, b) => {
+      const bankA = a.available_card?.bank || 'ZZZ'
+      const bankB = b.available_card?.bank || 'ZZZ'
+      return bankA.localeCompare(bankB)
+    })
+  )
+
+  async function loadUserCards() {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await apiClient.get('/user-cards')
+      if (response.success) {
+        cards.value = response.data || []
+      } else {
+        error.value = response.error || 'Error al cargar tarjetas'
+      }
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Error de conexión'
+    } finally {
+      loading.value = false
     }
-  },
+  }
 
-  actions: {
-    // Cargar tarjetas del usuario (todas las vinculadas)
-    async loadUserCards() {
-      this.loading = true
-      this.error = null
-      
-      try {
-        const response = await apiClient.get('/user-cards')
-        
-        if (response.success) {
-          this.cards = response.data || []
-        } else {
-          this.error = response.error || 'Error al cargar tarjetas'
-        }
-      } catch (error) {
-        console.error('Error cargando tarjetas del usuario:', error)
-        this.error = error.response?.data?.error || 'Error de conexión'
-      } finally {
-        this.loading = false
+  function clearState() {
+    cards.value = []
+    loading.value = false
+    error.value = null
+  }
+
+  async function linkCardToUser(availableCardId) {
+    try {
+      const response = await apiClient.post('/user-cards', { available_card_id: availableCardId })
+      if (response.success) {
+        await loadUserCards()
+        return { success: true }
       }
-    },
-
-    // Limpiar estado
-    clearState() {
-      this.cards = []
-      this.loading = false
-      this.error = null
-    },
-
-    // Vincular una tarjeta al usuario
-    async linkCardToUser(availableCardId) {
-      try {
-        const response = await apiClient.post('/user-cards', {
-          available_card_id: availableCardId
-        })
-        
-        
-        if (response.success) {
-          // Recargar las tarjetas del usuario
-          await this.loadUserCards()
-          return { success: true }
-        } else {
-          return { success: false, error: response.error || 'Error al vincular tarjeta' }
-        }
-      } catch (error) {
-        console.error('Error vinculando tarjeta:', error)
-        return { 
-          success: false, 
-          error: error.response?.data?.error || 'Error de conexión al vincular tarjeta' 
-        }
-      }
-    },
-
-    // Desvincular una tarjeta del usuario
-    async unlinkCardFromUser(userCardId) {
-      try {
-        const response = await apiClient.delete(`/user-cards/${userCardId}`)
-        
-        if (response.success) {
-          // Recargar las tarjetas del usuario
-          await this.loadUserCards()
-          return { success: true }
-        } else {
-          return { success: false, error: response.error || 'Error al desvincular tarjeta' }
-        }
-      } catch (error) {
-        console.error('Error desvinculando tarjeta:', error)
-        return { 
-          success: false, 
-          error: error.response?.data?.error || 'Error de conexión al desvincular tarjeta' 
-        }
-      }
-    },
-
-    // Cargar tarjetas del usuario que tienen gastos (para ExpensesView.vue)
-    async loadUserCardsWithExpenses() {
-      try {
-        const response = await apiClient.get('/expenses/user-cards')
-        
-        if (response.success) {
-          this.cards = response.cards || []
-        } else {
-          this.error = response.error || 'Error al cargar tarjetas'
-        }
-      } catch (error) {
-        console.error('Error cargando tarjetas del usuario con gastos:', error)
-        this.error = error.response?.data?.error || 'Error de conexión'
-      }
+      return { success: false, error: response.error || 'Error al vincular tarjeta' }
+    } catch (err) {
+      return { success: false, error: err.response?.data?.error || 'Error de conexión' }
     }
+  }
+
+  async function unlinkCardFromUser(userCardId) {
+    try {
+      const response = await apiClient.delete(`/user-cards/${userCardId}`)
+      if (response.success) {
+        await loadUserCards()
+        return { success: true }
+      }
+      return { success: false, error: response.error || 'Error al desvincular tarjeta' }
+    } catch (err) {
+      return { success: false, error: err.response?.data?.error || 'Error de conexión' }
+    }
+  }
+
+  async function loadUserCardsWithExpenses() {
+    try {
+      const response = await apiClient.get('/expenses/user-cards')
+      if (response.success) {
+        cards.value = response.cards || []
+      } else {
+        error.value = response.error || 'Error al cargar tarjetas'
+      }
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Error de conexión'
+    }
+  }
+
+  return {
+    cards,
+    loading,
+    error,
+    sortedCards,
+    cardsByType,
+    sortedCardsByBank,
+    loadUserCards,
+    clearState,
+    linkCardToUser,
+    unlinkCardFromUser,
+    loadUserCardsWithExpenses,
   }
 })

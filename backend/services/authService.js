@@ -364,15 +364,15 @@ export class AuthService {
     }
   }
 
-  // Obtener perfil del usuario actual
+  // Obtener perfil del usuario actual (UID = id en usuarios_perfil; email en Auth)
   static async getCurrentUserProfile(userId) {
     try {
-      // Obtener perfil personalizado directamente por ID
       const { data: profile, error: profileError } = await supabase
         .from('usuarios_perfil')
         .select(`
           id,
           nombre,
+          creado,
           roles(nombre, descripcion)
         `)
         .eq('id', userId)
@@ -382,12 +382,50 @@ export class AuthService {
         throw new Error('Usuario no encontrado');
       }
 
+      // Email real desde Supabase Auth (UID = id de usuarios_perfil)
+      let email = null;
+      if (supabase) {
+        const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+        if (authUser?.user?.email) email = authUser.user.email;
+      }
+
       return {
         id: profile.id,
-        email: profile.nombre, // Usar el nombre como email temporal
+        email: email || profile.nombre,
         nombre_perfil: profile.nombre,
+        creado: profile.creado,
         role_nombre: profile.roles?.nombre || 'user',
         role_descripcion: profile.roles?.descripcion || 'Usuario regular'
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async updateProfile(userId, updates) {
+    try {
+      const updateData = {};
+      if (updates.nombre_perfil) {
+        updateData.nombre = updates.nombre_perfil;
+      }
+
+      const { data, error } = await supabase
+        .from('usuarios_perfil')
+        .update(updateData)
+        .eq('id', userId)
+        .select('id, nombre, roles(nombre, descripcion)')
+        .single();
+
+      if (error) throw new Error('Error al actualizar perfil');
+
+      return {
+        success: true,
+        data: {
+          id: data.id,
+          nombre_perfil: data.nombre,
+          role_nombre: data.roles?.nombre || 'user',
+          role_descripcion: data.roles?.descripcion || 'Usuario regular'
+        }
       };
     } catch (error) {
       throw error;

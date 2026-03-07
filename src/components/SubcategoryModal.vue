@@ -10,7 +10,7 @@
     aria-labelledby="subcategory-modal-title"
   >
     <div 
-      class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" 
+      class="bg-white rounded-2xl shadow-soft max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-100" 
       @wheel.stop 
       @touchmove.stop 
       @scroll.stop
@@ -19,13 +19,13 @@
       tabindex="-1"
     >
       <!-- Header -->
-      <div class="flex justify-between items-center p-6 border-b border-gray-200">
-        <h3 id="subcategory-modal-title" class="text-lg font-semibold text-gray-900">
+      <div class="flex justify-between items-center p-6 border-b border-slate-200">
+        <h3 id="subcategory-modal-title" class="text-lg font-semibold text-slate-900">
           {{ subcategory ? 'Editar Subcategoría' : 'Nueva Subcategoría' }}
         </h3>
         <button
           @click="$emit('close')"
-          class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          class="text-slate-400 hover:text-slate-600 transition-colors duration-200"
           aria-label="Cerrar modal"
           type="button"
         >
@@ -37,14 +37,14 @@
       <form @submit.prevent="onSubmit" class="p-6 space-y-4" novalidate>
         <!-- Categoría padre -->
         <div>
-          <label for="category_id" class="block text-sm font-medium text-gray-700">
+          <label for="category_id" class="block text-sm font-medium text-slate-700">
             Categoría padre
           </label>
           <select
             id="category_id"
             v-model="categoryId"
             class="input-field mt-1"
-            :class="{ 'border-red-500': errors.category_id }"
+            :class="{ 'border-danger-500': errors.category_id }"
             :disabled="!!selectedCategory || !!subcategory"
             aria-describedby="category_id-error"
             :aria-invalid="!!errors.category_id"
@@ -59,17 +59,17 @@
               {{ category.name }}
             </option>
           </select>
-          <p v-if="errors.category_id" id="category_id-error" class="mt-1 text-sm text-red-600" role="alert">
+          <p v-if="errors.category_id" id="category_id-error" class="mt-1 text-sm text-danger-600" role="alert">
             {{ errors.category_id }}
           </p>
-          <p v-if="selectedCategory" class="text-sm text-gray-500 mt-1">
+          <p v-if="selectedCategory" class="text-sm text-slate-500 mt-1">
             Categoría seleccionada: <strong>{{ selectedCategory.name }}</strong>
           </p>
         </div>
 
         <!-- Nombre -->
         <div>
-          <label for="name" class="block text-sm font-medium text-gray-700">
+          <label for="name" class="block text-sm font-medium text-slate-700">
             Nombre de la subcategoría
           </label>
           <input
@@ -77,20 +77,20 @@
             v-model="name"
             type="text"
             class="input-field mt-1"
-            :class="{ 'border-red-500': errors.name }"
+            :class="{ 'border-danger-500': errors.name }"
             placeholder="Ej: Ropa, Joyas, Salud, etc."
             aria-describedby="name-error"
             :aria-invalid="!!errors.name"
             v-bind="nameAttrs"
           />
-          <p v-if="errors.name" id="name-error" class="mt-1 text-sm text-red-600" role="alert">
+          <p v-if="errors.name" id="name-error" class="mt-1 text-sm text-danger-600" role="alert">
             {{ errors.name }}
           </p>
         </div>
 
         <!-- Color (solo visible si no hay categoría padre seleccionada) -->
         <div v-if="!selectedCategory && !subcategory">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="block text-sm font-medium text-slate-700 mb-2">
             Color
           </label>
           <div class="grid grid-cols-6 gap-2">
@@ -101,7 +101,7 @@
               @click="form.color = color"
               :class="[
                 'w-8 h-8 rounded-full border-2 transition-all duration-200',
-                form.color === color ? 'border-gray-900 scale-110' : 'border-gray-300 hover:scale-105'
+                form.color === color ? 'border-slate-900 scale-110' : 'border-slate-300 hover:scale-105'
               ]"
               :style="{ backgroundColor: color }"
             ></button>
@@ -110,23 +110,23 @@
 
         <!-- Color heredado (cuando hay categoría padre) -->
         <div v-if="selectedCategory || (subcategory && parentCategoryColor)">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="block text-sm font-medium text-slate-700 mb-2">
             Color (heredado de la categoría padre)
           </label>
           <div class="flex items-center space-x-2">
             <div
-              class="w-8 h-8 rounded-full border-2 border-gray-300"
+              class="w-8 h-8 rounded-full border-2 border-slate-300"
               :style="{ backgroundColor: parentCategoryColor }"
             ></div>
-            <span class="text-sm text-gray-600">
+            <span class="text-sm text-slate-600">
               Color de "{{ parentCategoryName }}"
             </span>
           </div>
         </div>
 
         <!-- Vista previa -->
-        <div v-if="form.name && (form.color || parentCategoryColor) && form.category_id" class="p-3 bg-gray-50 rounded-lg">
-          <p class="text-sm text-gray-600 mb-2">Vista previa:</p>
+        <div v-if="form.name && (form.color || parentCategoryColor) && form.category_id" class="p-3 bg-slate-50 rounded-lg">
+          <p class="text-sm text-slate-600 mb-2">Vista previa:</p>
           <div class="flex items-center space-x-2">
             <span
               class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
@@ -134,7 +134,7 @@
             >
               {{ form.name }}
             </span>
-            <span class="text-xs text-gray-500">
+            <span class="text-xs text-slate-500">
               en {{ getCategoryName(form.category_id) }}
             </span>
           </div>
@@ -290,7 +290,6 @@ const parentCategoryName = computed(() => {
 // Función para inicializar el formulario
 const initializeForm = () => {
   if (props.subcategory && props.subcategory.id) {
-    // Editando una subcategoría existente
     resetValidation({
       values: {
         category_id: props.subcategory.category_id || '',
@@ -299,7 +298,6 @@ const initializeForm = () => {
     })
     colorValue.value = props.subcategory.color || '#3B82F6'
   } else if (props.selectedCategory && props.selectedCategory.id) {
-    // Creando una nueva subcategoría con categoría padre seleccionada
     resetValidation({
       values: {
         category_id: props.selectedCategory.id,
@@ -308,7 +306,6 @@ const initializeForm = () => {
     })
     colorValue.value = props.selectedCategory.color || '#3B82F6'
   } else {
-    // Creando una nueva subcategoría sin categoría padre pre-seleccionada
     resetValidation({
       values: {
         category_id: '',
@@ -338,7 +335,6 @@ const onSubmit = handleSubmit(async (values) => {
   submitError.value = ''
 
   try {
-    // Usar el color de la categoría padre si está disponible
     const colorToUse = parentCategoryColor.value || colorValue.value
 
     if (!colorToUse) {
@@ -361,7 +357,6 @@ const onSubmit = handleSubmit(async (values) => {
 
 onMounted(async () => {
   document.body.style.overflow = 'hidden'
-  // Cargar categorías si no están cargadas
   if (categories.value.length === 0) {
     await categoriesStore.loadCategories()
   }
@@ -375,4 +370,4 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   document.body.style.overflow = ''
 })
-</script> 
+</script>

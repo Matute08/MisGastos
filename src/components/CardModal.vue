@@ -10,7 +10,7 @@
     aria-labelledby="modal-title"
   >
     <div 
-      class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" 
+      class="bg-white rounded-2xl shadow-soft max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-100" 
       @wheel.stop 
       @touchmove.stop 
       @scroll.stop
@@ -19,13 +19,13 @@
       tabindex="-1"
     >
       <!-- Header -->
-      <div class="flex justify-between items-center p-6 border-b border-gray-200">
-        <h3 id="modal-title" class="text-lg font-semibold text-gray-900">
+      <div class="flex justify-between items-center p-6 border-b border-slate-200">
+        <h3 id="modal-title" class="text-lg font-semibold text-slate-900">
           {{ card ? 'Editar Tarjeta' : 'Nueva Tarjeta' }}
         </h3>
         <button
           @click="$emit('close')"
-          class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          class="text-slate-400 hover:text-slate-600 transition-colors duration-200"
           aria-label="Cerrar modal"
           type="button"
         >
@@ -37,7 +37,7 @@
       <form @submit.prevent="onSubmit" class="p-6 space-y-4" novalidate>
         <!-- Nombre -->
         <div>
-          <label for="name" class="block text-sm font-medium text-gray-700">
+          <label for="name" class="block text-sm font-medium text-slate-700">
             Nombre de la tarjeta
           </label>
           <input
@@ -45,27 +45,27 @@
             v-model="name"
             type="text"
             class="input-field mt-1"
-            :class="{ 'border-red-500': errors.name }"
+            :class="{ 'border-danger-500': errors.name }"
             placeholder="Ej: Visa Galicia"
             aria-describedby="name-error"
             aria-invalid="true"
             v-bind="nameAttrs"
           />
-          <p v-if="errors.name" id="name-error" class="mt-1 text-sm text-red-600" role="alert">
+          <p v-if="errors.name" id="name-error" class="mt-1 text-sm text-danger-600" role="alert">
             {{ errors.name }}
           </p>
         </div>
 
         <!-- Tipo -->
         <div>
-          <label for="type" class="block text-sm font-medium text-gray-700">
+          <label for="type" class="block text-sm font-medium text-slate-700">
             Tipo
           </label>
           <select
             id="type"
             v-model="type"
             class="input-field mt-1"
-            :class="{ 'border-red-500': errors.type }"
+            :class="{ 'border-danger-500': errors.type }"
             aria-describedby="type-error"
             aria-invalid="true"
             v-bind="typeAttrs"
@@ -74,14 +74,14 @@
             <option value="Crédito">Crédito</option>
             <option value="Débito">Débito</option>
           </select>
-          <p v-if="errors.type" id="type-error" class="mt-1 text-sm text-red-600" role="alert">
+          <p v-if="errors.type" id="type-error" class="mt-1 text-sm text-danger-600" role="alert">
             {{ errors.type }}
           </p>
         </div>
 
         <!-- Banco -->
         <div>
-          <label for="bank" class="block text-sm font-medium text-gray-700">
+          <label for="bank" class="block text-sm font-medium text-slate-700">
             Banco
           </label>
           <input
@@ -89,13 +89,13 @@
             v-model="bank"
             type="text"
             class="input-field mt-1"
-            :class="{ 'border-red-500': errors.bank }"
+            :class="{ 'border-danger-500': errors.bank }"
             placeholder="Ej: Galicia, Santander, etc."
             aria-describedby="bank-error"
             aria-invalid="true"
             v-bind="bankAttrs"
           />
-          <p v-if="errors.bank" id="bank-error" class="mt-1 text-sm text-red-600" role="alert">
+          <p v-if="errors.bank" id="bank-error" class="mt-1 text-sm text-danger-600" role="alert">
             {{ errors.bank }}
           </p>
         </div>
@@ -258,4 +258,4 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   document.body.style.overflow = ''
 })
-</script> 
+</script>

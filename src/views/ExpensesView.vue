@@ -1,57 +1,48 @@
 <template>
     <div class="space-y-6">
         <!-- Header -->
-        <div
-            class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2"
-        >
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Gastos</h1>
-                <p class="text-gray-600">Gestiona todos tus gastos y compras</p>
+                <h1 class="text-2xl font-bold text-slate-900">Gastos</h1>
+                <p class="text-slate-500">Gestiona todos tus gastos y compras</p>
             </div>
         </div>
 
-        <!-- Resumen del mes actual - Movido arriba -->
+        <!-- Resumen del mes actual -->
         <div class="space-y-4">
-            <!-- Título del mes actual -->
             <div class="text-center mb-2">
-                <h2 class="text-xl font-semibold text-gray-800">
+                <h2 class="text-xl font-semibold text-slate-800">
                     {{ monthYearTitle }}
                 </h2>
             </div>
-            
-            <!-- Resumen con cuotas y flechas de mes - Solo Desktop -->
+
+            <!-- Resumen - Desktop -->
             <SkeletonExpenseSummary v-if="isLoading" />
             <template v-else>
             <div class="hidden lg:flex card items-center justify-between">
                 <button
                     @click="previousMonth"
-                    class="btn-secondary px-2 py-1 flex items-center justify-center"
+                    class="btn-ghost p-2 rounded-xl flex items-center justify-center"
                 >
-                    <ChevronLeft class="h-4 w-4" />
+                    <ChevronLeft class="h-5 w-5" />
                 </button>
                 <div class="flex-1">
-                    <div
-                        class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center"
-                    >
-                        <div>
-                            <p class="text-sm text-gray-600">
-                                Total Débito
-                            </p>
-                            <p class="text-2xl font-bold text-blue-700">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="relative pl-4 border-l-4 border-primary-500 text-center">
+                            <p class="text-sm text-slate-500 font-medium">Total Débito</p>
+                            <p class="text-2xl font-bold text-primary-600">
                                 {{ formatCurrency(totalDebitTransferExpenses) }}
                             </p>
                         </div>
-                        <div>
-                            <p class="text-sm text-gray-600">
-                                Total Crédito
-                            </p>
-                            <p class="text-2xl font-bold text-purple-600">
+                        <div class="relative pl-4 border-l-4 border-violet-500 text-center">
+                            <p class="text-sm text-slate-500 font-medium">Total Crédito</p>
+                            <p class="text-2xl font-bold text-violet-600">
                                 {{ formatCurrency(totalCreditExpenses) }}
                             </p>
                         </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Gastos Totales</p>
-                            <p class="text-2xl font-bold text-green-600">
+                        <div class="relative pl-4 border-l-4 border-success-500 text-center">
+                            <p class="text-sm text-slate-500 font-medium">Gastos Totales</p>
+                            <p class="text-2xl font-bold text-success-600">
                                 {{ formatCurrency(totalExpenses) }}
                             </p>
                         </div>
@@ -59,46 +50,40 @@
                 </div>
                 <button
                     @click="nextMonth"
-                    class="btn-secondary px-2 py-1 flex items-center justify-center"
+                    class="btn-ghost p-2 rounded-xl flex items-center justify-center"
                 >
-                    <ChevronRight class="h-4 w-4" />
+                    <ChevronRight class="h-5 w-5" />
                 </button>
             </div>
 
-            <!-- Resumen con cuotas y flechas de mes - Mobile y Tablet -->
-            <div class="block lg:hidden card">
+            <!-- Resumen - Mobile y Tablet -->
+            <div class="block lg:hidden card !p-4">
                 <div class="flex items-center justify-between mb-3">
                     <button
                         @click="previousMonth"
-                        class="btn-secondary px-2 py-1 flex items-center justify-center"
+                        class="btn-ghost p-2 rounded-xl flex items-center justify-center"
                     >
                         <ChevronLeft class="h-4 w-4" />
                     </button>
                     <button
                         @click="nextMonth"
-                        class="btn-secondary px-2 py-1 flex items-center justify-center"
+                        class="btn-ghost p-2 rounded-xl flex items-center justify-center"
                     >
                         <ChevronRight class="h-4 w-4" />
                     </button>
                 </div>
-                <div class="grid grid-cols-3 gap-3">
-                    <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-2">Débito</p>
-                        <p class="text-sm font-bold text-blue-700 break-words leading-tight">
-                            {{ formatCurrency(totalDebitTransferExpenses) }}
-                        </p>
+                <div class="space-y-2.5">
+                    <div class="flex items-center justify-between py-1.5 border-l-4 border-primary-500 pl-3 rounded-r-lg bg-primary-50/30">
+                        <span class="text-xs text-slate-600 font-medium">Débito</span>
+                        <span class="text-sm font-bold text-primary-600 tabular-nums">{{ formatCurrency(totalDebitTransferExpenses) }}</span>
                     </div>
-                    <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-2">Crédito</p>
-                        <p class="text-sm font-bold text-purple-600 break-words leading-tight">
-                            {{ formatCurrency(totalCreditExpenses) }}
-                        </p>
+                    <div class="flex items-center justify-between py-1.5 border-l-4 border-violet-500 pl-3 rounded-r-lg bg-violet-50/30">
+                        <span class="text-xs text-slate-600 font-medium">Crédito</span>
+                        <span class="text-sm font-bold text-violet-600 tabular-nums">{{ formatCurrency(totalCreditExpenses) }}</span>
                     </div>
-                    <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-2">Total</p>
-                        <p class="text-sm font-bold text-green-600 break-words leading-tight">
-                            {{ formatCurrency(totalExpenses) }}
-                        </p>
+                    <div class="flex items-center justify-between py-2 border-l-4 border-success-500 pl-3 rounded-r-lg bg-success-50/40 mt-1">
+                        <span class="text-xs text-slate-700 font-semibold">Total</span>
+                        <span class="text-base font-bold text-success-600 tabular-nums">{{ formatCurrency(totalExpenses) }}</span>
                     </div>
                 </div>
             </div>
@@ -107,14 +92,9 @@
 
         <!-- Filtros Desktop -->
         <div class="hidden lg:block card">
-            <div
-                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end"
-            >
-                <!-- Filtro por tarjeta -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Tarjeta</label
-                    >
+                    <label class="block text-sm font-medium text-slate-600 mb-1.5">Tarjeta</label>
                     <select
                         v-model="filters.card_id"
                         @change="updateFilters"
@@ -131,11 +111,8 @@
                     </select>
                 </div>
 
-                <!-- Filtro por categoría -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Categoría</label
-                    >
+                    <label class="block text-sm font-medium text-slate-600 mb-1.5">Categoría</label>
                     <select
                         v-model="filters.category_id"
                         @change="updateFilters"
@@ -152,11 +129,8 @@
                     </select>
                 </div>
 
-                <!-- Filtro por mes -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Mes</label
-                    >
+                    <label class="block text-sm font-medium text-slate-600 mb-1.5">Mes</label>
                     <select
                         v-model="filters.month"
                         @change="updateFilters"
@@ -172,11 +146,8 @@
                     </select>
                 </div>
 
-                <!-- Filtro por año (activo) -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Año</label
-                    >
+                    <label class="block text-sm font-medium text-slate-600 mb-1.5">Año</label>
                     <select
                         v-model="filters.year"
                         @change="updateFilters"
@@ -192,11 +163,8 @@
                     </select>
                 </div>
 
-                <!-- Filtro por estado de pago -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Estado</label
-                    >
+                    <label class="block text-sm font-medium text-slate-600 mb-1.5">Estado</label>
                     <select
                         v-model="filters.payment_status_id"
                         @change="updateFilters"
@@ -214,26 +182,55 @@
                 </div>
             </div>
 
-            <!-- Botón limpiar filtros mejorado -->
-            <div class="mt-4 flex justify-end">
-                <button
-                    @click="clearFilters"
-                    class="btn-secondary flex items-center gap-2"
+            <!-- Active filters pills + clear -->
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+                <span
+                    v-if="filters.card_id"
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-xs font-semibold ring-1 ring-inset ring-primary-200"
                 >
-                    <RotateCcw class="h-4 w-4" />
-                    Limpiar Filtros
-                </button>
+                    Tarjeta filtrada
+                    <button @click="filters.card_id = ''; updateFilters()" class="ml-0.5 hover:text-primary-900">
+                        <X class="h-3 w-3" />
+                    </button>
+                </span>
+                <span
+                    v-if="filters.category_id"
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-violet-50 text-violet-700 text-xs font-semibold ring-1 ring-inset ring-violet-200"
+                >
+                    Categoría filtrada
+                    <button @click="filters.category_id = ''; updateFilters()" class="ml-0.5 hover:text-violet-900">
+                        <X class="h-3 w-3" />
+                    </button>
+                </span>
+                <span
+                    v-if="filters.payment_status_id"
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold ring-1 ring-inset ring-amber-200"
+                >
+                    Estado filtrado
+                    <button @click="filters.payment_status_id = null; updateFilters()" class="ml-0.5 hover:text-amber-900">
+                        <X class="h-3 w-3" />
+                    </button>
+                </span>
+                <div class="ml-auto">
+                    <button
+                        @click="clearFilters"
+                        class="btn-ghost text-sm flex items-center gap-1.5"
+                    >
+                        <RotateCcw class="h-3.5 w-3.5" />
+                        Limpiar Filtros
+                    </button>
+                </div>
             </div>
         </div>
 
         <!-- Filtros Móvil -->
         <div class="block lg:hidden">
-            <div class="bg-white rounded-lg shadow p-4">
+            <div class="card !p-4">
                 <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-sm font-medium text-gray-700">Filtros</h3>
+                    <h3 class="text-sm font-semibold text-slate-700">Filtros</h3>
                     <button
                         @click="clearFilters"
-                        class="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                        class="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1 font-medium"
                     >
                         <RotateCcw class="h-3 w-3" />
                         Limpiar
@@ -241,15 +238,12 @@
                 </div>
                 
                 <div class="grid grid-cols-2 gap-3">
-                    <!-- Filtro por tarjeta -->
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1"
-                            >Tarjeta</label
-                        >
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Tarjeta</label>
                         <select
                             v-model="filters.card_id"
                             @change="updateFilters"
-                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            class="input-field !py-1.5 !px-2.5 text-xs"
                         >
                             <option value="">Todas</option>
                             <option
@@ -262,15 +256,12 @@
                         </select>
                     </div>
 
-                    <!-- Filtro por categoría -->
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1"
-                            >Categoría</label
-                        >
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Categoría</label>
                         <select
                             v-model="filters.category_id"
                             @change="updateFilters"
-                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            class="input-field !py-1.5 !px-2.5 text-xs"
                         >
                             <option value="">Todas</option>
                             <option
@@ -283,15 +274,12 @@
                         </select>
                     </div>
 
-                    <!-- Filtro por mes -->
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1"
-                            >Mes</label
-                        >
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Mes</label>
                         <select
                             v-model="filters.month"
                             @change="updateFilters"
-                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            class="input-field !py-1.5 !px-2.5 text-xs"
                         >
                             <option
                                 v-for="(name, idx) in monthNames"
@@ -303,15 +291,12 @@
                         </select>
                     </div>
 
-                    <!-- Filtro por año -->
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1"
-                            >Año</label
-                        >
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Año</label>
                         <select
                             v-model="filters.year"
                             @change="updateFilters"
-                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            class="input-field !py-1.5 !px-2.5 text-xs"
                         >
                             <option
                                 v-for="year in availableYears"
@@ -323,15 +308,12 @@
                         </select>
                     </div>
 
-                    <!-- Filtro por estado de pago -->
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1"
-                            >Estado</label
-                        >
+                    <div class="col-span-2">
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Estado</label>
                         <select
                             v-model="filters.payment_status_id"
                             @change="updateFilters"
-                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            class="input-field !py-1.5 !px-2.5 text-xs"
                         >
                             <option :value="null">Todos</option>
                             <option
@@ -347,90 +329,46 @@
             </div>
         </div>
 
-
-
         <!-- Error -->
         <div
             v-if="expensesStore.error"
-            class="bg-danger-50 border border-danger-200 rounded-md p-4"
+            class="bg-danger-50 border border-danger-200 rounded-2xl p-4"
         >
-            <div class="flex">
-                <AlertCircle class="h-5 w-5 text-danger-400" />
-                <div class="ml-3">
-                    <p class="text-sm text-danger-700">
-                        {{ expensesStore.error }}
-                    </p>
-                </div>
+            <div class="flex items-center gap-3">
+                <AlertCircle class="h-5 w-5 text-danger-500 flex-shrink-0" />
+                <p class="text-sm text-danger-700">
+                    {{ expensesStore.error }}
+                </p>
             </div>
         </div>
 
         <!-- Loading -->
         <div v-if="isLoading" class="pb-20">
-          <!-- Skeleton para vista desktop (tabla) -->
-          <div class="hidden md:block card">
+          <!-- Skeleton desktop (tabla) -->
+          <div class="hidden md:block card !p-0 overflow-hidden">
             <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+              <table class="min-w-full divide-y divide-slate-100">
+                <thead class="bg-slate-50/80">
                   <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <div class="w-4 h-4 bg-gray-200 rounded"></div>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <div class="w-16 h-4 bg-gray-200 rounded"></div>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <div class="w-24 h-4 bg-gray-200 rounded"></div>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <div class="w-20 h-4 bg-gray-200 rounded"></div>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <div class="w-20 h-4 bg-gray-200 rounded"></div>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <div class="w-16 h-4 bg-gray-200 rounded"></div>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <div class="w-16 h-4 bg-gray-200 rounded"></div>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <div class="w-16 h-4 bg-gray-200 rounded"></div>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <div class="w-16 h-4 bg-gray-200 rounded"></div>
+                    <th v-for="i in 9" :key="i" class="px-5 py-4 text-left">
+                      <div class="skeleton h-4 rounded-lg" :style="{ width: [16, 64, 96, 80, 80, 64, 64, 64, 64][i-1] + 'px' }"></div>
                     </th>
                   </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <tr v-for="i in 8" :key="i" class="animate-pulse">
-                    <td class="px-6 py-4">
-                      <div class="w-4 h-4 bg-gray-200 rounded"></div>
-                    </td>
-                    <td class="px-6 py-4">
-                      <div class="w-8 h-8 bg-gray-200 rounded-full"></div>
-                    </td>
-                    <td class="px-6 py-4">
-                      <div class="w-32 h-4 bg-gray-200 rounded"></div>
-                    </td>
-                    <td class="px-6 py-4">
-                      <div class="w-24 h-4 bg-gray-200 rounded"></div>
-                    </td>
-                    <td class="px-6 py-4">
-                      <div class="w-20 h-5 bg-gray-200 rounded-full"></div>
-                    </td>
-                    <td class="px-6 py-4">
-                      <div class="w-24 h-4 bg-gray-200 rounded"></div>
-                    </td>
-                    <td class="px-6 py-4">
-                      <div class="w-20 h-4 bg-gray-200 rounded"></div>
-                    </td>
-                    <td class="px-6 py-4">
-                      <div class="w-20 h-6 bg-gray-200 rounded-full"></div>
-                    </td>
-                    <td class="px-6 py-4">
+                <tbody class="divide-y divide-slate-50">
+                  <tr v-for="i in 8" :key="i">
+                    <td class="px-5 py-4"><div class="skeleton h-4 w-4 rounded-lg"></div></td>
+                    <td class="px-5 py-4"><div class="skeleton h-8 w-8 rounded-full"></div></td>
+                    <td class="px-5 py-4"><div class="skeleton h-4 w-32 rounded-lg"></div></td>
+                    <td class="px-5 py-4"><div class="skeleton h-4 w-24 rounded-lg"></div></td>
+                    <td class="px-5 py-4"><div class="skeleton h-5 w-20 rounded-full"></div></td>
+                    <td class="px-5 py-4"><div class="skeleton h-4 w-24 rounded-lg"></div></td>
+                    <td class="px-5 py-4"><div class="skeleton h-4 w-20 rounded-lg"></div></td>
+                    <td class="px-5 py-4"><div class="skeleton h-6 w-20 rounded-full"></div></td>
+                    <td class="px-5 py-4">
                       <div class="flex gap-2">
-                        <div class="w-4 h-4 bg-gray-200 rounded"></div>
-                        <div class="w-4 h-4 bg-gray-200 rounded"></div>
+                        <div class="skeleton h-4 w-4 rounded-lg"></div>
+                        <div class="skeleton h-4 w-4 rounded-lg"></div>
                       </div>
                     </td>
                   </tr>
@@ -439,7 +377,7 @@
             </div>
           </div>
           
-          <!-- Skeleton para vista móvil (tarjetas) -->
+          <!-- Skeleton vista móvil -->
           <SkeletonExpenseCard :count="8" class="block md:hidden" />
         </div>
 
@@ -448,15 +386,14 @@
 
             <!-- Botón Seleccionar y Barra de acciones múltiples -->
             <div class="space-y-3">
-                <!-- Botón Seleccionar -->
                 <div class="flex justify-center">
                     <button
                         @click="toggleBulkMode"
                         :class="[
-                            'flex items-center gap-1 px-3 py-2 text-sm transition-colors rounded-md',
+                            'flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200',
                             isBulkMode 
-                                ? 'bg-green-600 hover:bg-green-700 text-white' 
-                                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                                ? 'bg-success-600 hover:bg-success-700 text-white shadow-sm' 
+                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                         ]"
                     >
                         <CheckCircle2 class="h-4 w-4" />
@@ -465,7 +402,7 @@
                 </div>
 
                 <!-- Barra de acciones múltiples -->
-                <div v-if="isBulkMode" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div v-if="isBulkMode" class="card !bg-primary-50 !border-primary-200">
                     <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
                         <div class="flex items-center gap-3">
                             <label class="flex items-center gap-2 cursor-pointer">
@@ -473,9 +410,8 @@
                                     type="checkbox"
                                     :checked="selectAllExpenses"
                                     @change="toggleSelectAllExpenses"
-                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                 />
-                                <span class="text-sm font-medium text-gray-700">
+                                <span class="text-sm font-medium text-slate-700">
                                     Seleccionar todos ({{ selectedExpensesCount }} seleccionados)
                                 </span>
                             </label>
@@ -485,21 +421,21 @@
                             <button
                                 @click="bulkChangeStatus(2)"
                                 :disabled="selectedExpensesCount === 0"
-                                class="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                class="btn-success !py-1.5 !px-3 !text-xs"
                             >
                                 Pagado
                             </button>
                             <button
                                 @click="bulkChangeStatus(1)"
                                 :disabled="selectedExpensesCount === 0"
-                                class="px-3 py-1.5 text-xs font-medium bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                class="px-3 py-1.5 text-xs font-semibold bg-warning-500 text-white rounded-xl hover:bg-warning-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                             >
                                  Pendiente
                             </button>
                             <button
                                 @click="bulkDeleteExpenses"
                                 :disabled="selectedExpensesCount === 0"
-                                class="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                class="btn-danger !py-1.5 !px-3 !text-xs"
                             >
                                 Eliminar Seleccionados
                             </button>
@@ -509,73 +445,55 @@
             </div>
 
             <!-- Vista Desktop: Tabla de gastos -->
-            <div class="hidden md:block card">
+            <div class="hidden md:block card !p-0 overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table :key="tableKey" class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table :key="tableKey" class="min-w-full divide-y divide-slate-100">
+                        <thead class="bg-slate-50/80">
                             <tr>
                                 <th
                                     v-if="isBulkMode"
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"
                                 >
                                     <input
                                         type="checkbox"
                                         :checked="selectAllExpenses"
                                         @change="toggleSelectAllExpenses"
-                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                     />
                                 </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Tipo
                                 </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Descripción
                                 </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Tarjeta
                                 </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Categoría
                                 </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Monto
                                 </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Fecha
                                 </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Estado
                                 </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Acciones
                                 </th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <!-- Gastos directos y cuotas -->
-
+                        <tbody class="divide-y divide-slate-50">
                             <template v-if="paginatedExpensesDesktop.length > 0">
                                 <tr
                                     v-for="(item, index) in paginatedExpensesDesktop"
                                     :key="`${tableKey}-${Date.now()}-${item.is_installment ? 'installment-' + item.installment_id : 'expense-' + item.id}-${index}`"
+                                    class="hover:bg-slate-50/60 transition-colors duration-150"
                                 >
-                                    <td v-if="isBulkMode" class="px-6 py-4 whitespace-nowrap">
+                                    <td v-if="isBulkMode" class="px-5 py-4 whitespace-nowrap">
                                         <input
                                             type="checkbox"
                                             :checked="selectedExpenses.has(
@@ -588,137 +506,101 @@
                                                     ? `installment-${item.installment_id}`
                                                     : `expense-${item.id}`
                                             )"
-                                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                         />
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-5 py-4 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
-                                            <CreditCard
-                                                v-if="item.is_installment"
-                                                class="h-4 w-4 text-blue-500"
-                                            />
-                                            <Receipt
-                                                v-else
-                                                class="h-4 w-4 text-gray-500"
-                                            />
-                                            <span
-                                                class="text-xs font-medium"
-                                                :class="
-                                                    item.is_installment
-                                                        ? 'text-blue-600'
-                                                        : 'text-gray-600'
-                                                "
+                                            <div
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center"
+                                                :class="item.is_installment ? 'bg-primary-50' : 'bg-slate-100'"
                                             >
-                                                {{
-                                                    item.is_installment
-                                                        ? "Cuota"
-                                                        : "Gasto"
-                                                }}
+                                                <CreditCard
+                                                    v-if="item.is_installment"
+                                                    class="h-4 w-4 text-primary-500"
+                                                />
+                                                <component
+                                                    v-else
+                                                    :is="getCategoryIcon(item.categories?.name)"
+                                                    class="h-4 w-4 text-slate-500"
+                                                />
+                                            </div>
+                                            <span
+                                                class="text-xs font-semibold"
+                                                :class="item.is_installment ? 'text-primary-600' : 'text-slate-500'"
+                                            >
+                                                {{ item.is_installment ? "Cuota" : "Gasto" }}
                                             </span>
                                         </div>
                                     </td>
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    >
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-900">
                                         <div>
-                                            <div class="font-medium">
+                                            <div class="font-semibold">
                                                 {{ item.description }}
                                             </div>
                                             <div
                                                 v-if="item.is_installment"
-                                                class="text-xs text-gray-500"
+                                                class="text-xs text-slate-400 mt-0.5"
                                             >
-                                                Cuota
-                                                {{ item.installment_number }} de
-                                                {{ item.installments_count }}
+                                                Cuota {{ item.installment_number }} de {{ item.installments_count }}
                                             </div>
                                         </div>
                                     </td>
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
-                                    >
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-600">
                                         {{ item.expenses?.available_cards?.name || item.available_cards?.name || "Sin cuenta" }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-5 py-4 whitespace-nowrap">
                                         <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
                                             :style="{
-                                                backgroundColor:
-                                                    item.categories?.color +
-                                                    '20',
+                                                backgroundColor: item.categories?.color + '15',
                                                 color: item.categories?.color,
                                             }"
                                         >
-                                            {{
-                                                item.categories?.name ||
-                                                "Sin categoría"
-                                            }}
+                                            <component
+                                                :is="getCategoryIcon(item.categories?.name)"
+                                                class="h-3 w-3"
+                                            />
+                                            {{ item.categories?.name || "Sin categoría" }}
                                         </span>
                                     </td>
                                     <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm font-medium"
-                                        :class="
-                                            item.is_installment
-                                                ? 'text-blue-600'
-                                                : 'text-gray-900'
-                                        "
+                                        class="px-5 py-4 whitespace-nowrap text-sm font-bold"
+                                        :class="item.is_installment ? 'text-primary-600' : 'text-slate-900'"
                                     >
-                                        {{
-                                            formatCurrency(
-                                                item.is_installment
-                                                    ? item.installment_amount
-                                                    : item.amount
-                                            )
-                                        }}
+                                        {{ formatCurrency(item.is_installment ? item.installment_amount : item.amount) }}
                                     </td>
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
-                                    >
-                                        {{
-                                            formatDate(
-                                                item.is_installment
-                                                    ? item.due_date
-                                                    : item.purchase_date
-                                            )
-                                        }}
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-500">
+                                        {{ formatDate(item.is_installment ? item.due_date : item.purchase_date) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-5 py-4 whitespace-nowrap">
                                         <span
                                             :class="[
-                                                'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                                                getStatusColor(item),
+                                                getStatusBadgeClass(item),
                                             ]"
                                         >
                                             {{ getStatusLabel(item) }}
                                         </span>
                                     </td>
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                                    >
-                                        <div class="flex space-x-2">
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm">
+                                        <div class="flex items-center gap-1">
                                             <button
                                                 v-if="!item.is_installment"
                                                 @click="editExpense(item)"
-                                                class="text-primary-600 hover:text-primary-900 transition-colors duration-200"
+                                                class="p-1.5 rounded-lg text-primary-600 hover:bg-primary-50 transition-colors duration-200"
                                             >
                                                 <Edit class="h-4 w-4" />
                                             </button>
                                             <button
                                                 v-if="!item.is_installment"
                                                 @click="deleteExpense(item.id, item)"
-                                                class="text-danger-600 hover:text-danger-900 transition-colors duration-200"
+                                                class="p-1.5 rounded-lg text-danger-600 hover:bg-danger-50 transition-colors duration-200"
                                             >
                                                 <Trash2 class="h-4 w-4" />
                                             </button>
                                             <button
                                                 v-if="item.is_installment"
-                                                @click="
-                                                    showInstallments(
-                                                        item.expense_id,
-                                                        item.installment_number
-                                                    )
-                                                "
-                                                class="text-blue-600 hover:text-blue-900 transition-colors duration-200"
+                                                @click="showInstallments(item.expense_id, item.installment_number)"
+                                                class="p-1.5 rounded-lg text-primary-600 hover:bg-primary-50 transition-colors duration-200"
                                                 title="Ver cuota"
                                             >
                                                 <CreditCard class="h-4 w-4" />
@@ -728,101 +610,72 @@
                                 </tr>
                             </template>
 
-                            <!-- Gastos normales (cuando no hay filtros de mes) -->
                             <template v-else-if="!filters.value || !filters.value.month || !filters.value.year">
                                 <tr
                                     v-for="expense in paginatedDirectExpensesDesktop"
                                     :key="expense.id"
+                                    class="hover:bg-slate-50/60 transition-colors duration-150"
                                 >
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-5 py-4 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
-                                            <Receipt
-                                                class="h-4 w-4 text-gray-500"
-                                            />
-                                            <span
-                                                class="text-xs font-medium text-gray-600"
-                                                >Gasto</span
-                                            >
+                                            <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                                                <component
+                                                    :is="getCategoryIcon(expense.categories?.name)"
+                                                    class="h-4 w-4 text-slate-500"
+                                                />
+                                            </div>
+                                            <span class="text-xs font-semibold text-slate-500">Gasto</span>
                                         </div>
                                     </td>
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    >
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                                         {{ expense.description }}
                                     </td>
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
-                                    >
-                                        {{
-                                            expense.expenses?.available_cards?.name || expense.available_cards?.name || "Sin cuenta"
-                                        }}
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-600">
+                                        {{ expense.expenses?.available_cards?.name || expense.available_cards?.name || "Sin cuenta" }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-5 py-4 whitespace-nowrap">
                                         <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
                                             :style="{
-                                                backgroundColor:
-                                                    expense.categories?.color +
-                                                    '20',
-                                                color: expense.categories
-                                                    ?.color,
+                                                backgroundColor: expense.categories?.color + '15',
+                                                color: expense.categories?.color,
                                             }"
                                         >
-                                            {{
-                                                expense.categories?.name ||
-                                                "Sin categoría"
-                                            }}
+                                            <component
+                                                :is="getCategoryIcon(expense.categories?.name)"
+                                                class="h-3 w-3"
+                                            />
+                                            {{ expense.categories?.name || "Sin categoría" }}
                                         </span>
                                     </td>
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
-                                    >
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm font-bold text-slate-900">
                                         {{ formatCurrency(expense.amount) }}
                                     </td>
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
-                                    >
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-500">
                                         {{ formatDate(expense.purchase_date) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-5 py-4 whitespace-nowrap">
                                         <button
                                             @click="togglePaidStatus(expense)"
                                             :class="[
-                                                'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors duration-200',
-                                                paymentStatusMap[
-                                                    expense.payment_status_id
-                                                ]?.code === 'pagada'
-                                                    ? 'bg-success-100 text-success-800 hover:bg-success-200'
-                                                    : paymentStatusMap[
-                                                          expense
-                                                              .payment_status_id
-                                                      ]?.code === 'en_deuda'
-                                                    ? 'bg-danger-100 text-danger-800 hover:bg-danger-200'
-                                                    : 'bg-warning-100 text-warning-800 hover:bg-warning-200',
+                                                'cursor-pointer transition-colors duration-200',
+                                                getStatusBadgeClass(expense)
                                             ]"
                                         >
-                                            {{
-                                                paymentStatusMap[
-                                                    expense.payment_status_id
-                                                ]?.label || "Sin estado"
-                                            }}
+                                            {{ paymentStatusMap[expense.payment_status_id]?.label || "Sin estado" }}
                                         </button>
                                     </td>
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                                    >
-                                        <div class="flex space-x-2">
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm">
+                                        <div class="flex items-center gap-1">
                                             <button
                                                 @click="editExpense(expense)"
-                                                class="text-primary-600 hover:text-primary-900 transition-colors duration-200"
+                                                class="p-1.5 rounded-lg text-primary-600 hover:bg-primary-50 transition-colors duration-200"
                                             >
                                                 <Edit class="h-4 w-4" />
                                             </button>
                                             <button
-                                                @click="
-                                                    deleteExpense(expense.id, expense)
-                                                "
-                                                class="text-danger-600 hover:text-danger-900 transition-colors duration-200"
+                                                @click="deleteExpense(expense.id, expense)"
+                                                class="p-1.5 rounded-lg text-danger-600 hover:bg-danger-50 transition-colors duration-200"
                                             >
                                                 <Trash2 class="h-4 w-4" />
                                             </button>
@@ -835,11 +688,11 @@
                 </div>
 
                 <!-- Paginación desktop -->
-                <div v-if="totalPagesDesktop > 1" class="flex justify-center items-center gap-2 mt-6 py-4 border-t border-gray-200">
+                <div v-if="totalPagesDesktop > 1" class="flex justify-center items-center gap-2 px-6 py-4 border-t border-slate-100">
                     <button
                         @click="previousPageDesktop"
                         :disabled="currentPageDesktop === 1"
-                        class="px-3 py-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 text-sm font-medium"
+                        class="btn-secondary !py-2 !px-3 !text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Anterior
                     </button>
@@ -850,10 +703,10 @@
                             :key="page"
                             @click="goToPageDesktop(page)"
                             :class="[
-                                'px-3 py-1 rounded-lg text-sm font-medium cursor-pointer transition-colors duration-200',
+                                'px-3 py-1.5 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-200',
                                 page === currentPageDesktop
-                                    ? 'bg-primary-600 text-white'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                    ? 'bg-primary-600 text-white shadow-sm'
+                                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
                             ]"
                         >
                             {{ page }}
@@ -863,7 +716,7 @@
                     <button
                         @click="nextPageDesktop"
                         :disabled="currentPageDesktop === totalPagesDesktop"
-                        class="px-3 py-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 text-sm font-medium"
+                        class="btn-secondary !py-2 !px-3 !text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Siguiente
                     </button>
@@ -871,180 +724,159 @@
             </div>
 
             <!-- Vista Móvil: Lista de tarjetas de gastos -->
-            <div class="block md:hidden space-y-2">
+            <div class="block md:hidden space-y-3">
                 <template v-if="paginatedExpenses.length > 0">
                     <div
                         v-for="(item, index) in paginatedExpenses"
                         :key="`${tableKey}-${Date.now()}-${item.is_installment ? 'installment-' + item.installment_id : 'expense-' + item.id}-${index}`"
-                        class="bg-white rounded-lg shadow-sm border border-gray-200 p-3"
+                        class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden"
                     >
-                        <!-- Header de la tarjeta -->
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex items-center gap-2">
-                                <!-- Checkbox para selección múltiple -->
-                                <div v-if="isBulkMode" class="flex-shrink-0">
-                                    <input
-                                        type="checkbox"
-                                        :checked="selectedExpenses.has(
-                                            item.is_installment
-                                                ? item.installment_id
-                                                : item.id
-                                        )"
-                                        @change="toggleExpenseSelection(
-                                            item.is_installment
-                                                ? item.installment_id
-                                                : item.id
-                                        )"
-                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                    />
-                                </div>
-                                
-                                <!-- Icono del tipo de gasto -->
-                                <div
-                                    class="w-8 h-8 rounded-full flex items-center justify-center"
-                                    :class="
-                                        item.is_installment
-                                            ? 'bg-blue-100'
-                                            : 'bg-gray-100'
-                                    "
-                                >
-                                    <CreditCard
-                                        v-if="item.is_installment"
-                                        class="h-4 w-4 text-blue-600"
-                                    />
-                                    <Receipt
-                                        v-else
-                                        class="h-4 w-4 text-gray-600"
-                                    />
-                                </div>
-                                
-                                <!-- Información principal -->
-                                <div class="flex-1">
-                                    <h3 class="font-semibold text-gray-900 text-sm">
-                                        {{ item.description }}
-                                    </h3>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <span
-                                            class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium"
-                                            :style="{
-                                                backgroundColor:
-                                                    item.categories?.color +
-                                                    '20',
-                                                color: item.categories?.color,
-                                            }"
-                                        >
-                                            {{ item.categories?.name || "Sin categoría" }}
-                                        </span>
-                                        <span
-                                            class="text-xs text-gray-500"
-                                            :class="
+                        <!-- Category color accent -->
+                        <div
+                            class="h-1"
+                            :style="{ backgroundColor: item.categories?.color || '#94a3b8' }"
+                        ></div>
+                        
+                        <div class="p-4">
+                            <!-- Header de la tarjeta -->
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center gap-3">
+                                    <!-- Checkbox para selección múltiple -->
+                                    <div v-if="isBulkMode" class="flex-shrink-0">
+                                        <input
+                                            type="checkbox"
+                                            :checked="selectedExpenses.has(
                                                 item.is_installment
-                                                    ? 'text-blue-600'
-                                                    : 'text-gray-600'
-                                            "
-                                        >
-                                            {{ item.is_installment ? "Cuota" : "Gasto" }}
-                                        </span>
+                                                    ? item.installment_id
+                                                    : item.id
+                                            )"
+                                            @change="toggleExpenseSelection(
+                                                item.is_installment
+                                                    ? item.installment_id
+                                                    : item.id
+                                            )"
+                                        />
                                     </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Monto y menú de acciones -->
-                            <div class="text-right relative">
-                                <!-- Menú de acciones con tres puntitos -->
-                                <div class="relative action-menu-container mb-1">
-                                    <button
-                                        @click="toggleActionMenu(item.id)"
-                                        class="p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                                        title="Más opciones"
-                                    >
-                                        <MoreVertical class="h-4 w-4" />
-                                    </button>
                                     
-                                    <!-- Menú desplegable -->
+                                    <!-- Icono de categoría -->
                                     <div
-                                        v-if="activeActionMenu === item.id"
-                                        class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[120px]"
+                                        class="w-10 h-10 rounded-xl flex items-center justify-center"
+                                        :style="{
+                                            backgroundColor: (item.categories?.color || '#94a3b8') + '15',
+                                        }"
                                     >
-                                        <button
-                                            v-if="!item.is_installment"
-                                            @click="editExpense(item)"
-                                            class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                                        >
-                                            <Edit class="h-4 w-4" />
-                                            Editar
-                                        </button>
-                                        <button
-                                            v-if="!item.is_installment"
-                                            @click="deleteExpense(item.id, item)"
-                                            class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                        >
-                                            <Trash2 class="h-4 w-4" />
-                                            Eliminar
-                                        </button>
-                                        <button
-                                            v-if="item.is_installment"
-                                            @click="showInstallments(item.expense_id, item.installment_number)"
-                                            class="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
-                                        >
-                                            <CreditCard class="h-4 w-4" />
-                                            Ver cuota
-                                        </button>
+                                        <component
+                                            :is="getCategoryIcon(item.categories?.name)"
+                                            class="h-5 w-5"
+                                            :style="{ color: item.categories?.color || '#94a3b8' }"
+                                        />
+                                    </div>
+                                    
+                                    <!-- Información principal -->
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-semibold text-slate-900 text-sm truncate">
+                                            {{ item.description }}
+                                        </h3>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span
+                                                class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold"
+                                                :style="{
+                                                    backgroundColor: item.categories?.color + '15',
+                                                    color: item.categories?.color,
+                                                }"
+                                            >
+                                                {{ item.categories?.name || "Sin categoría" }}
+                                            </span>
+                                            <span
+                                                class="text-xs font-medium"
+                                                :class="item.is_installment ? 'text-primary-500' : 'text-slate-400'"
+                                            >
+                                                {{ item.is_installment ? "Cuota" : "Gasto" }}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 
-                                <div
-                                    class="text-base font-bold"
-                                    :class="
-                                        item.is_installment
-                                            ? 'text-blue-600'
-                                            : 'text-gray-900'
-                                    "
-                                >
-                                    {{ formatCurrency(
-                                        item.is_installment
-                                            ? item.installment_amount
-                                            : item.amount
-                                    ) }}
+                                <!-- Monto y menú de acciones -->
+                                <div class="text-right relative flex-shrink-0 ml-2">
+                                    <div class="relative action-menu-container mb-1">
+                                        <button
+                                            @click="toggleActionMenu(item.id)"
+                                            class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors duration-200"
+                                            title="Más opciones"
+                                        >
+                                            <MoreVertical class="h-4 w-4" />
+                                        </button>
+                                        
+                                        <div
+                                            v-if="activeActionMenu === item.id"
+                                            class="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-10 min-w-[140px]"
+                                        >
+                                            <button
+                                                v-if="!item.is_installment"
+                                                @click="editExpense(item)"
+                                                class="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium"
+                                            >
+                                                <Edit class="h-4 w-4 text-primary-500" />
+                                                Editar
+                                            </button>
+                                            <button
+                                                v-if="!item.is_installment"
+                                                @click="deleteExpense(item.id, item)"
+                                                class="w-full px-4 py-2.5 text-left text-sm text-danger-600 hover:bg-danger-50 flex items-center gap-2 font-medium"
+                                            >
+                                                <Trash2 class="h-4 w-4" />
+                                                Eliminar
+                                            </button>
+                                            <button
+                                                v-if="item.is_installment"
+                                                @click="showInstallments(item.expense_id, item.installment_number)"
+                                                class="w-full px-4 py-2.5 text-left text-sm text-primary-600 hover:bg-primary-50 flex items-center gap-2 font-medium"
+                                            >
+                                                <CreditCard class="h-4 w-4" />
+                                                Ver cuota
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div
+                                        class="text-base font-bold"
+                                        :class="item.is_installment ? 'text-primary-600' : 'text-slate-900'"
+                                    >
+                                        {{ formatCurrency(item.is_installment ? item.installment_amount : item.amount) }}
+                                    </div>
                                 </div>
-                               
-                            </div>
-                        </div>
-
-                        <!-- Detalles adicionales -->
-                        <div class="space-y-1">
-                            <!-- Información de cuota -->
-                            <div
-                                v-if="item.is_installment"
-                                class="flex items-center justify-between text-xs"
-                            >
-                                <span class="text-gray-600">Cuota {{ item.installment_number }} de {{ item.installments_count }}</span>
-                                <span class="text-blue-600 font-medium">Vence: {{ formatDate(item.due_date) }}</span>
                             </div>
 
-                            <!-- Tarjeta -->
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-gray-600">Tarjeta</span>
-                                <span class="text-gray-900 font-medium">{{ item.expenses?.available_cards?.name || item.available_cards?.name || "Sin cuenta" }}</span>
-                            </div>
-
-
-                            <!-- Estado -->
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-600">Estado</span>
-                                <button
-                                    @click="item.is_installment ? showInstallments(item.expense_id, item.installment_number) : togglePaidStatus(item)"
-                                    :class="[
-                                        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium transition-colors duration-200',
-                                        getStatusColor(item)
-                                    ]"
+                            <!-- Detalles adicionales -->
+                            <div class="space-y-2 pt-2 border-t border-slate-100">
+                                <div
+                                    v-if="item.is_installment"
+                                    class="flex items-center justify-between text-xs"
                                 >
-                                    {{ getStatusLabel(item) }}
-                                </button>
+                                    <span class="text-slate-500">Cuota {{ item.installment_number }} de {{ item.installments_count }}</span>
+                                    <span class="text-primary-600 font-semibold">Vence: {{ formatDate(item.due_date) }}</span>
+                                </div>
+
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-slate-500">Tarjeta</span>
+                                    <span class="text-slate-700 font-semibold">{{ item.expenses?.available_cards?.name || item.available_cards?.name || "Sin cuenta" }}</span>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-slate-500">Estado</span>
+                                    <button
+                                        @click="item.is_installment ? showInstallments(item.expense_id, item.installment_number) : togglePaidStatus(item)"
+                                        :class="[
+                                            'transition-colors duration-200',
+                                            getStatusBadgeClass(item)
+                                        ]"
+                                    >
+                                        {{ getStatusLabel(item) }}
+                                    </button>
+                                </div>
                             </div>
                         </div>
-
-
                     </div>
                 </template>
 
@@ -1053,142 +885,140 @@
                     <div
                         v-for="expense in paginatedDirectExpenses"
                         :key="expense.id"
-                        class="bg-white rounded-lg shadow-sm border border-gray-200 p-3"
+                        class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden"
                     >
-                        <!-- Header de la tarjeta -->
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex items-center gap-2">
-                                <!-- Checkbox para selección múltiple -->
-                                <div v-if="isBulkMode" class="flex-shrink-0">
-                                    <input
-                                        type="checkbox"
-                                        :checked="selectedExpenses.has(expense.id)"
-                                        @change="toggleExpenseSelection(expense.id)"
-                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                    />
-                                </div>
-                                
-                                <!-- Icono del tipo de gasto -->
-                                <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                                    <Receipt class="h-4 w-4 text-gray-600" />
-                                </div>
-                                
-                                <!-- Información principal -->
-                                <div class="flex-1">
-                                    <h3 class="font-semibold text-gray-900 text-sm">
-                                        {{ expense.description }}
-                                    </h3>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <span
-                                            class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium"
-                                            :style="{
-                                                backgroundColor:
-                                                    expense.categories?.color +
-                                                    '20',
-                                                color: expense.categories?.color,
-                                            }"
-                                        >
-                                            {{ expense.categories?.name || "Sin categoría" }}
-                                        </span>
-                                        <span class="text-xs text-gray-500">Gasto</span>
+                        <!-- Category color accent -->
+                        <div
+                            class="h-1"
+                            :style="{ backgroundColor: expense.categories?.color || '#94a3b8' }"
+                        ></div>
+
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center gap-3">
+                                    <div v-if="isBulkMode" class="flex-shrink-0">
+                                        <input
+                                            type="checkbox"
+                                            :checked="selectedExpenses.has(expense.id)"
+                                            @change="toggleExpenseSelection(expense.id)"
+                                        />
                                     </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Monto y menú de acciones -->
-                            <div class="text-right relative">
-                                <!-- Menú de acciones con tres puntitos -->
-                                <div class="relative action-menu-container mb-1">
-                                    <button
-                                        @click="toggleActionMenu(expense.id)"
-                                        class="p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                                        title="Más opciones"
-                                    >
-                                        <MoreVertical class="h-4 w-4" />
-                                    </button>
                                     
-                                    <!-- Menú desplegable -->
                                     <div
-                                        v-if="activeActionMenu === expense.id"
-                                        class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[120px]"
+                                        class="w-10 h-10 rounded-xl flex items-center justify-center"
+                                        :style="{
+                                            backgroundColor: (expense.categories?.color || '#94a3b8') + '15',
+                                        }"
                                     >
-                                        <button
-                                            @click="editExpense(expense)"
-                                            class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                                        >
-                                            <Edit class="h-4 w-4" />
-                                            Editar
-                                        </button>
-                                        <button
-                                            @click="deleteExpense(expense.id, expense)"
-                                            class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                        >
-                                            <Trash2 class="h-4 w-4" />
-                                            Eliminar
-                                        </button>
+                                        <component
+                                            :is="getCategoryIcon(expense.categories?.name)"
+                                            class="h-5 w-5"
+                                            :style="{ color: expense.categories?.color || '#94a3b8' }"
+                                        />
+                                    </div>
+                                    
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-semibold text-slate-900 text-sm truncate">
+                                            {{ expense.description }}
+                                        </h3>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span
+                                                class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold"
+                                                :style="{
+                                                    backgroundColor: expense.categories?.color + '15',
+                                                    color: expense.categories?.color,
+                                                }"
+                                            >
+                                                {{ expense.categories?.name || "Sin categoría" }}
+                                            </span>
+                                            <span class="text-xs text-slate-400 font-medium">Gasto</span>
+                                        </div>
                                     </div>
                                 </div>
                                 
-                                <div class="text-base font-bold text-gray-900">
-                                    {{ formatCurrency(expense.amount) }}
+                                <div class="text-right relative flex-shrink-0 ml-2">
+                                    <div class="relative action-menu-container mb-1">
+                                        <button
+                                            @click="toggleActionMenu(expense.id)"
+                                            class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors duration-200"
+                                            title="Más opciones"
+                                        >
+                                            <MoreVertical class="h-4 w-4" />
+                                        </button>
+                                        
+                                        <div
+                                            v-if="activeActionMenu === expense.id"
+                                            class="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-10 min-w-[140px]"
+                                        >
+                                            <button
+                                                @click="editExpense(expense)"
+                                                class="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium"
+                                            >
+                                                <Edit class="h-4 w-4 text-primary-500" />
+                                                Editar
+                                            </button>
+                                            <button
+                                                @click="deleteExpense(expense.id, expense)"
+                                                class="w-full px-4 py-2.5 text-left text-sm text-danger-600 hover:bg-danger-50 flex items-center gap-2 font-medium"
+                                            >
+                                                <Trash2 class="h-4 w-4" />
+                                                Eliminar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="text-base font-bold text-slate-900">
+                                        {{ formatCurrency(expense.amount) }}
+                                    </div>
+                                    <div class="text-xs text-slate-400 mt-0.5">
+                                        {{ formatDate(expense.purchase_date) }}
+                                    </div>
                                 </div>
-                                <div class="text-xs text-gray-500 mt-0.5">
-                                    {{ formatDate(expense.purchase_date) }}
+                            </div>
+
+                            <div class="space-y-2 pt-2 border-t border-slate-100">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-slate-500">Tarjeta</span>
+                                    <span class="text-slate-700 font-semibold">{{ expense.expenses?.available_cards?.name || expense.available_cards?.name || "Sin cuenta" }}</span>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-slate-500">Estado</span>
+                                    <button
+                                        @click="togglePaidStatus(expense)"
+                                        :class="[
+                                            'cursor-pointer transition-colors duration-200',
+                                            getStatusBadgeClass(expense)
+                                        ]"
+                                    >
+                                        {{ paymentStatusMap[expense.payment_status_id]?.label || "Sin estado" }}
+                                    </button>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Detalles adicionales -->
-                        <div class="space-y-1">
-                            <!-- Tarjeta -->
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-gray-600">Tarjeta</span>
-                                <span class="text-gray-900 font-medium">{{ expense.expenses?.available_cards?.name || expense.available_cards?.name || "Sin cuenta" }}</span>
-                            </div>
-
-                            <!-- Estado -->
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-600">Estado</span>
-                                <button
-                                    @click="togglePaidStatus(expense)"
-                                    :class="[
-                                        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors duration-200',
-                                        paymentStatusMap[expense.payment_status_id]?.code === 'pagada'
-                                            ? 'bg-success-100 text-success-800 hover:bg-success-200'
-                                            : paymentStatusMap[expense.payment_status_id]?.code === 'en_deuda'
-                                            ? 'bg-danger-100 text-danger-800 hover:bg-danger-200'
-                                            : 'bg-warning-100 text-warning-800 hover:bg-warning-200',
-                                    ]"
-                                >
-                                    {{ paymentStatusMap[expense.payment_status_id]?.label || "Sin estado" }}
-                                </button>
-                            </div>
-                        </div>
-
-
                     </div>
                 </template>
 
                 <!-- Paginación móvil -->
-                <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 mt-6">
+                <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 mt-6 pt-4">
                     <button
                         @click="previousPage"
                         :disabled="currentPage === 1"
-                        class="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 mt-6"
+                        class="p-2 rounded-xl border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
                     >
-                        <ChevronLeft class="h-4 w-4" />
+                        <ChevronLeft class="h-4 w-4 text-slate-600" />
                     </button>
                     
-                    <div class="flex items-center gap-1 mt-6">
+                    <div class="flex items-center gap-1">
                         <span
                             v-for="page in visiblePages"
                             :key="page"
                             @click="goToPage(page)"
                             :class="[
-                                'px-3 py-1 rounded-lg text-sm font-medium cursor-pointer transition-colors duration-200',
+                                'px-3 py-1.5 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-200',
                                 page === currentPage
-                                    ? 'bg-primary-600 text-white'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                    ? 'bg-primary-600 text-white shadow-sm'
+                                    : 'text-slate-500 hover:bg-slate-100'
                             ]"
                         >
                             {{ page }}
@@ -1198,9 +1028,9 @@
                     <button
                         @click="nextPage"
                         :disabled="currentPage === totalPages"
-                        class="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 mt-6"
+                        class="p-2 rounded-xl border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
                     >
-                        <ChevronRight class="h-4 w-4" />
+                        <ChevronRight class="h-4 w-4 text-slate-600" />
                     </button>
                 </div>
             </div>
@@ -1208,16 +1038,17 @@
             <!-- Estado vacío -->
             <div
                 v-if="filteredExpensesToShow.length === 0 && !expensesStore.loading"
-                class="text-center py-12"
+                class="card text-center py-16"
             >
-                <Receipt class="mx-auto h-12 w-12 text-gray-400" />
-                <h3 class="mt-4 text-lg font-medium text-gray-900">
+                <div class="w-16 h-16 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+                    <Receipt class="h-8 w-8 text-slate-400" />
+                </div>
+                <h3 class="text-lg font-semibold text-slate-900">
                     No hay gastos
                 </h3>
-                <p class="mt-2 text-gray-600">
-                    Comienza agregando tu primer gasto
+                <p class="mt-1 text-slate-500 text-sm max-w-sm mx-auto">
+                    Comienza agregando tu primer gasto para llevar el control de tus finanzas
                 </p>
-
             </div>
         </div>
 
@@ -1252,22 +1083,19 @@
             (showModal || showInstallmentsModal || showScheduledModal) ? 'hidden' : ''
         ]"
     >
-        <!-- Botones de opciones (se muestran cuando showExpenseOptions es true) -->
         <div v-if="showExpenseOptions" class="flex flex-col gap-2">
-            <!-- Botón para gasto programado -->
             <button 
                 @click="openNewScheduledExpenseModal"
-                class="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-purple-600 hover:bg-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-purple-400 focus:ring-offset-2 transform hover:scale-105 active:scale-95"
+                class="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-violet-400 focus:ring-offset-2 transform hover:scale-105 active:scale-95"
                 title="Nuevo gasto programado"
             >
                 <Calendar class="h-5 w-5" />
                 <span class="hidden lg:inline">Gasto Programado</span>
             </button>
             
-            <!-- Botón para gasto normal -->
             <button 
                 @click="openNewExpenseModal"
-                class="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-400 focus:ring-offset-2 transform hover:scale-105 active:scale-95"
+                class="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary-400 focus:ring-offset-2 transform hover:scale-105 active:scale-95"
                 title="Nuevo gasto"
             >
                 <Receipt class="h-5 w-5" />
@@ -1275,13 +1103,12 @@
             </button>
         </div>
         
-        <!-- Botón principal (se muestra cuando showExpenseOptions es false) -->
         <button 
             @click="toggleExpenseOptions"
-            class="flex items-center justify-center gap-2 px-6 py-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-400 focus:ring-offset-2 transform hover:scale-105 active:scale-95"
+            class="flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary-400 focus:ring-offset-2 transform hover:scale-105 active:scale-95"
             title="Agregar gasto"
         >
-            <Plus class="h-6 w-6" />
+            <Plus class="h-6 w-6" :class="showExpenseOptions ? 'rotate-45' : ''" style="transition: transform 0.2s" />
             <span class="hidden lg:inline">Nuevo Gasto</span>
         </button>
     </div>
@@ -1313,14 +1140,53 @@ import {
     MoreVertical,
     CheckCircle2,
     Calendar,
+    X,
+    UtensilsCrossed,
+    Car,
+    Gamepad2,
+    Home,
+    GraduationCap,
+    Shirt,
+    ShoppingCart,
+    Tv,
+    Dumbbell,
+    PawPrint,
+    Plane,
+    Laptop,
+    Heart,
+    Landmark,
+    ShoppingBag,
+    MoreHorizontal,
 } from "lucide-vue-next";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-// Importar SweetAlert2
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 
-// Mapeo manual de estados de pago
+const categoryIconMap = {
+    'Comida': UtensilsCrossed,
+    'Transporte': Car,
+    'Entretenimiento': Gamepad2,
+    'Vivienda': Home,
+    'Educación': GraduationCap,
+    'Ropa': Shirt,
+    'Supermercado': ShoppingCart,
+    'Streaming/TV': Tv,
+    'Deporte': Dumbbell,
+    'Mascotas': PawPrint,
+    'Viajes/Ocio': Plane,
+    'Electronico/PC': Laptop,
+    'Bienestar': Heart,
+    'Gastos Financieros': Landmark,
+    'Compras': ShoppingBag,
+    'Otros': MoreHorizontal,
+};
+
+const getCategoryIcon = (categoryName) => {
+    if (!categoryName) return Receipt;
+    return categoryIconMap[categoryName] || Receipt;
+};
+
 const paymentStatusMap = {
     1: { code: "pendiente", label: "Pendiente" },
     2: { code: "pagada", label: "Pagada" },
@@ -1337,25 +1203,22 @@ const showScheduledModal = ref(false);
 const showNoCardsAlert = ref(false);
 const editingExpense = ref(null);
 const showExpenseOptions = ref(false);
-const isLoading = ref(true); // Estado de loading local para evitar doble carga
+const isLoading = ref(true);
 const now = new Date();
 const filters = ref({
     card_id: "",
     category_id: "",
-    month: now.getMonth() + 1, // Mes actual (getMonth() devuelve 0-11, por eso +1)
-    year: now.getFullYear(), // Año actual
-    payment_status_id: null, // Por defecto "Todos los estados"
+    month: now.getMonth() + 1,
+    year: now.getFullYear(),
+    payment_status_id: null,
 });
 
-// Variables para selección múltiple
 const selectedExpenses = ref(new Set());
 const isBulkMode = ref(false);
 const selectAllExpenses = ref(false);
 
-// Computed para el conteo de seleccionados
 const selectedExpensesCount = computed(() => selectedExpenses.value.size);
 
-// Funciones para selección múltiple
 const toggleBulkMode = () => {
     isBulkMode.value = !isBulkMode.value;
     if (!isBulkMode.value) {
@@ -1413,7 +1276,6 @@ const bulkDeleteExpenses = async () => {
                 }
             }
             
-            // Recargar datos
             if (filters.value && filters.value.year) {
                 await loadMonthlyData();
             } else {
@@ -1467,7 +1329,6 @@ const bulkChangeStatus = async (newStatusId) => {
                     let actualId = expenseId;
                     let isInstallment = false;
                     
-                    // Extraer el ID real y determinar si es cuota o gasto
                     if (expenseId.startsWith('installment-')) {
                         actualId = expenseId.replace('installment-', '');
                         isInstallment = true;
@@ -1493,7 +1354,6 @@ const bulkChangeStatus = async (newStatusId) => {
                 }
             }
             
-            // Recargar datos
             if (filters.value && filters.value.year) {
                 await loadMonthlyData();
             } else {
@@ -1521,16 +1381,13 @@ const bulkChangeStatus = async (newStatusId) => {
     }
 };
 
-// Años disponibles: desde el año actual hasta el año máximo de las cuotas existentes
 const availableYears = computed(() => {
-    const startYear = new Date().getFullYear(); // Año actual
-    // Buscar el año máximo entre todas las cuotas (installments) cargadas
+    const startYear = new Date().getFullYear();
     let maxYear = new Date().getFullYear();
     const allInstallments = expensesStore.filteredExpensesWithInstallments;
     if (allInstallments.length > 0) {
         const years = allInstallments
             .map((inst) => {
-                // Puede ser gasto directo o cuota
                 if (inst.is_installment && inst.due_date) {
                     return new Date(inst.due_date).getFullYear();
                 } else if (inst.purchase_date) {
@@ -1543,7 +1400,6 @@ const availableYears = computed(() => {
             maxYear = Math.max(...years, maxYear);
         }
     }
-    // Generar el array de años
     const yearsArr = [];
     for (let y = startYear; y <= maxYear; y++) {
         yearsArr.push(y);
@@ -1555,10 +1411,15 @@ const directExpenses = computed(() =>
     expensesStore.filteredExpenses.filter((e) => e.installments_count === 1)
 );
 
+let _mounted = true
+
 onMounted(async () => {
-    // Activar loading local al inicio
     isLoading.value = true
-    
+
+    const safetyTimer = setTimeout(() => {
+        if (_mounted) isLoading.value = false
+    }, 12000)
+
     try {
         await Promise.all([
             expensesStore.loadExpenses(),
@@ -1567,7 +1428,8 @@ onMounted(async () => {
             expensesStore.loadPaymentStatuses(),
         ]);
         
-        // Actualizar filtros iniciales en el store
+        if (!_mounted) return
+
         expensesStore.updateFilters({
             card_id: filters.value.card_id || null,
             category_id: filters.value.category_id || null,
@@ -1575,32 +1437,30 @@ onMounted(async () => {
             year: filters.value.year || null
         });
         
-        // Si hay mes y año seleccionados, cargar los datos mensuales automáticamente
         if (filters.value && filters.value.year) {
             await loadMonthlyData();
         }
+    } catch (err) {
+        console.error('Error cargando datos de gastos:', err)
     } finally {
-        // Desactivar loading solo cuando TODAS las llamadas terminen
-        isLoading.value = false
+        clearTimeout(safetyTimer)
+        if (_mounted) isLoading.value = false
     }
 
-    // Cerrar menú de acciones cuando se hace clic fuera
     document.addEventListener('click', handleClickOutside);
 });
 
-// Watcher para forzar actualización cuando cambien los filtros
 watch(
     () => filters.value.payment_status_id,
     () => {
-        // Limpiar datos inmediatamente cuando cambie el filtro de estado
         expensesStore.clearMonthlyData();
         forceTableUpdate();
     },
     { immediate: false }
 );
 
-// Limpiar event listener al desmontar
 onUnmounted(() => {
+    _mounted = false
     document.removeEventListener('click', handleClickOutside);
 });
 
@@ -1609,22 +1469,18 @@ const handleClickOutside = (event) => {
         activeActionMenu.value = null;
     }
     
-    // Cerrar opciones de gastos si se hace clic fuera
     if (!event.target.closest('.fixed.bottom-24') && !event.target.closest('.fixed.bottom-6')) {
         showExpenseOptions.value = false;
     }
 };
 
 const updateFilters = () => {
-    // Limpiar datos inmediatamente y forzar actualización
     expensesStore.clearMonthlyData();
     forceTableUpdate();
     
-    // Resetear paginación cuando cambian los filtros
     currentPage.value = 1;
     currentPageDesktop.value = 1;
     
-    // Actualizar filtros en el store
     expensesStore.updateFilters({
         card_id: filters.value.card_id || null,
         category_id: filters.value.category_id || null,
@@ -1633,26 +1489,20 @@ const updateFilters = () => {
         payment_status_id: filters.value.payment_status_id || null
     });
     
-    // Forzar limpieza adicional
     setTimeout(() => {
         expensesStore.clearMonthlyData();
         forceTableUpdate();
     }, 50);
     
-    // Recargar datos del backend cuando cambien los filtros
     if (filters.value && filters.value.month && filters.value.year) {
         loadMonthlyData();
     }
 };
 
-
-
 const loadMonthlyData = async () => {
     if (filters.value && filters.value.month && filters.value.year) {
-        // Limpiar datos inmediatamente
         expensesStore.clearMonthlyData();
         
-        // Esperar un momento para que se limpien los datos
         await new Promise(resolve => setTimeout(resolve, 10));
         
         forceTableUpdate();
@@ -1676,19 +1526,16 @@ const loadMonthlyData = async () => {
             ),
         ]);
         
-        // Forzar actualización después de cargar
         forceTableUpdate();
     }
 };
 
-// Computed para las tarjetas utilizadas en el mes actual
 const availableCardsForMonth = computed(() => {
     const allData = expensesStore.monthlyExpensesWithInstallments;
     if (!allData || allData.length === 0) {
         return [];
     }
     
-    // Extraer IDs únicos de tarjetas utilizadas en el mes
     const cardIds = new Set();
     allData.forEach(item => {
         if (item.available_cards?.id) {
@@ -1696,18 +1543,15 @@ const availableCardsForMonth = computed(() => {
         }
     });
     
-    // Filtrar las tarjetas del usuario que se usaron en este mes
     return userCardsStore.cards.filter(card => cardIds.has(card.available_card_id));
 });
 
-// Computed para las categorías utilizadas en el mes actual
 const availableCategoriesForMonth = computed(() => {
     const allData = expensesStore.monthlyExpensesWithInstallments;
     if (!allData || allData.length === 0) {
         return [];
     }
     
-    // Extraer IDs únicos de categorías utilizadas en el mes
     const categoryIds = new Set();
     allData.forEach(item => {
         if (item.categories?.id) {
@@ -1715,16 +1559,13 @@ const availableCategoriesForMonth = computed(() => {
         }
     });
     
-    // Filtrar las categorías del usuario que se usaron en este mes
     return userCategoriesStore.categories.filter(category => categoryIds.has(category.id));
 });
 
-// Computed para los estados de pago (ahora viene de la API)
 const availablePaymentStatuses = computed(() => {
     return expensesStore.paymentStatuses || [];
 });
 
-// Computed para el nombre del mes y año actual
 const monthNames = [
     "Enero",
     "Febrero",
@@ -1747,14 +1588,12 @@ const monthYearTitle = computed(() => {
     return `${monthNames[month - 1]} ${year}`;
 });
 
-// Modificar clearFilters para que solo limpie tarjeta y categoría
 const clearFilters = () => {
     filters.value.card_id = "";
     filters.value.category_id = "";
-    filters.value.month = new Date().getMonth() + 1; // Mes actual por defecto
-    filters.value.year = new Date().getFullYear(); // Año actual por defecto
+    filters.value.month = new Date().getMonth() + 1;
+    filters.value.year = new Date().getFullYear();
     
-    // Actualizar filtros en el store
     expensesStore.updateFilters({
         card_id: null,
         category_id: null,
@@ -1762,7 +1601,6 @@ const clearFilters = () => {
         year: filters.value.year
     });
     
-    // Recargar datos después de limpiar filtros
     loadMonthlyData();
 };
 
@@ -1775,9 +1613,7 @@ const deleteExpense = async (expenseId, expenseItem = null) => {
     
     const isScheduled = expenseItem?.is_scheduled || false;
     
-    
     if (isScheduled) {
-        // Modal para gastos programados
         const { value: deleteOption } = await Swal.fire({
             title: "¿Cómo quieres eliminar este gasto programado?",
             html: `
@@ -1815,15 +1651,11 @@ const deleteExpense = async (expenseId, expenseItem = null) => {
             }
         });
 
-        
-        
         if (deleteOption) {
             try {
-                
                 const result = await expensesStore.deleteExpense(expenseId, deleteOption);
 
                 if (result.success) {
-                    // Recargar datos
                     if (filters.value && filters.value.year) {
                         await loadMonthlyData();
                     } else {
@@ -1853,7 +1685,6 @@ const deleteExpense = async (expenseId, expenseItem = null) => {
             }
         }
     } else {
-        // Gasto normal
         const result = await Swal.fire({
             title: "¿Estás seguro?",
             text: "Esta acción no se puede deshacer",
@@ -1870,7 +1701,6 @@ const deleteExpense = async (expenseId, expenseItem = null) => {
                 const deleteResult = await expensesStore.deleteExpense(expenseId);
 
                 if (deleteResult.success) {
-                    // Recargar datos
                     if (filters.value && filters.value.year) {
                         await loadMonthlyData();
                     } else {
@@ -1910,20 +1740,15 @@ const togglePaidStatus = async (expense) => {
 };
 
 const openNewExpenseModal = async () => {
-
-    
-    // Verificar si el usuario tiene tarjetas asociadas
     const userCards = userCardsStore.cards;
     
     if (!userCards || userCards.length === 0) {
-        // Mostrar alerta para asociar tarjeta primero
         showNoCardsAlert.value = true;
         const result = await Swal.fire({
             icon: 'warning',
             title: 'Sin tarjetas asociadas',
             html: `
                 <div style="text-align: center; padding: 20px 0;">
-                    
                     <p style="color: #374151; margin-bottom: 16px; font-size: 16px;">
                         Para poder agregar gastos, primero necesitas asociar una cuenta.
                     </p>
@@ -1941,13 +1766,11 @@ const openNewExpenseModal = async () => {
         });
         
         if (result.isConfirmed) {
-            // Redirigir a la vista de cuentas
             router.push('/cuentas');
         }
         return;
     }
     
-    // Si tiene tarjetas, abrir el modal normalmente
     editingExpense.value = null;
     showModal.value = true;
     showExpenseOptions.value = false;
@@ -1967,11 +1790,9 @@ const toggleExpenseOptions = () => {
 };
 
 const openNewScheduledExpenseModal = async () => {
-  // Verificar si el usuario tiene tarjetas asociadas
   const userCards = userCardsStore.cards;
   
   if (!userCards || userCards.length === 0) {
-    // Mostrar alerta para asociar tarjeta primero
     showNoCardsAlert.value = true;
     const result = await Swal.fire({
       icon: 'warning',
@@ -1995,13 +1816,11 @@ const openNewScheduledExpenseModal = async () => {
     });
     
     if (result.isConfirmed) {
-      // Redirigir a la vista de cuentas
       router.push('/cuentas');
     }
     return;
   }
   
-  // Si tiene tarjetas, abrir el modal normalmente
   showScheduledModal.value = true;
   showExpenseOptions.value = false;
 };
@@ -2032,10 +1851,8 @@ const saveExpense = async (expenseData) => {
                 });
                 return;
             }
-            // Las cuotas se crean manualmente en el backend
         }
 
-        // Recargar datos según el contexto actual
         if (filters.value && filters.value.year) {
             await loadMonthlyData();
         } else {
@@ -2059,7 +1876,6 @@ const saveExpense = async (expenseData) => {
 
 const saveScheduledExpense = async (result) => {
     try {
-        // El resultado ya viene del modal, no necesitamos crear el gasto aquí
         if (!result.success) {
             Swal.fire({
                 icon: "error",
@@ -2069,7 +1885,6 @@ const saveScheduledExpense = async (result) => {
             return;
         }
 
-        // Recargar datos según el contexto actual
         if (filters.value && filters.value.year) {
             await loadMonthlyData();
         } else {
@@ -2093,22 +1908,19 @@ const saveScheduledExpense = async (result) => {
 
 const toggleInstallmentPaid = async (item) => {
     const currentStatus = item.payment_status_code;
-    const newStatusId = currentStatus === "pendiente" ? 2 : 1; // 2 = pagada, 1 = pendiente
+    const newStatusId = currentStatus === "pendiente" ? 2 : 1;
     await expensesStore.markInstallmentAsPaid(
         item.installment_id,
         newStatusId
     );
-    // Recargar datos si estamos en vista mensual
     if (filters.value.year) {
         loadMonthlyData();
     }
 };
 
-// Modal para ver cuotas
 const showInstallmentsModal = ref(false);
 const selectedExpenseId = ref(null);
 
-// Reemplazar el método showInstallments para mostrar el modal de una sola cuota
 const showInstallments = async (expenseId, installmentNumber = null) => {
   try {
     await expensesStore.loadInstallments(expenseId);
@@ -2198,7 +2010,7 @@ const showInstallments = async (expenseId, installmentNumber = null) => {
         }
       });
 
-      const newStatusId = isPaid ? 2 : 1; // 2 = pagada, 1 = pendiente
+      const newStatusId = isPaid ? 2 : 1;
       const result = await expensesStore.markInstallmentAsPaid(cuota.id, newStatusId);
       
       Swal.close();
@@ -2259,7 +2071,6 @@ const closeInstallmentsModal = () => {
     selectedExpenseId.value = null;
 };
 
-// Funciones de utilidad
 const formatCurrency = (amount) => {
     return new Intl.NumberFormat("es-AR", {
         style: "currency",
@@ -2267,28 +2078,23 @@ const formatCurrency = (amount) => {
     }).format(amount);
 };
 
+
 const formatDate = (date) => {
     return format(parseISO(date), "dd/MM/yyyy", { locale: es });
 };
 
-// Checkbox para alternar entre gastos directos y cuotas
 const showDirectExpenses = ref(false);
 
-// Forzar actualización de la tabla
 const tableKey = ref(0);
 const forceTableUpdate = () => {
     tableKey.value++;
 };
 
-// Computed para filtrar lo que se muestra en la tabla
 const filteredExpensesToShow = computed(() => {
-    // Forzar reactividad con tableKey
     const key = tableKey.value;
     
-    // Usar los datos filtrados del store, no los datos sin filtrar
     const allData = expensesStore.filteredExpensesWithInstallments;
     
-    // Si no hay datos o está cargando, retornar array vacío
     if (!allData || allData.length === 0 || expensesStore.loading) {
         return [];
     }
@@ -2305,7 +2111,6 @@ const filteredExpensesToShow = computed(() => {
     });
 });
 
-// Funciones para cambiar de mes con las flechas
 function previousMonth() {
     if (!filters.value) return;
     let month = parseInt(filters.value.month);
@@ -2336,22 +2141,18 @@ function nextMonth() {
     updateFilters();
 }
 
-// Total de gastos débito/transferencia del mes (desde backend)
 const totalDebitTransferExpenses = computed(() => {
     return expensesStore.monthlyTotals?.total_debit_transfer || 0;
 });
 
-// Total de gastos de crédito del mes (desde backend)
 const totalCreditExpenses = computed(() => {
     return expensesStore.monthlyTotals?.total_credit || 0;
 });
 
-// Total de gastos combinados (desde backend)
 const totalExpenses = computed(() => {
     return expensesStore.monthlyTotals?.total_expenses || 0;
 });
 
-// Funciones para mostrar el estado correctamente
 function getStatusLabel(item) {
     if (item.payment_status_label) return item.payment_status_label;
     if (item.payment_status_id)
@@ -2371,8 +2172,19 @@ function getStatusColor(item) {
     return "bg-warning-100 text-warning-800";
 }
 
-// Paginación
-const itemsPerPage = 5; // Número de elementos por página
+function getStatusBadgeClass(item) {
+    const code =
+        item.payment_status_code ||
+        (item.payment_status_id
+            ? paymentStatusMap[item.payment_status_id]?.code
+            : null);
+    if (code === "pagada") return "badge-success";
+    if (code === "en_deuda") return "badge-danger";
+    if (code === "pendiente") return "badge-warning";
+    return "badge-warning";
+}
+
+const itemsPerPage = 5;
 const currentPage = ref(1);
 
 const paginatedExpenses = computed(() => {
@@ -2432,14 +2244,12 @@ const goToPage = (page) => {
     }
 };
 
-// Menú de acciones con tres puntitos
 const activeActionMenu = ref(null);
 const toggleActionMenu = (id) => {
     activeActionMenu.value = activeActionMenu.value === id ? null : id;
 };
 
-// Paginación para la vista desktop
-const itemsPerPageDesktop = 10; // Número de elementos por página para la vista desktop
+const itemsPerPageDesktop = 10;
 const currentPageDesktop = ref(1);
 
 const paginatedExpensesDesktop = computed(() => {
@@ -2501,279 +2311,68 @@ const goToPageDesktop = (page) => {
 </script>
 
 <style scoped>
-/* Estilos para el spinner de carga */
 @keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .spinner {
     animation: spin 1s linear infinite;
 }
 
-/* Estilos personalizados para SweetAlert */
-         :deep(.swal2-modal-custom) {
-           border-radius: 12px !important;
-           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12) !important;
-           padding: 16px !important;
-           max-width: 350px !important;
-         }
+:deep(.swal2-modal-custom) {
+    border-radius: 16px !important;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12) !important;
+    padding: 16px !important;
+    max-width: 350px !important;
+}
 
 :deep(.swal2-confirm-custom) {
-  background: linear-gradient(135deg, #3b82f6, #6366f1) !important;
-  border-radius: 8px !important;
-  padding: 10px 20px !important;
-  font-weight: 600 !important;
-  font-size: 0.9em !important;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
-  transition: all 0.2s ease !important;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+    border-radius: 12px !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    font-size: 0.9em !important;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important;
+    transition: all 0.2s ease !important;
 }
 
 :deep(.swal2-confirm-custom:hover) {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4) !important;
 }
 
 :deep(.swal2-cancel-custom) {
-  background: #f3f4f6 !important;
-  border-radius: 8px !important;
-  padding: 10px 20px !important;
-  font-weight: 600 !important;
-  font-size: 0.9em !important;
-  color: #6b7280 !important;
-  border: 1px solid #e5e7eb !important;
-  transition: all 0.2s ease !important;
+    background: #f1f5f9 !important;
+    border-radius: 12px !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    font-size: 0.9em !important;
+    color: #64748b !important;
+    border: 1px solid #e2e8f0 !important;
+    transition: all 0.2s ease !important;
 }
 
 :deep(.swal2-cancel-custom:hover) {
-  background: #e5e7eb !important;
-  color: #374151 !important;
+    background: #e2e8f0 !important;
+    color: #334155 !important;
 }
 
-/* Estilos para el spinner */
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Mejoras para la tabla */
-.expenses-table {
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.expenses-table th {
-    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-    font-weight: 600;
-    color: #374151;
-    padding: 16px 12px;
-    border-bottom: 2px solid #e5e7eb;
-}
-
-.expenses-table td {
-    padding: 16px 12px;
-    border-bottom: 1px solid #f3f4f6;
-    transition: background-color 0.2s ease;
-}
-
-.expenses-table tbody tr:hover {
-    background-color: #f8fafc;
-}
-
-/* Estilos para los badges de estado */
-.status-badge {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-}
-
-.status-pagada {
-    background-color: #dcfce7;
-    color: #166534;
-}
-
-.status-pendiente {
-    background-color: #fef3c7;
-    color: #92400e;
-}
-
-.status-en-deuda {
-    background-color: #fee2e2;
-    color: #991b1b;
-}
-
-/* Estilos para los botones de acción */
-.action-button {
-    padding: 8px;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    border: none;
-    background: transparent;
-}
-
-.action-button:hover {
-    background-color: #f3f4f6;
-    transform: translateY(-1px);
-}
-
-.action-button:active {
-    transform: translateY(0);
-}
-
-/* Mejoras para los filtros */
-.filter-section {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 24px;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-
-.filter-row {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 150px;
-}
-
-.filter-label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #374151;
-}
-
-.filter-select {
-    padding: 8px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    background: white;
-    font-size: 0.875rem;
-    transition: border-color 0.2s ease;
-}
-
-.filter-select:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.clear-filters-btn {
-    padding: 8px 16px;
-    background: #6b7280;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.clear-filters-btn:hover {
-    background: #4b5563;
-    transform: translateY(-1px);
-}
-
-/* Mejoras para las tarjetas de resumen */
-.summary-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-bottom: 24px;
-}
-
-.summary-card {
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-    border-left: 4px solid #3b82f6;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.summary-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.summary-card-title {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #6b7280;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-}
-
-.summary-card-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #1f2937;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-    .filter-row {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .filter-group {
-        min-width: auto;
-    }
-
-    .summary-cards {
-        grid-template-columns: 1fr;
-    }
-
-    .expenses-table {
-        font-size: 0.875rem;
-    }
-
-    .expenses-table th,
-    .expenses-table td {
-        padding: 12px 8px;
-    }
-}
-
-/* Estilos para el botón flotante */
 @media (max-width: 1024px) {
-  .fixed.bottom-24.right-6 {
-    bottom: 6rem; /* Evitar que se superponga con la navegación móvil/tablet */
-    right: 1rem;
-  }
+    .fixed.bottom-24.right-6 {
+        bottom: 6rem;
+        right: 1rem;
+    }
 }
 
-/* Animación de pulso para llamar la atención */
 @keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
-  }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
+    50% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
 }
 
-/* Aplicar animación solo en desktop */
 @media (min-width: 1025px) {
-  .fixed.bottom-6.right-6 {
-    animation: pulse-glow 2s infinite;
-  }
+    .fixed.bottom-6.right-6 {
+        animation: pulse-glow 2s infinite;
+    }
 }
 </style>

@@ -1,47 +1,45 @@
 import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
 import { apiClient } from '@/lib/api'
 
-export const useUserCategoriesStore = defineStore('userCategories', {
-  state: () => ({
-    categories: [],
-    loading: false,
-    error: null
-  }),
+export const useUserCategoriesStore = defineStore('userCategories', () => {
+  const categories = ref([])
+  const loading = ref(false)
+  const error = ref(null)
 
-  getters: {
-    // Obtener categorías ordenadas por nombre
-    sortedCategories: (state) => {
-      return [...state.categories].sort((a, b) => a.name.localeCompare(b.name))
-    }
-  },
+  const sortedCategories = computed(() =>
+    [...categories.value].sort((a, b) => a.name.localeCompare(b.name))
+  )
 
-  actions: {
-    // Cargar categorías del usuario (solo las que tiene gastos)
-    async loadUserCategories() {
-      this.loading = true
-      this.error = null
-      
-      try {
-        const response = await apiClient.get('/expenses/user-categories')
-        
-        if (response.success) {
-          this.categories = response.categories
-        } else {
-          this.error = response.error || 'Error al cargar categorías'
-        }
-      } catch (error) {
-        console.error('Error cargando categorías del usuario:', error)
-        this.error = error.response?.data?.error || 'Error de conexión'
-      } finally {
-        this.loading = false
+  async function loadUserCategories() {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await apiClient.get('/expenses/user-categories')
+      if (response.success) {
+        categories.value = response.categories
+      } else {
+        error.value = response.error || 'Error al cargar categorías'
       }
-    },
-
-    // Limpiar estado
-    clearState() {
-      this.categories = []
-      this.loading = false
-      this.error = null
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Error de conexión'
+    } finally {
+      loading.value = false
     }
+  }
+
+  function clearState() {
+    categories.value = []
+    loading.value = false
+    error.value = null
+  }
+
+  return {
+    categories,
+    loading,
+    error,
+    sortedCategories,
+    loadUserCategories,
+    clearState,
   }
 })

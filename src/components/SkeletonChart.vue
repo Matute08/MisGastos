@@ -1,18 +1,9 @@
 <template>
-  <div class="card animate-pulse">
-    <div class="card-header">
-      <div class="w-48 h-5 bg-gray-200 rounded mb-2"></div>
-      <div class="w-64 h-4 bg-gray-200 rounded"></div>
+  <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-soft">
+    <div class="mb-6">
+      <div class="skeleton h-5 w-40 mb-2" />
+      <div class="skeleton h-3 w-56" />
     </div>
-    <div class="h-64 flex items-center justify-center">
-      <div class="w-full h-full bg-gray-100 rounded"></div>
-    </div>
+    <div class="skeleton h-64 w-full" />
   </div>
 </template>
-
-<script setup>
-</script>
-
-
-
-

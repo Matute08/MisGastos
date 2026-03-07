@@ -10,7 +10,8 @@ export const useExpensesStore = defineStore('expenses', () => {
   const installments = ref([])
   const monthlyExpensesWithInstallments = ref([])
   const monthlyTotals = ref(null)
-  const loading = ref(false)
+  const _loadingCount = ref(0)
+  const loading = computed(() => _loadingCount.value > 0)
   const error = ref(null)
   const filters = ref({
     card_id: null,
@@ -132,7 +133,7 @@ export const useExpensesStore = defineStore('expenses', () => {
   const loadExpenses = async () => {
     if (!authStore.user) return
     
-    loading.value = true
+    _loadingCount.value++
     error.value = null
     
     try {
@@ -150,7 +151,7 @@ export const useExpensesStore = defineStore('expenses', () => {
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
@@ -158,7 +159,7 @@ export const useExpensesStore = defineStore('expenses', () => {
   const loadMonthlyExpensesWithInstallments = async (month, year, filters = {}) => {
     if (!authStore.user) return
     
-    loading.value = true
+    _loadingCount.value++
     error.value = null
     
     try {
@@ -174,7 +175,6 @@ export const useExpensesStore = defineStore('expenses', () => {
         return { success: false, error: response.error || 'Error al cargar gastos mensuales' }
       }
       
-      // Asegurar que accedemos al array real de gastos
       monthlyExpensesWithInstallments.value = response.data || []
       
       return { success: true, data: response.data }
@@ -183,7 +183,7 @@ export const useExpensesStore = defineStore('expenses', () => {
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
@@ -216,7 +216,7 @@ export const useExpensesStore = defineStore('expenses', () => {
   const createExpense = async (expenseData) => {
     if (!authStore.user) return { success: false, error: 'Usuario no autenticado' }
     
-    loading.value = true
+    _loadingCount.value++
     error.value = null
     
     try {
@@ -249,13 +249,13 @@ export const useExpensesStore = defineStore('expenses', () => {
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
   // Actualizar gasto
   const updateExpense = async (id, updates) => {
-    loading.value = true
+    _loadingCount.value++
     error.value = null
     
     try {
@@ -276,13 +276,13 @@ export const useExpensesStore = defineStore('expenses', () => {
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
   // Eliminar gasto
   const deleteExpense = async (id, deleteOption = null) => {
-    loading.value = true
+    _loadingCount.value++
     error.value = null
     
     try {
@@ -299,13 +299,13 @@ export const useExpensesStore = defineStore('expenses', () => {
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
   // Marcar gasto como pagado
   const markAsPaid = async (id, payment_status_id) => {
-    loading.value = true
+    _loadingCount.value++
     error.value = null
     
     try {
@@ -326,7 +326,7 @@ export const useExpensesStore = defineStore('expenses', () => {
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
@@ -334,7 +334,7 @@ export const useExpensesStore = defineStore('expenses', () => {
 
   // Cargar cuotas de un gasto
   const loadInstallments = async (expenseId) => {
-    loading.value = true
+    _loadingCount.value++
     error.value = null
     
     try {
@@ -351,13 +351,13 @@ export const useExpensesStore = defineStore('expenses', () => {
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
   // Función para marcar cuota como pagada/pendiente usando payment_status_id
   const markInstallmentAsPaid = async (id, payment_status_id) => {
-    loading.value = true
+    _loadingCount.value++
     error.value = null
     try {
       // Extraer el ID real si viene con prefijo
@@ -379,14 +379,14 @@ export const useExpensesStore = defineStore('expenses', () => {
       console.error('[markInstallmentAsPaid] Error inesperado:', err)
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
   // Cargar próximas cuotas a vencer
   const loadUpcomingInstallments = async (limit = 10) => {
     if (!authStore.user) return
-    loading.value = true
+    _loadingCount.value++
     error.value = null
     try {
       const response = await expensesApi.getUpcomingInstallments(authStore.user.id, limit)
@@ -400,14 +400,14 @@ export const useExpensesStore = defineStore('expenses', () => {
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
   // Cargar resumen de tarjetas de crédito
   const loadCreditCardsSummary = async (isAnnual = false) => {
     if (!authStore.user) return
-    loading.value = true
+    _loadingCount.value++
     error.value = null
     try {
       const response = await expensesApi.getCreditCardsSummary(isAnnual)
@@ -421,14 +421,14 @@ export const useExpensesStore = defineStore('expenses', () => {
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
   // Cargar resumen por tipo de tarjeta
   const loadExpensesSummaryByType = async (isAnnual = false) => {
     if (!authStore.user) return
-    loading.value = true
+    _loadingCount.value++
     error.value = null
     try {
       const response = await expensesApi.getExpensesSummaryByType(isAnnual)
@@ -442,13 +442,13 @@ export const useExpensesStore = defineStore('expenses', () => {
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
   // Cargar todos los estados de pago
   const loadPaymentStatuses = async () => {
-    loading.value = true
+    _loadingCount.value++
     error.value = null
     
     try {
@@ -462,7 +462,7 @@ export const useExpensesStore = defineStore('expenses', () => {
       error.value = err.message
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
@@ -486,22 +486,8 @@ export const useExpensesStore = defineStore('expenses', () => {
 
   // Limpiar datos mensuales
   const clearMonthlyData = () => {
-    // Limpiar datos de manera más agresiva
     monthlyExpensesWithInstallments.value = []
     monthlyTotals.value = null
-    
-    // Forzar reactividad múltiples veces
-    setTimeout(() => {
-      monthlyExpensesWithInstallments.value = []
-    }, 0)
-    
-    setTimeout(() => {
-      monthlyExpensesWithInstallments.value = []
-    }, 10)
-    
-    setTimeout(() => {
-      monthlyExpensesWithInstallments.value = []
-    }, 50)
   }
 
   // Limpiar error
@@ -514,7 +500,7 @@ export const useExpensesStore = defineStore('expenses', () => {
   // Cargar gastos programados
   const loadScheduledExpenses = async () => {
     try {
-      loading.value = true
+      _loadingCount.value++
       error.value = null
       
       const response = await expensesApi.getScheduledExpenses()
@@ -528,14 +514,14 @@ export const useExpensesStore = defineStore('expenses', () => {
       error.value = err.message
       console.error('Error cargando gastos programados:', err)
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
   // Crear gasto programado
   const createScheduledExpense = async (expenseData) => {
     try {
-      loading.value = true
+      _loadingCount.value++
       error.value = null
 
       const response = await expensesApi.createScheduledExpense(expenseData)
@@ -552,14 +538,14 @@ export const useExpensesStore = defineStore('expenses', () => {
       console.error('Error creando gasto programado:', err)
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
   // Actualizar gasto programado
   const updateScheduledExpense = async (scheduledExpenseId, expenseData) => {
     try {
-      loading.value = true
+      _loadingCount.value++
       error.value = null
 
       const response = await expensesApi.updateScheduledExpense(scheduledExpenseId, expenseData)
@@ -576,14 +562,14 @@ export const useExpensesStore = defineStore('expenses', () => {
       console.error('Error actualizando gasto programado:', err)
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
   // Cancelar gasto programado
   const cancelScheduledExpense = async (scheduledExpenseId) => {
     try {
-      loading.value = true
+      _loadingCount.value++
       error.value = null
       
       const response = await expensesApi.cancelScheduledExpense(scheduledExpenseId)
@@ -600,7 +586,7 @@ export const useExpensesStore = defineStore('expenses', () => {
       console.error('Error cancelando gasto programado:', err)
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      _loadingCount.value--
     }
   }
 
