@@ -4,12 +4,33 @@ import { incomes as incomesApi } from '@/lib/api'
 
 export const useIncomesStore = defineStore('incomes', () => {
   const incomes = ref([])
+  /** Ingresos para el gráfico de evolución (varios meses/años), no pisa `incomes` */
+  const incomesForChart = ref([])
   const loading = ref(false)
   const error = ref(null)
 
   const totalIncome = computed(() =>
     incomes.value.reduce((sum, inc) => sum + parseFloat(inc.amount), 0)
   )
+
+  /** Carga ingresos por año y los deja en incomesForChart (para Dashboard Ingresos vs Gastos) */
+  async function loadIncomesForChart(years = []) {
+    if (!years.length) {
+      incomesForChart.value = []
+      return
+    }
+    try {
+      const results = await Promise.all(
+        years.map((y) => incomesApi.getIncomes({ year: y }))
+      )
+      const merged = (results || [])
+        .flatMap((r) => r.data || [])
+        .sort((a, b) => (a.income_date || a.date || '').localeCompare(b.income_date || b.date || ''))
+      incomesForChart.value = merged
+    } catch (err) {
+      incomesForChart.value = []
+    }
+  }
 
   async function loadIncomes(filters = {}) {
     loading.value = true
@@ -70,10 +91,12 @@ export const useIncomesStore = defineStore('incomes', () => {
 
   return {
     incomes,
+    incomesForChart,
     loading,
     error,
     totalIncome,
     loadIncomes,
+    loadIncomesForChart,
     createIncome,
     updateIncome,
     deleteIncome,

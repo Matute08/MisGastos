@@ -920,7 +920,7 @@ const evolutionChartData = computed(() => {
   }
 
   const getIncomeForMonth = (m, y) => {
-    return incomesStore.incomes
+    return incomesStore.incomesForChart
       .filter(inc => {
         const d = parseISO(inc.income_date || inc.date || inc.created_at)
         return d.getMonth() + 1 === m && d.getFullYear() === y
@@ -1212,6 +1212,7 @@ onMounted(async () => {
       expensesStore.loadCreditCardsSummary(isAnnual.value),
       expensesStore.loadExpensesSummaryByType(isAnnual.value),
       incomesStore.loadIncomes({ month: currentMonth, year: currentYear }),
+      incomesStore.loadIncomesForChart([currentYear, currentYear - 1]),
       cardsStore.loadCards(),
       categoriesStore.loadCategories()
     ])
@@ -1249,7 +1250,8 @@ watch(isAnnual, async (annual) => {
     await Promise.all([
       expensesStore.loadCreditCardsSummary(annual),
       expensesStore.loadExpensesSummaryByType(annual),
-      incomesStore.loadIncomes(incomeFilters)
+      incomesStore.loadIncomes(incomeFilters),
+      incomesStore.loadIncomesForChart([currentYear, currentYear - 1])
     ])
   } catch (err) {
     console.error('Error toggling annual view:', err)
