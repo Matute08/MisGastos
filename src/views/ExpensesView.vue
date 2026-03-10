@@ -1593,12 +1593,15 @@ const clearFilters = () => {
     filters.value.category_id = "";
     filters.value.month = new Date().getMonth() + 1;
     filters.value.year = new Date().getFullYear();
+    filters.value.payment_status_id = null;
     
     expensesStore.updateFilters({
         card_id: null,
         category_id: null,
         month: filters.value.month,
-        year: filters.value.year
+        year: filters.value.year,
+        payment_status_id: null,
+        payment_status_code: null
     });
     
     loadMonthlyData();

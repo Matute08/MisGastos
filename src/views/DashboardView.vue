@@ -772,6 +772,14 @@ const totalExpensesView = computed(() => {
   const cm = now.getMonth() + 1
   const cy = now.getFullYear()
 
+  // Para la vista mensual usamos el total mensual calculado en backend
+  if (!isAnnual.value) {
+    if (expensesStore.monthlyTotals?.total_expenses != null) {
+      return expensesStore.monthlyTotals.total_expenses
+    }
+  }
+
+  // Fallback y vista anual: calcular directamente desde los datos cargados
   if (isAnnual.value) {
     return expensesStore.expenses
       .filter(e => parseISO(e.purchase_date).getFullYear() === cy)
@@ -1209,6 +1217,7 @@ onMounted(async () => {
     await Promise.all([
       expensesStore.loadExpenses(),
       expensesStore.loadUpcomingInstallments(1000),
+      expensesStore.loadMonthlyTotals(currentMonth, currentYear),
       expensesStore.loadCreditCardsSummary(isAnnual.value),
       expensesStore.loadExpensesSummaryByType(isAnnual.value),
       incomesStore.loadIncomes({ month: currentMonth, year: currentYear }),
@@ -1250,6 +1259,7 @@ watch(isAnnual, async (annual) => {
     await Promise.all([
       expensesStore.loadCreditCardsSummary(annual),
       expensesStore.loadExpensesSummaryByType(annual),
+      expensesStore.loadMonthlyTotals(currentMonth, currentYear),
       incomesStore.loadIncomes(incomeFilters),
       incomesStore.loadIncomesForChart([currentYear, currentYear - 1])
     ])
