@@ -1,8 +1,12 @@
 // Configuración de variables de entorno para MisGastos
+// VITE_API_URL se inyecta en build (p. ej. Vercel build.env); en local usar .env o el fallback.
+const DEFAULT_DEV_API = 'http://localhost:3001/api'
+//const DEFAULT_PROD_API = 'https://fascinating-bridie-misgastos-e524faff.koyeb.app/api'
+
 export const config = {
-  // URL de la API - Backend desplegado en Koyeb
-  API_BASE_URL: 'https://fascinating-bridie-misgastos-e524faff.koyeb.app/api',
-  //API_BASE_URL: 'http://localhost:3001/api',
+  API_BASE_URL:
+    import.meta.env.VITE_API_URL ||
+    (import.meta.env.DEV ? DEFAULT_DEV_API : DEFAULT_PROD_API),
 
   // URL del frontend - Desplegado en Vercel
   FRONTEND_URL: 'https://mis-gastos-phi.vercel.app',

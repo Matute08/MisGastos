@@ -12,7 +12,9 @@
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     }
   ],
-  "env": {
-    "VITE_API_URL": "https://fascinating-bridie-misgastos-e524faff.koyeb.app/api"
+  "build": {
+    "env": {
+      "VITE_API_URL": "https://fascinating-bridie-misgastos-e524faff.koyeb.app/api"
+    }
   }
 }

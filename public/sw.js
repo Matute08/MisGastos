@@ -67,7 +67,7 @@ self.addEventListener('fetch', (event) => {
   // No cachear API ni Supabase
   if (url.pathname.startsWith('/api/') || url.host.includes('supabase.co')) return;
 
-  if (event.request.method !== 'GET')) return;
+  if (event.request.method !== 'GET') return;
 
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);

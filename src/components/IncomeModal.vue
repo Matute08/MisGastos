@@ -8,7 +8,7 @@
     aria-labelledby="income-modal-title"
   >
     <div
-      class="modal-content bg-white rounded-2xl shadow-soft-lg max-w-lg w-full max-h-[90vh] overflow-y-auto border border-slate-100"
+      class="modal-content bg-white rounded-2xl shadow-soft-lg max-w-lg w-full min-w-0 max-h-[90vh] overflow-y-auto overflow-x-hidden border border-slate-100"
       @wheel.stop
       @touchmove.stop
       role="document"
@@ -32,7 +32,7 @@
         </button>
       </div>
 
-      <form @submit.prevent="handleSubmit" class="p-6 space-y-5" novalidate>
+      <form @submit.prevent="handleSubmit" class="p-6 space-y-5 min-w-0" novalidate>
         <div>
           <label for="income-description" class="block text-sm font-semibold text-slate-700 mb-1.5">
             Descripción
@@ -75,8 +75,8 @@
           <label for="income-date" class="block text-sm font-semibold text-slate-700 mb-1.5">
             Fecha
           </label>
-          <div class="relative">
-            <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <div class="relative min-w-0 w-full max-w-full">
+            <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none z-[1]" />
             <input
               id="income-date"
               v-model="form.date"

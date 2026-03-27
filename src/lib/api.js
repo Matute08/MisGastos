@@ -10,6 +10,19 @@ class ApiClient {
     this.refreshPromise = null;
   }
 
+  /** Evita que un 401 en login/registro dispare refresh con un JWT viejo (causa bucles y errores genéricos). */
+  isCredentialExchangeEndpoint(endpoint) {
+    return (
+      endpoint.startsWith('/auth/login') ||
+      endpoint.startsWith('/auth/register') ||
+      endpoint.startsWith('/auth/refresh')
+    );
+  }
+
+  syncTokenFromStorage() {
+    this.token = localStorage.getItem('token');
+  }
+
   getHeaders() {
     const headers = {
       'Content-Type': 'application/json',
@@ -22,23 +35,39 @@ class ApiClient {
     return headers;
   }
 
+  async parseJsonBody(response) {
+    const text = await response.text();
+    if (!text) return {};
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { error: response.statusText || 'Respuesta inválida del servidor' };
+    }
+  }
+
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
-    const config = {
+    this.syncTokenFromStorage();
+    const fetchConfig = {
       headers: this.getHeaders(),
       ...options,
     };
 
     try {
-      const response = await fetch(url, config);
-      const data = await response.json();
+      const response = await fetch(url, fetchConfig);
+      const data = await this.parseJsonBody(response);
 
-      if (response.status === 401 && this.token) {
+      if (
+        response.status === 401 &&
+        this.token &&
+        !this.isCredentialExchangeEndpoint(endpoint)
+      ) {
         const refreshed = await this.refreshToken();
         if (refreshed) {
-          config.headers = this.getHeaders();
-          const retryResponse = await fetch(url, config);
-          const retryData = await retryResponse.json();
+          this.syncTokenFromStorage();
+          fetchConfig.headers = this.getHeaders();
+          const retryResponse = await fetch(url, fetchConfig);
+          const retryData = await this.parseJsonBody(retryResponse);
           
           if (!retryResponse.ok) {
             const apiError = new Error(getUserFriendlyError({ 
@@ -186,6 +215,7 @@ const apiClient = new ApiClient();
 
 export const auth = {
   async signUp(email, password, nombre_perfil) {
+    apiClient.clearToken();
     const response = await apiClient.post('/auth/register', {
       email,
       password,
@@ -200,6 +230,7 @@ export const auth = {
   },
 
   async signIn(email, password) {
+    apiClient.clearToken();
     const response = await apiClient.post('/auth/login', {
       email,
       password

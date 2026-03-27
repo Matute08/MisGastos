@@ -526,9 +526,9 @@
                                             </div>
                                             <span
                                                 class="text-xs font-semibold"
-                                                :class="item.is_installment ? 'text-primary-600' : 'text-slate-500'"
+                                                :class="item.is_installment ? 'text-primary-600' : item.is_scheduled ? 'text-violet-600' : 'text-slate-500'"
                                             >
-                                                {{ item.is_installment ? "Cuota" : "Gasto" }}
+                                                {{ item.is_installment ? "Cuota" : item.is_scheduled ? "Programado" : "Gasto" }}
                                             </span>
                                         </div>
                                     </td>
@@ -542,6 +542,12 @@
                                                 class="text-xs text-slate-400 mt-0.5"
                                             >
                                                 Cuota {{ item.installment_number }} de {{ item.installments_count }}
+                                            </div>
+                                            <div
+                                                v-else-if="item.is_scheduled && getScheduledInstallmentLabel(item)"
+                                                class="text-xs text-slate-400 mt-0.5"
+                                            >
+                                                {{ getScheduledInstallmentLabel(item) }}
                                             </div>
                                         </div>
                                     </td>
@@ -628,7 +634,13 @@
                                         </div>
                                     </td>
                                     <td class="px-5 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                                        {{ expense.description }}
+                                        <div>{{ expense.description }}</div>
+                                        <div
+                                            v-if="expense.is_scheduled && getScheduledInstallmentLabel(expense)"
+                                            class="text-xs text-slate-400 font-normal mt-0.5"
+                                        >
+                                            {{ getScheduledInstallmentLabel(expense) }}
+                                        </div>
                                     </td>
                                     <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-600">
                                         {{ expense.expenses?.available_cards?.name || expense.available_cards?.name || "Sin cuenta" }}
@@ -777,6 +789,12 @@
                                         <h3 class="font-semibold text-slate-900 text-sm truncate">
                                             {{ item.description }}
                                         </h3>
+                                        <p
+                                            v-if="item.is_scheduled && getScheduledInstallmentLabel(item)"
+                                            class="text-xs text-slate-400 mt-0.5"
+                                        >
+                                            {{ getScheduledInstallmentLabel(item) }}
+                                        </p>
                                         <div class="flex items-center gap-2 mt-1">
                                             <span
                                                 class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold"
@@ -789,9 +807,9 @@
                                             </span>
                                             <span
                                                 class="text-xs font-medium"
-                                                :class="item.is_installment ? 'text-primary-500' : 'text-slate-400'"
+                                                :class="item.is_installment ? 'text-primary-500' : item.is_scheduled ? 'text-violet-500' : 'text-slate-400'"
                                             >
-                                                {{ item.is_installment ? "Cuota" : "Gasto" }}
+                                                {{ item.is_installment ? "Cuota" : item.is_scheduled ? "Programado" : "Gasto" }}
                                             </span>
                                         </div>
                                     </div>
@@ -858,6 +876,14 @@
                                     <span class="text-primary-600 font-semibold">Vence: {{ formatDate(item.due_date) }}</span>
                                 </div>
 
+                                <div
+                                    v-else-if="item.is_scheduled && getScheduledInstallmentLabel(item)"
+                                    class="flex items-center justify-between text-xs"
+                                >
+                                    <span class="text-slate-500">{{ getScheduledInstallmentLabel(item) }}</span>
+                                    <span class="text-violet-600 font-semibold">Mes: {{ formatDate(item.purchase_date) }}</span>
+                                </div>
+
                                 <div class="flex items-center justify-between text-xs">
                                     <span class="text-slate-500">Tarjeta</span>
                                     <span class="text-slate-700 font-semibold">{{ item.expenses?.available_cards?.name || item.available_cards?.name || "Sin cuenta" }}</span>
@@ -921,6 +947,12 @@
                                         <h3 class="font-semibold text-slate-900 text-sm truncate">
                                             {{ expense.description }}
                                         </h3>
+                                        <p
+                                            v-if="expense.is_scheduled && getScheduledInstallmentLabel(expense)"
+                                            class="text-xs text-slate-400 mt-0.5"
+                                        >
+                                            {{ getScheduledInstallmentLabel(expense) }}
+                                        </p>
                                         <div class="flex items-center gap-2 mt-1">
                                             <span
                                                 class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold"
@@ -931,7 +963,12 @@
                                             >
                                                 {{ expense.categories?.name || "Sin categoría" }}
                                             </span>
-                                            <span class="text-xs text-slate-400 font-medium">Gasto</span>
+                                            <span
+                                                class="text-xs font-medium"
+                                                :class="expense.is_scheduled ? 'text-violet-500' : 'text-slate-400'"
+                                            >
+                                                {{ expense.is_scheduled ? "Programado" : "Gasto" }}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -1159,6 +1196,7 @@ import {
     MoreHorizontal,
 } from "lucide-vue-next";
 import { format, parseISO } from "date-fns";
+import { getScheduledInstallmentLabel } from "@/utils/scheduledExpense.js";
 import { es } from "date-fns/locale";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
@@ -1622,21 +1660,21 @@ const deleteExpense = async (expenseId, expenseItem = null) => {
             html: `
                 <div style="text-align: left; margin: 20px 0;">
                     <p style="margin-bottom: 15px; color: #374151;">
-                        Este es un gasto programado. Puedes:
+                        Si querés dejar de ver este gasto en los meses siguientes, elegí cancelar la serie.
                     </p>
                     <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
-                            <input type="radio" name="deleteOption" value="current" checked style="margin: 0;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border: 2px solid #7c3aed; border-radius: 6px; background: #faf5ff;">
+                            <input type="radio" name="deleteOption" value="future" checked style="margin: 0;">
                             <div>
-                                <div style="font-weight: 600; color: #374151;">Solo este mes</div>
-                                <div style="font-size: 0.875rem; color: #6b7280;">Eliminar únicamente este gasto, mantener los futuros</div>
+                                <div style="font-weight: 600; color: #374151;">Desde esta cuota y todas las futuras (recomendado)</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">Elimina este mes y los gastos programados que faltan; no volverán a aparecer.</div>
                             </div>
                         </label>
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
-                            <input type="radio" name="deleteOption" value="future" style="margin: 0;">
+                            <input type="radio" name="deleteOption" value="current" style="margin: 0;">
                             <div>
-                                <div style="font-weight: 600; color: #374151;">Este mes y todos los futuros</div>
-                                <div style="font-size: 0.875rem; color: #6b7280;">Cancelar completamente el gasto programado</div>
+                                <div style="font-weight: 600; color: #374151;">Solo este mes</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">Quita solo esta instancia; los demás meses ya generados siguen en la lista.</div>
                             </div>
                         </label>
                     </div>

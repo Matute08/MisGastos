@@ -9,7 +9,7 @@
     aria-labelledby="expense-modal-title"
   >
     <div 
-      class="modal-content bg-white rounded-2xl shadow-soft-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-100" 
+      class="modal-content bg-white rounded-2xl shadow-soft-lg max-w-2xl w-full min-w-0 max-h-[90vh] overflow-y-auto overflow-x-hidden border border-slate-100" 
       @wheel.stop 
       @touchmove.stop 
       role="document"
@@ -35,7 +35,7 @@
       </div>
 
       <!-- Form -->
-      <form @submit.prevent="handleSubmit" class="p-6 space-y-5" novalidate>
+      <form @submit.prevent="handleSubmit" class="p-6 space-y-5 min-w-0" novalidate>
         <!-- Descripcion -->
         <div>
           <label for="description" class="block text-sm font-semibold text-slate-700 mb-1.5">
@@ -156,8 +156,8 @@
           <label for="purchase_date" class="block text-sm font-semibold text-slate-700 mb-1.5">
             Fecha de compra
           </label>
-          <div class="relative">
-            <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <div class="relative min-w-0 w-full max-w-full">
+            <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none z-[1]" />
             <input
               id="purchase_date"
               v-model="form.purchase_date"
@@ -354,6 +354,46 @@ const handleEscape = (event) => {
   if (event.key === 'Escape') emit('close')
 }
 
+/** Validación en cliente antes de llamar a la API (el form usa novalidate). */
+const getValidationError = () => {
+  const isScheduledExpense = props.expense && props.expense.is_scheduled
+
+  const desc = String(form.value.description ?? '').trim()
+  if (!desc) return 'Completá la descripción del gasto.'
+
+  const amountStr = String(form.value.amount ?? '').replace(/,/g, '.').trim()
+  if (!amountStr) return 'Ingresá el monto.'
+  const amount = parseFloat(amountStr)
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return 'Ingresá un monto válido mayor a cero.'
+  }
+
+  if (!form.value.card_id) return 'Seleccioná una cuenta.'
+  if (!form.value.category_id) return 'Seleccioná una categoría.'
+
+  if (!isScheduledExpense) {
+    if (!form.value.purchase_date) return 'Seleccioná la fecha de compra.'
+
+    const card = selectedCard.value
+    if (card && card.type === 'Crédito') {
+      if (form.value.payment_type === 'installments') {
+        const n = Number(form.value.installments_count)
+        if (!Number.isFinite(n) || n < 2) {
+          return 'Indicá el número de cuotas (entre 2 y 24).'
+        }
+        if (n > 24) return 'El número de cuotas no puede ser mayor a 24.'
+        if (!String(firstInstallmentDateManual.value ?? '').trim()) {
+          return 'Seleccioná la fecha de la primera cuota.'
+        }
+      } else if (!String(singleInstallmentDate.value ?? '').trim()) {
+        return 'Seleccioná la fecha de la cuota.'
+      }
+    }
+  }
+
+  return null
+}
+
 const resetForm = () => {
   form.value = {
     description: '',
@@ -464,26 +504,13 @@ watch(
 
 const handleSubmit = async () => {
   const isScheduledExpense = props.expense && props.expense.is_scheduled
-  
-  if (!isScheduledExpense) {
-    if (form.value.payment_type === 'installments' && form.value.installments_count < 2) {
-      error.value = 'El número de cuotas debe ser mayor a 1'
-      return
-    }
-    if (form.value.payment_type === 'installments' && form.value.installments_count > 24) {
-      error.value = 'El número de cuotas no puede ser mayor a 24'
-      return
-    }
-    if (form.value.payment_type === 'installments' && !firstInstallmentDateManual.value) {
-      error.value = 'La fecha de la primera cuota es obligatoria'
-      return
-    }
-    if (selectedCard.value && selectedCard.value.type === 'Crédito' && form.value.payment_type === 'single' && !singleInstallmentDate.value) {
-      error.value = 'La fecha de la cuota es obligatoria para tarjetas de crédito'
-      return
-    }
+
+  const validationError = getValidationError()
+  if (validationError) {
+    error.value = validationError
+    return
   }
-  
+
   const formatDateForAPI = (dateString) => {
     if (!dateString) return null
     const date = new Date(dateString)
@@ -495,10 +522,6 @@ const handleSubmit = async () => {
     if (form.value.payment_type === 'single') {
       firstInstallmentDate = formatDateForAPI(singleInstallmentDate.value)
     } else if (form.value.payment_type === 'installments') {
-      if (!firstInstallmentDateManual.value) {
-        error.value = 'Debes seleccionar la fecha de la primera cuota'
-        return
-      }
       firstInstallmentDate = formatDateForAPI(firstInstallmentDateManual.value)
     }
   } else if (isScheduledExpense && props.expense && props.expense.first_installment_date) {

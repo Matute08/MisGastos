@@ -1,6 +1,6 @@
 <template>
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @wheel.prevent @touchmove.prevent @scroll.prevent>
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" @wheel.stop @touchmove.stop @scroll.stop>
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full min-w-0 max-h-[90vh] overflow-y-auto overflow-x-hidden" @wheel.stop @touchmove.stop @scroll.stop>
       <div class="flex justify-between items-center p-6 border-b border-gray-200">
         <h3 class="text-lg font-semibold text-gray-900">
           {{ scheduledExpense ? 'Editar Gasto Programado' : 'Nuevo Gasto Programado' }}
@@ -13,7 +13,7 @@
         </button>
       </div>
 
-      <form @submit.prevent="handleSubmit" class="p-6 space-y-4">
+      <form @submit.prevent="handleSubmit" class="p-6 space-y-4 min-w-0">
         <div>
           <label for="description" class="block text-sm font-medium text-gray-700">
             Descripción
@@ -207,10 +207,10 @@
               </h3>
               <div class="mt-2 text-sm text-blue-700">
                 <ul class="list-disc list-inside space-y-1">
-                  <li>Se creará un gasto automáticamente cada mes</li>
-                  <li>Puedes cancelar el gasto programado en cualquier momento</li>
-                  <li>Los gastos pasados no se eliminan al cancelar</li>
-                  <li>Perfecto para servicios como Netflix, Spotify, etc.</li>
+                  <li>Se generan las instancias mes a mes; en la lista verás <strong>Cuota X de N</strong> como en las cuotas de tarjeta</li>
+                  <li>Al eliminar, elegí cancelar la serie para que no aparezcan los meses siguientes</li>
+                  <li>Los gastos pasados no se eliminan al cancelar la serie</li>
+                  <li>Ideal para suscripciones o pagos acordados en varias cuotas</li>
                 </ul>
               </div>
             </div>
