@@ -1,7 +1,7 @@
 <template>
   <Transition name="modal">
   <div 
-    class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" 
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overscroll-none"
     @click.self="$emit('close')"
     @keydown.esc="handleEscape"
     role="dialog"
@@ -290,6 +290,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, onBeforeUnmount, nextTick } from 'vue'
+import { useBodyScrollLock } from '@/composables/useBodyScrollLock.js'
 import { useUserCardsStore } from '@/stores/userCards'
 import { useCategoriesStore } from '@/stores/categories'
 import { useSubcategoriesStore } from '@/stores/subcategories'
@@ -349,6 +350,7 @@ const error = ref('')
 const firstInstallmentDateManual = ref('')
 const singleInstallmentDate = ref('')
 const modalRef = ref(null)
+const { lock: lockBodyScroll, unlock: unlockBodyScroll } = useBodyScrollLock()
 
 const handleEscape = (event) => {
   if (event.key === 'Escape') emit('close')
@@ -594,7 +596,7 @@ const getSubcategoriesForCategory = (categoryId) => {
 }
 
 onMounted(async () => {
-  document.body.style.overflow = 'hidden'
+  lockBodyScroll()
   await Promise.all([
     userCardsStore.loadUserCards(),
     categoriesStore.loadCategories(),
@@ -606,7 +608,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  document.body.style.overflow = ''
+  unlockBodyScroll()
   loading.value = false
 })
 </script>

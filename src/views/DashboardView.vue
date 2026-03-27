@@ -647,6 +647,11 @@ import SkeletonTable from '@/components/SkeletonTable.vue'
 import SkeletonList from '@/components/SkeletonList.vue'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
+import {
+  directExpenseBelongsToPeriod,
+  getMonthRange,
+  getYearRange
+} from '@/utils/expenseDirectInPeriod'
 
 ChartJS.register(
   Title,
@@ -779,22 +784,32 @@ const totalExpensesView = computed(() => {
     }
   }
 
-  // Fallback y vista anual: calcular directamente desde los datos cargados
+  // Fallback y vista anual: misma imputación que gráficos y backend (crédito → first_installment_date)
   if (isAnnual.value) {
-    return expensesStore.expenses
-      .filter(e => parseISO(e.purchase_date).getFullYear() === cy)
+    const { startDate, endDate } = getYearRange(cy)
+    const direct = expensesStore.expenses
+      .filter(e => !e.installments_count || e.installments_count === 1)
+      .filter(e => directExpenseBelongsToPeriod(e, startDate, endDate))
       .reduce((sum, e) => sum + e.amount, 0)
+    const inst = expensesStore.upcomingInstallments
+      .filter(inst => {
+        if (inst.payment_status_id === 3) return false
+        const due = parseISO(inst.due_date)
+        return due.getFullYear() === cy
+      })
+      .reduce((sum, i) => sum + i.amount, 0)
+    return direct + inst
   }
 
+  const { startDate, endDate } = getMonthRange(cm, cy)
   const monthlyDirect = expensesStore.expenses
-    .filter(e => {
-      const d = parseISO(e.purchase_date)
-      return d.getMonth() + 1 === cm && d.getFullYear() === cy
-    })
+    .filter(e => !e.installments_count || e.installments_count === 1)
+    .filter(e => directExpenseBelongsToPeriod(e, startDate, endDate))
     .reduce((sum, e) => sum + e.amount, 0)
 
   const monthlyInst = expensesStore.upcomingInstallments
     .filter(inst => {
+      if (inst.payment_status_id === 3) return false
       const due = parseISO(inst.due_date)
       return due.getMonth() + 1 === cm && due.getFullYear() === cy
     })
@@ -849,12 +864,12 @@ const chartData = computed(() => {
   }
 
   const addDirectExpenses = (monthFilter) => {
+    const { startDate, endDate } = monthFilter
+      ? getMonthRange(cm, cy)
+      : getYearRange(cy)
     expensesStore.expenses.forEach(expense => {
-      const d = parseISO(expense.purchase_date)
-      const match = monthFilter
-        ? d.getMonth() + 1 === cm && d.getFullYear() === cy
-        : d.getFullYear() === cy
-      if (!match || (expense.installments_count && expense.installments_count > 1)) return
+      if (expense.installments_count && expense.installments_count > 1) return
+      if (!directExpenseBelongsToPeriod(expense, startDate, endDate)) return
 
       const cat = expense.categories?.name || 'Sin categoría'
       categories[cat] = (categories[cat] || 0) + expense.amount
@@ -917,10 +932,11 @@ const evolutionChartData = computed(() => {
       })
       .reduce((sum, i) => sum + i.amount, 0)
 
+    const { startDate, endDate } = getMonthRange(m, y)
     const direct = expensesStore.expenses
       .filter(e => {
-        const d = parseISO(e.purchase_date)
-        return d.getMonth() + 1 === m && d.getFullYear() === y && (!e.installments_count || e.installments_count === 1)
+        if (e.installments_count && e.installments_count > 1) return false
+        return directExpenseBelongsToPeriod(e, startDate, endDate)
       })
       .reduce((sum, e) => sum + e.amount, 0)
 
@@ -995,12 +1011,10 @@ const topExpensesChartData = computed(() => {
 
   let allItems = []
 
+  const directRange = isAnnual.value ? getYearRange(cy) : getMonthRange(cm, cy)
   expensesStore.expenses.forEach(e => {
-    const d = parseISO(e.purchase_date)
-    const match = isAnnual.value
-      ? d.getFullYear() === cy
-      : d.getMonth() + 1 === cm && d.getFullYear() === cy
-    if (!match || (e.installments_count && e.installments_count > 1)) return
+    if (e.installments_count && e.installments_count > 1) return
+    if (!directExpenseBelongsToPeriod(e, directRange.startDate, directRange.endDate)) return
     allItems.push({ description: e.description || 'Sin descripción', amount: e.amount })
   })
 
@@ -1037,12 +1051,10 @@ const paymentTypeChartData = computed(() => {
   const cy = currentYear
   const typeMap = {}
 
+  const typeRange = isAnnual.value ? getYearRange(cy) : getMonthRange(cm, cy)
   expensesStore.expenses.forEach(e => {
-    const d = parseISO(e.purchase_date)
-    const match = isAnnual.value
-      ? d.getFullYear() === cy
-      : d.getMonth() + 1 === cm && d.getFullYear() === cy
-    if (!match || (e.installments_count && e.installments_count > 1)) return
+    if (e.installments_count && e.installments_count > 1) return
+    if (!directExpenseBelongsToPeriod(e, typeRange.startDate, typeRange.endDate)) return
     const type = e.available_cards?.type || 'Otro'
     typeMap[type] = (typeMap[type] || 0) + e.amount
   })

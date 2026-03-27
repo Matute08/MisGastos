@@ -1,6 +1,6 @@
 <template>
   <div
-    class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overscroll-none"
     @click.self="$emit('close')"
     @keydown.esc="$emit('close')"
     role="dialog"
@@ -111,6 +111,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+import { useBodyScrollLock } from '@/composables/useBodyScrollLock.js'
 import { X, FileText, DollarSign, Calendar } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -123,6 +124,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'save'])
 
 const modalRef = ref(null)
+const { lock: lockBodyScroll, unlock: unlockBodyScroll } = useBodyScrollLock()
 const loading = ref(false)
 const error = ref('')
 
@@ -203,13 +205,13 @@ const handleSubmit = async () => {
 }
 
 onMounted(async () => {
-  document.body.style.overflow = 'hidden'
+  lockBodyScroll()
   await nextTick()
   if (modalRef.value) modalRef.value.focus()
 })
 
 onBeforeUnmount(() => {
-  document.body.style.overflow = ''
+  unlockBodyScroll()
   loading.value = false
 })
 </script>
