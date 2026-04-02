@@ -116,7 +116,7 @@ export const useExpensesStore = defineStore('expenses', () => {
       const due = parseISO(inst.due_date)
       return due.getMonth() + 1 === currentMonth && due.getFullYear() === currentYear
     })
-    const allPaid = currentMonthInstallments.every(inst => inst.payment_status_id === 3) // 3: pagada
+    const allPaid = currentMonthInstallments.every(inst => inst.payment_status_id === 2)
     if (currentMonthInstallments.length && !allPaid) {
       return currentMonthInstallments
     }
@@ -309,19 +309,21 @@ export const useExpensesStore = defineStore('expenses', () => {
     error.value = null
     
     try {
-      const { data, error: apiError } = await expensesApi.markAsPaid(id, payment_status_id)
+      const response = await expensesApi.markAsPaid(id, payment_status_id)
       
-      if (apiError) {
-        error.value = apiError.message
-        return { success: false, error: apiError.message }
+      if (!response?.success) {
+        const msg = response?.error || 'Error al actualizar'
+        error.value = msg
+        return { success: false, error: msg }
       }
       
+      const updated = response.data
       const index = expenses.value.findIndex(expense => expense.id === id)
-      if (index !== -1) {
-        expenses.value[index] = data[0]
+      if (index !== -1 && updated) {
+        expenses.value[index] = Array.isArray(updated) ? updated[0] : updated
       }
       
-      return { success: true, data: data[0] }
+      return { success: true, data: Array.isArray(updated) ? updated[0] : updated }
     } catch (err) {
       error.value = err.message
       return { success: false, error: err.message }
@@ -368,9 +370,10 @@ export const useExpensesStore = defineStore('expenses', () => {
       
       const response = await expensesApi.markInstallmentAsPaid(actualId, payment_status_id)
       
-      if (response.error) {
-        error.value = response.error
-        return { success: false, error: response.error }
+      if (!response?.success) {
+        const msg = response?.error || 'Error al actualizar cuota'
+        error.value = msg
+        return { success: false, error: msg }
       }
       
       return { success: true, data: response.data }

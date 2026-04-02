@@ -78,6 +78,14 @@
             </button>
 
             <button
+              @click="goToCategories"
+              class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+            >
+              <Tag class="h-4 w-4 text-gray-400" />
+              Categorías
+            </button>
+
+            <button
               v-if="authStore.isAdmin"
               @click="goToAdminCards"
               class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
@@ -106,40 +114,124 @@
     v-if="authStore.isAuthenticated && authStore.isAuthReady"
     class="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-200/80 shadow-[0_-2px_10px_-3px_rgba(0,0,0,0.06)] z-50"
   >
+    <Transition
+      enter-active-class="transition ease-out duration-150"
+      enter-from-class="opacity-0 translate-y-1"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition ease-in duration-100"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 translate-y-1"
+    >
+      <div
+        v-if="showUserMenu"
+        ref="mobileUserMenuRef"
+        class="absolute bottom-full right-3 mb-2 w-56 bg-white rounded-xl shadow-soft-lg border border-gray-200 py-1"
+      >
+        <button
+          @click="goToProfile"
+          class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+        >
+          <UserCircle class="h-4 w-4 text-gray-400" />
+          Mi Perfil
+        </button>
+
+        <button
+          @click="goToCategories"
+          class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+        >
+          <Tag class="h-4 w-4 text-gray-400" />
+          Categorías
+        </button>
+
+        <button
+          v-if="authStore.isAdmin"
+          @click="goToAdminCards"
+          class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+        >
+          <CreditCard class="h-4 w-4 text-gray-400" />
+          Admin Cuentas
+        </button>
+
+        <div class="border-t border-gray-100 my-1"></div>
+
+        <button
+          @click="signOut"
+          class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-danger-600 hover:bg-danger-50 transition-colors duration-150"
+        >
+          <LogOut class="h-4 w-4" />
+          Cerrar sesión
+        </button>
+      </div>
+    </Transition>
+
     <div class="flex items-center justify-around h-16 px-1">
-      <router-link
+      <template
         v-for="item in mobileItems"
         :key="item.name"
-        :to="item.path"
-        class="flex flex-col items-center justify-center flex-1 min-w-0 py-1"
       >
-        <div
-          :class="[
-            'flex items-center justify-center rounded-full transition-all duration-200 mb-0.5',
-            isActive(item.name)
-              ? 'bg-primary-100 h-8 w-12'
-              : 'h-8 w-8'
-          ]"
+        <button
+          v-if="item.name === 'perfil'"
+          ref="mobileProfileButtonRef"
+          type="button"
+          @click="toggleUserMenu"
+          class="flex flex-col items-center justify-center flex-1 min-w-0 py-1"
         >
-          <component
-            :is="item.icon"
+          <div
             :class="[
-              'transition-all duration-200',
-              isActive(item.name)
-                ? 'h-[22px] w-[22px] text-primary-600'
-                : 'h-5 w-5 text-gray-400'
+              'flex items-center justify-center rounded-full transition-all duration-200 mb-0.5',
+              showUserMenu ? 'bg-primary-100 h-8 w-12' : 'h-8 w-8'
             ]"
-          />
-        </div>
-        <span
-          :class="[
-            'text-[10px] font-medium transition-colors duration-200 leading-tight',
-            isActive(item.name) ? 'text-primary-600' : 'text-gray-500'
-          ]"
         >
-          {{ item.label }}
-        </span>
-      </router-link>
+            <component
+              :is="item.icon"
+              :class="[
+                'transition-all duration-200',
+                showUserMenu ? 'h-[22px] w-[22px] text-primary-600' : 'h-5 w-5 text-gray-400'
+              ]"
+            />
+          </div>
+          <span
+            :class="[
+              'text-[10px] font-medium transition-colors duration-200 leading-tight',
+              showUserMenu ? 'text-primary-600' : 'text-gray-500'
+            ]"
+          >
+            {{ item.label }}
+          </span>
+        </button>
+        <router-link
+          v-else
+          :to="item.path"
+          class="flex flex-col items-center justify-center flex-1 min-w-0 py-1"
+        >
+          <div
+            :class="[
+              'flex items-center justify-center rounded-full transition-all duration-200 mb-0.5',
+              isActive(item.name)
+                ? 'bg-primary-100 h-8 w-12'
+                : 'h-8 w-8'
+            ]"
+          >
+            <component
+              :is="item.icon"
+              :class="[
+                'transition-all duration-200',
+                isActive(item.name)
+                  ? 'h-[22px] w-[22px] text-primary-600'
+                  : 'h-5 w-5 text-gray-400'
+              ]"
+            />
+          </div>
+          <span
+            :class="[
+              'text-[10px] font-medium transition-colors duration-200 leading-tight',
+              isActive(item.name) ? 'text-primary-600' : 'text-gray-500'
+            ]"
+          >
+            {{ item.label }}
+          </span>
+        </router-link>
+      </template>
     </div>
   </nav>
 </template>
@@ -152,6 +244,7 @@ import {
   BarChart3,
   Receipt,
   Wallet,
+  PiggyBank,
   CreditCard,
   Tag,
   UserCircle,
@@ -165,6 +258,8 @@ const authStore = useAuthStore()
 
 const showUserMenu = ref(false)
 const userMenuRef = ref(null)
+const mobileUserMenuRef = ref(null)
+const mobileProfileButtonRef = ref(null)
 
 const userName = computed(() => {
   return authStore.userProfile?.nombre_perfil || authStore.user?.email?.split('@')[0] || 'Usuario'
@@ -189,16 +284,16 @@ const sidebarItems = computed(() => [
   { name: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: BarChart3 },
   { name: 'expenses', label: 'Gastos', path: '/expenses', icon: Receipt },
   { name: 'incomes', label: 'Ingresos', path: '/incomes', icon: Wallet },
-  { name: 'cuentas', label: 'Cuentas', path: '/cuentas', icon: CreditCard },
-  { name: 'categories', label: 'Categorías', path: '/categories', icon: Tag }
+  { name: 'savings', label: 'Ahorros', path: '/savings', icon: PiggyBank },
+  { name: 'cuentas', label: 'Cuentas', path: '/cuentas', icon: CreditCard }
 ])
 
 const mobileItems = computed(() => [
   { name: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: BarChart3 },
   { name: 'expenses', label: 'Gastos', path: '/expenses', icon: Receipt },
   { name: 'incomes', label: 'Ingresos', path: '/incomes', icon: Wallet },
+  { name: 'savings', label: 'Ahorros', path: '/savings', icon: PiggyBank },
   { name: 'cuentas', label: 'Cuentas', path: '/cuentas', icon: CreditCard },
-  { name: 'categories', label: 'Categorías', path: '/categories', icon: Tag },
   { name: 'perfil', label: 'Perfil', path: '/perfil', icon: UserCircle }
 ])
 
@@ -227,8 +322,26 @@ const goToAdminCards = () => {
   router.push('/admin/cuentas')
 }
 
+const goToCategories = () => {
+  showUserMenu.value = false
+  router.push('/categories')
+}
+
+const unwrapRefEl = (r) => {
+  if (!r) return null
+  return Array.isArray(r) ? r[0] : r
+}
+
 const handleClickOutside = (event) => {
-  if (userMenuRef.value && !userMenuRef.value.contains(event.target)) {
+  const desktopEl = unwrapRefEl(userMenuRef.value)
+  const mobileMenuEl = unwrapRefEl(mobileUserMenuRef.value)
+  const mobileProfileEl = unwrapRefEl(mobileProfileButtonRef.value)
+
+  const clickedDesktopMenu = desktopEl && desktopEl.contains(event.target)
+  const clickedMobileMenu = mobileMenuEl && mobileMenuEl.contains(event.target)
+  const clickedMobileProfileButton = mobileProfileEl && mobileProfileEl.contains(event.target)
+
+  if (!clickedDesktopMenu && !clickedMobileMenu && !clickedMobileProfileButton) {
     showUserMenu.value = false
   }
 }

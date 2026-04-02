@@ -40,17 +40,32 @@ router.get('/summary', authenticateToken, async (req, res) => {
 
 router.post('/', authenticateToken, validateIncome, async (req, res) => {
   try {
+    const affectsCash = req.body.affects_cash_balance !== false;
+
+    if (!affectsCash) {
+      if (!req.body.card_id) {
+        return res.status(400).json({
+          success: false,
+          error: 'Indicá la tarjeta de crédito para registrar un crédito en tarjeta'
+        });
+      }
+      await IncomesService.assertUserOwnsCreditCard(req.user.id, req.body.card_id);
+    }
+
     const incomeData = {
       user_id: req.user.id,
       description: req.body.description,
       amount: parseFloat(req.body.amount),
       income_date: req.body.income_date,
       is_recurring: req.body.is_recurring || false,
+      affects_cash_balance: affectsCash,
+      card_id: affectsCash ? null : req.body.card_id
     };
     const result = await IncomesService.createIncome(incomeData);
     res.status(201).json(result);
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    const status = error.statusCode || 500;
+    res.status(status).json({ success: false, error: error.message });
   }
 });
 
@@ -63,10 +78,39 @@ router.put('/:id', authenticateToken, async (req, res) => {
     if (incomeDateValue !== undefined) updates.income_date = incomeDateValue;
     if (req.body.is_recurring !== undefined) updates.is_recurring = req.body.is_recurring;
 
+    if (req.body.affects_cash_balance !== undefined || req.body.card_id !== undefined) {
+      const current = await IncomesService.getIncomeById(req.user.id, req.params.id);
+      if (!current) {
+        return res.status(404).json({ success: false, error: 'Ingreso no encontrado' });
+      }
+      const nextAffects =
+        req.body.affects_cash_balance !== undefined
+          ? req.body.affects_cash_balance !== false
+          : current.affects_cash_balance !== false;
+      const nextCardId =
+        req.body.card_id !== undefined ? req.body.card_id : current.card_id;
+
+      if (nextAffects) {
+        updates.affects_cash_balance = true;
+        updates.card_id = null;
+      } else {
+        if (!nextCardId) {
+          return res.status(400).json({
+            success: false,
+            error: 'Indicá la tarjeta de crédito para registrar un crédito en tarjeta'
+          });
+        }
+        await IncomesService.assertUserOwnsCreditCard(req.user.id, nextCardId);
+        updates.affects_cash_balance = false;
+        updates.card_id = nextCardId;
+      }
+    }
+
     const result = await IncomesService.updateIncome(req.params.id, req.user.id, updates);
     res.json(result);
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    const status = error.statusCode || 500;
+    res.status(status).json({ success: false, error: error.message });
   }
 });
 

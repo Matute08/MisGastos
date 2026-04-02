@@ -9,6 +9,8 @@
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Evita franja blanca al bloquear scroll (modales): mismo tono que body/#app */
+    @apply bg-slate-50;
   }
 
   body {

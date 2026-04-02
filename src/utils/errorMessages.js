@@ -46,6 +46,7 @@ export const getUserFriendlyError = (error) => {
     'EMAIL_ALREADY_EXISTS': 'Este email ya está registrado.',
     'TOKEN_EXPIRED': 'Tu sesión expiró. Por favor, inicia sesión nuevamente.',
     'TOKEN_INVALID': 'Sesión inválida. Por favor, inicia sesión nuevamente.',
+    'SERVER_WAKING_UP': 'El servidor se está activando. Espera unos segundos e intenta nuevamente.',
   };
 
   // Buscar por código de error

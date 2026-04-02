@@ -1397,6 +1397,7 @@ const bulkChangeStatus = async (newStatusId) => {
             } else {
                 await expensesStore.loadExpenses();
             }
+            await expensesStore.loadUpcomingInstallments(1000);
             
             selectedExpenses.value.clear();
             isBulkMode.value = false;
@@ -1568,6 +1569,7 @@ const loadMonthlyData = async () => {
     }
 };
 
+
 const availableCardsForMonth = computed(() => {
     const allData = expensesStore.monthlyExpensesWithInstallments;
     if (!allData || allData.length === 0) {
@@ -1625,6 +1627,7 @@ const monthYearTitle = computed(() => {
     if (!month || !year) return "";
     return `${monthNames[month - 1]} ${year}`;
 });
+
 
 const clearFilters = () => {
     filters.value.card_id = "";
@@ -1777,7 +1780,15 @@ const togglePaidStatus = async (expense) => {
     const currentStatus = paymentStatusMap[expense.payment_status_id]?.code;
     const newStatus = currentStatus === "pagada" ? "pendiente" : "pagada";
     const newStatusId = newStatus === "pagada" ? 2 : 1;
-    await expensesStore.markAsPaid(expense.id, newStatusId);
+    const result = await expensesStore.markAsPaid(expense.id, newStatusId);
+    if (result?.success) {
+        if (filters.value?.month && filters.value?.year) {
+            await loadMonthlyData();
+        } else {
+            await expensesStore.loadExpenses();
+        }
+        await expensesStore.loadUpcomingInstallments(1000);
+    }
 };
 
 const openNewExpenseModal = async () => {
@@ -1950,12 +1961,13 @@ const saveScheduledExpense = async (result) => {
 const toggleInstallmentPaid = async (item) => {
     const currentStatus = item.payment_status_code;
     const newStatusId = currentStatus === "pendiente" ? 2 : 1;
-    await expensesStore.markInstallmentAsPaid(
+    const result = await expensesStore.markInstallmentAsPaid(
         item.installment_id,
         newStatusId
     );
-    if (filters.value.year) {
-        loadMonthlyData();
+    if (result?.success && filters.value.month && filters.value.year) {
+        await loadMonthlyData();
+        await expensesStore.loadUpcomingInstallments(1000);
     }
 };
 
@@ -2182,16 +2194,30 @@ function nextMonth() {
     updateFilters();
 }
 
+/** Monto de fila igual que en la tabla (cuota → installment_amount). */
+const rowAmountForSummary = (item) => {
+    const raw = item.is_installment ? item.installment_amount ?? item.amount : item.amount;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : 0;
+};
+
+/** Totales acordes a los filtros y listado visible (no al endpoint de balance, que solo suma crédito pagado). */
 const totalDebitTransferExpenses = computed(() => {
-    return expensesStore.monthlyTotals?.total_debit_transfer || 0;
+    return filteredExpensesToShow.value.reduce((sum, item) => {
+        if (item.available_cards?.type === "Crédito") return sum;
+        return sum + rowAmountForSummary(item);
+    }, 0);
 });
 
 const totalCreditExpenses = computed(() => {
-    return expensesStore.monthlyTotals?.total_credit || 0;
+    return filteredExpensesToShow.value.reduce((sum, item) => {
+        if (item.available_cards?.type !== "Crédito") return sum;
+        return sum + rowAmountForSummary(item);
+    }, 0);
 });
 
 const totalExpenses = computed(() => {
-    return expensesStore.monthlyTotals?.total_expenses || 0;
+    return filteredExpensesToShow.value.reduce((sum, item) => sum + rowAmountForSummary(item), 0);
 });
 
 function getStatusLabel(item) {

@@ -10,7 +10,16 @@ export const useIncomesStore = defineStore('incomes', () => {
   const error = ref(null)
 
   const totalIncome = computed(() =>
-    incomes.value.reduce((sum, inc) => sum + parseFloat(inc.amount), 0)
+    incomes.value
+      .filter((inc) => inc.affects_cash_balance !== false)
+      .reduce((sum, inc) => sum + parseFloat(inc.amount), 0)
+  )
+
+  /** Créditos en tarjeta (percepciones, devoluciones): no suman al balance de efectivo. */
+  const totalCardCreditIncome = computed(() =>
+    incomes.value
+      .filter((inc) => inc.affects_cash_balance === false)
+      .reduce((sum, inc) => sum + parseFloat(inc.amount), 0)
   )
 
   /** Carga ingresos por año y los deja en incomesForChart (para Dashboard Ingresos vs Gastos) */
@@ -95,6 +104,7 @@ export const useIncomesStore = defineStore('incomes', () => {
     loading,
     error,
     totalIncome,
+    totalCardCreditIncome,
     loadIncomes,
     loadIncomesForChart,
     createIncome,

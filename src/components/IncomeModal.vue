@@ -87,6 +87,61 @@
           </div>
         </div>
 
+        <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-3">
+          <p class="text-sm font-semibold text-slate-800">Tipo de ingreso</p>
+          <div class="space-y-2">
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input
+                v-model="form.affectsCashBalance"
+                type="radio"
+                class="mt-1"
+                :value="true"
+              />
+              <span>
+                <span class="text-sm font-medium text-slate-800">Ingreso al balance (efectivo)</span>
+                <span class="block text-xs text-slate-500 mt-0.5">
+                  Sueldo, transferencias, préstamos, ventas, etc. Suma al balance y al gráfico de ingresos.
+                </span>
+              </span>
+            </label>
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input
+                v-model="form.affectsCashBalance"
+                type="radio"
+                class="mt-1"
+                :value="false"
+              />
+              <span>
+                <span class="text-sm font-medium text-slate-800">Crédito en tarjeta</span>
+                <span class="block text-xs text-slate-500 mt-0.5">
+                  Percepciones devueltas, reintegros o ajustes que acreditan la tarjeta. No suman al balance: reducen el consumo mostrado de esa tarjeta.
+                </span>
+              </span>
+            </label>
+          </div>
+
+          <div v-if="!form.affectsCashBalance" class="pt-1">
+            <label for="income-card" class="block text-sm font-semibold text-slate-700 mb-1.5">
+              Tarjeta de crédito
+            </label>
+            <select
+              id="income-card"
+              v-model="form.cardId"
+              class="input-field w-full"
+              :disabled="creditUserCards.length === 0"
+            >
+              <option value="" disabled>{{ creditUserCards.length ? 'Seleccioná una tarjeta' : 'No hay tarjetas de crédito vinculadas' }}</option>
+              <option
+                v-for="card in creditUserCards"
+                :key="card.id"
+                :value="card.available_card_id"
+              >
+                {{ card.available_card?.name }} · {{ card.available_card?.bank || '—' }}
+              </option>
+            </select>
+          </div>
+        </div>
+
         <div v-if="error" class="bg-danger-50 border border-danger-100 rounded-xl p-4" role="alert">
           <p class="text-sm text-danger-700">{{ error }}</p>
         </div>
@@ -110,8 +165,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useBodyScrollLock } from '@/composables/useBodyScrollLock.js'
+import { useUserCardsStore } from '@/stores/userCards'
 import { X, FileText, DollarSign, Calendar } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -123,15 +179,23 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'save'])
 
+const userCardsStore = useUserCardsStore()
+
 const modalRef = ref(null)
 const { lock: lockBodyScroll, unlock: unlockBodyScroll } = useBodyScrollLock()
 const loading = ref(false)
 const error = ref('')
 
+const creditUserCards = computed(() =>
+  (userCardsStore.cards || []).filter((c) => c.available_card?.type === 'Crédito')
+)
+
 const form = ref({
   description: '',
   amount: '',
   date: new Date().toISOString().split('T')[0],
+  affectsCashBalance: true,
+  cardId: ''
 })
 
 const sanitizeAmount = (rawValue) => {
@@ -159,12 +223,16 @@ const initForm = () => {
       description: props.income.description || '',
       amount: String(props.income.amount ?? ''),
       date: props.income.income_date || props.income.date || new Date().toISOString().split('T')[0],
+      affectsCashBalance: props.income.affects_cash_balance !== false,
+      cardId: props.income.card_id || ''
     }
   } else {
     form.value = {
       description: '',
       amount: '',
       date: new Date().toISOString().split('T')[0],
+      affectsCashBalance: true,
+      cardId: ''
     }
   }
   error.value = ''
@@ -188,16 +256,27 @@ const handleSubmit = async () => {
     error.value = 'La fecha es obligatoria'
     return
   }
+  if (!form.value.affectsCashBalance) {
+    if (!form.value.cardId) {
+      error.value = 'Seleccioná la tarjeta donde se acreditó el crédito'
+      return
+    }
+  }
 
   loading.value = true
   error.value = ''
 
   try {
-    emit('save', {
+    const payload = {
       description: form.value.description.trim(),
       amount,
       income_date: form.value.date,
-    })
+      affects_cash_balance: form.value.affectsCashBalance
+    }
+    if (!form.value.affectsCashBalance) {
+      payload.card_id = form.value.cardId
+    }
+    emit('save', payload)
   } catch {
     error.value = 'Error al guardar el ingreso'
     loading.value = false
@@ -205,6 +284,7 @@ const handleSubmit = async () => {
 }
 
 onMounted(async () => {
+  await userCardsStore.loadUserCards()
   lockBodyScroll()
   await nextTick()
   if (modalRef.value) modalRef.value.focus()

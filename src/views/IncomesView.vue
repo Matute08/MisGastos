@@ -36,15 +36,22 @@
           <div class="flex-1">
             <div class="grid grid-cols-3 gap-4 text-center">
               <div>
-                <p class="text-sm text-slate-500">Total Ingresos</p>
+                <p class="text-sm text-slate-500">Total al balance</p>
                 <p class="text-2xl font-bold text-success-600">{{ formatCurrency(incomesStore.totalIncome) }}</p>
+                <p
+                  v-if="incomesStore.totalCardCreditIncome > 0"
+                  class="text-xs text-slate-500 mt-2 max-w-[14rem] mx-auto leading-snug"
+                >
+                  Créditos en tarjeta (no suman al balance):
+                  <span class="font-semibold text-violet-700">{{ formatCurrency(incomesStore.totalCardCreditIncome) }}</span>
+                </p>
               </div>
               <div>
                 <p class="text-sm text-slate-500">Cantidad</p>
                 <p class="text-2xl font-bold text-primary-600">{{ incomesStore.incomes.length }}</p>
               </div>
               <div>
-                <p class="text-sm text-slate-500">Ingreso Promedio</p>
+                <p class="text-sm text-slate-500">Promedio (efectivo)</p>
                 <p class="text-2xl font-bold text-slate-700">{{ formatCurrency(averageIncome) }}</p>
               </div>
             </div>
@@ -66,8 +73,15 @@
           </div>
           <div class="space-y-2.5">
             <div class="flex items-center justify-between py-1.5 border-l-4 border-success-500 pl-3 rounded-r-lg bg-success-50/40">
-              <span class="text-xs text-slate-700 font-semibold">Total</span>
+              <span class="text-xs text-slate-700 font-semibold">Total al balance</span>
               <span class="text-base font-bold text-success-600 tabular-nums">{{ formatCurrency(incomesStore.totalIncome) }}</span>
+            </div>
+            <div
+              v-if="incomesStore.totalCardCreditIncome > 0"
+              class="flex items-start justify-between gap-2 py-1.5 border-l-4 border-violet-400 pl-3 rounded-r-lg bg-violet-50/50"
+            >
+              <span class="text-xs text-slate-600">Créditos en tarjeta</span>
+              <span class="text-sm font-semibold text-violet-800 tabular-nums text-right">{{ formatCurrency(incomesStore.totalCardCreditIncome) }}</span>
             </div>
             <div class="flex items-center justify-between py-1.5 border-l-4 border-primary-500 pl-3 rounded-r-lg bg-primary-50/30">
               <span class="text-xs text-slate-600 font-medium">Cantidad</span>
@@ -98,7 +112,7 @@
           <table class="min-w-full divide-y divide-slate-100">
             <thead class="bg-slate-50/80">
               <tr>
-                <th v-for="i in 4" :key="i" class="px-6 py-3 text-left">
+                <th v-for="i in 5" :key="i" class="px-6 py-3 text-left">
                   <div class="skeleton h-4 w-20"></div>
                 </th>
               </tr>
@@ -156,6 +170,7 @@
             <thead class="bg-slate-50/80">
               <tr>
                 <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Descripción</th>
+                <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Origen</th>
                 <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Monto</th>
                 <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Fecha</th>
                 <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Acciones</th>
@@ -164,7 +179,23 @@
             <tbody class="bg-white divide-y divide-slate-50">
               <tr v-for="income in incomesStore.incomes" :key="income.id" class="hover:bg-slate-50/60 transition-colors">
                 <td class="px-6 py-4 text-sm text-slate-900 font-medium">{{ income.description }}</td>
-                <td class="px-6 py-4 text-sm font-bold text-success-600">{{ formatCurrency(income.amount) }}</td>
+                <td class="px-6 py-4">
+                  <span
+                    v-if="income.affects_cash_balance !== false"
+                    class="inline-flex text-xs font-medium text-emerald-800 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md"
+                  >
+                    Balance
+                  </span>
+                  <span
+                    v-else
+                    class="inline-flex text-xs font-medium text-violet-800 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-md"
+                  >
+                    Tarjeta · {{ cardLabel(income) }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-sm font-bold" :class="income.affects_cash_balance !== false ? 'text-success-600' : 'text-violet-700'">
+                  {{ formatCurrency(income.amount) }}
+                </td>
                 <td class="px-6 py-4 text-sm text-slate-500">
                   <div class="flex items-center gap-1.5">
                     <Calendar class="h-3.5 w-3.5 text-slate-400" />
@@ -205,12 +236,29 @@
           <div class="flex justify-between items-start mb-2">
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold text-slate-900 truncate">{{ income.description }}</p>
-              <div class="flex items-center gap-1.5 mt-1">
-                <Calendar class="h-3 w-3 text-slate-400" />
+              <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                <Calendar class="h-3 w-3 text-slate-400 shrink-0" />
                 <p class="text-xs text-slate-500">{{ formatDate(income.income_date) }}</p>
+                <span
+                  v-if="income.affects_cash_balance !== false"
+                  class="text-[10px] font-medium text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded"
+                >
+                  Balance
+                </span>
+                <span
+                  v-else
+                  class="text-[10px] font-medium text-violet-800 bg-violet-50 px-1.5 py-0.5 rounded"
+                >
+                  Tarjeta · {{ cardLabel(income) }}
+                </span>
               </div>
             </div>
-            <p class="text-sm font-bold text-success-600 ml-3">{{ formatCurrency(income.amount) }}</p>
+            <p
+              class="text-sm font-bold ml-3 shrink-0"
+              :class="income.affects_cash_balance !== false ? 'text-success-600' : 'text-violet-700'"
+            >
+              {{ formatCurrency(income.amount) }}
+            </p>
           </div>
           <div class="flex items-center justify-end gap-3 mt-3 pt-3 border-t border-slate-100">
             <button
@@ -243,6 +291,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useIncomesStore } from '@/stores/incomes'
+import { useExpensesStore } from '@/stores/expenses'
+import { useUserCardsStore } from '@/stores/userCards'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Wallet, Plus, ChevronLeft, ChevronRight, Pencil, Trash2, RefreshCw, Calendar } from 'lucide-vue-next'
@@ -250,6 +300,8 @@ import Swal from 'sweetalert2'
 import IncomeModal from '@/components/IncomeModal.vue'
 
 const incomesStore = useIncomesStore()
+const expensesStore = useExpensesStore()
+const userCardsStore = useUserCardsStore()
 
 const now = new Date()
 const currentMonth = ref(now.getMonth() + 1)
@@ -266,11 +318,22 @@ const monthYearTitle = computed(() => {
   return `${monthNames[currentMonth.value - 1]} ${currentYear.value}`
 })
 
+const cashIncomesCount = computed(
+  () => incomesStore.incomes.filter((i) => i.affects_cash_balance !== false).length
+)
+
 const averageIncome = computed(() => {
-  const count = incomesStore.incomes.length
+  const count = cashIncomesCount.value
   if (count === 0) return 0
   return incomesStore.totalIncome / count
 })
+
+const cardLabel = (income) => {
+  if (income.affects_cash_balance !== false) return null
+  const id = income.card_id
+  const uc = userCardsStore.cards.find((c) => c.available_card_id === id)
+  return uc?.available_card?.name || 'Tarjeta'
+}
 
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('es-AR', {
@@ -356,6 +419,7 @@ const handleSave = async (formData) => {
     }
     closeModal()
     await loadIncomes()
+    await expensesStore.loadCreditCardsSummary(false)
   } catch {
     Swal.fire({
       icon: 'error',
@@ -389,6 +453,7 @@ const confirmDelete = async (income) => {
         timer: 2000
       })
       await loadIncomes()
+      await expensesStore.loadCreditCardsSummary(false)
     } catch {
       Swal.fire({
         icon: 'error',
@@ -400,6 +465,7 @@ const confirmDelete = async (income) => {
 }
 
 onMounted(() => {
+  userCardsStore.loadUserCards()
   loadIncomes()
 })
 </script>

@@ -1,5 +1,6 @@
 import { supabase } from '../config/database.js';
 import logger from '../utils/logger.js';
+import { IncomesService } from './incomesService.js';
 
 /**
  * Misma regla que getMonthlyTotalWithInstallments: en crédito con first_installment_date,
@@ -548,18 +549,16 @@ export class ExpensesService {
 
       if (installmentsError) throw installmentsError;
 
-      // Calcular totales sin filtrar por estado
-      // Separar gastos de débito/transferencia de gastos de crédito
+      // Débito/transferencia/etc.: impactan el balance en el mes (efectivo).
+      // Crédito: solo cuando está pagado (pago de resumen); pendiente/deuda no resta del balance.
       const debitTransferExpenses = directExpenses.filter(expense => {
-        // Incluir gastos de débito, transferencia o sin tarjeta (efectivo)
         const cardType = expense.available_cards?.type;
-        return !cardType || cardType === 'Débito' || cardType === 'Transferencia';
+        return cardType !== 'Crédito';
       });
       
       const creditExpenses = directExpenses.filter(expense => {
-        // Incluir solo gastos de crédito
         const cardType = expense.available_cards?.type;
-        return cardType === 'Crédito';
+        return cardType === 'Crédito' && expense.payment_status?.code === 'pagada';
       });
 
       const totalDebitTransfer = debitTransferExpenses
@@ -570,6 +569,7 @@ export class ExpensesService {
         ?.reduce((sum, expense) => sum + expense.amount, 0) || 0;
 
       const totalCreditInstallments = installments
+        ?.filter((installment) => installment.payment_status?.code === 'pagada')
         ?.reduce((sum, installment) => sum + installment.amount, 0) || 0;
 
       const totalCredit = totalCreditDirect + totalCreditInstallments;
@@ -1241,12 +1241,22 @@ export class ExpensesService {
         const installmentsTotal = (installments || []).reduce((sum, installment) => sum + installment.amount, 0);
         const totalAmount = directTotal + installmentsTotal;
 
+        const cardCredits = await IncomesService.sumCardCreditsInPeriod(
+          userId,
+          card.id,
+          startDate,
+          endDate
+        );
+        const netAmount = totalAmount - cardCredits;
+
         cardsSummary.push({
           id: card.id,
           name: card.name,
           bank: card.bank,
           type: card.type,
-          amount: totalAmount,
+          amount: netAmount,
+          grossAmount: totalAmount,
+          cardCredits,
           directExpenses: directTotal,
           installments: installmentsTotal,
           period: isAnnual ? 'annual' : 'monthly'

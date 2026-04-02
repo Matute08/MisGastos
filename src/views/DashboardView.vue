@@ -19,6 +19,10 @@
             <h1 v-else class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
               {{ formatCurrency(balanceView) }}
             </h1>
+            <p v-if="!isAnnual" class="text-primary-100 text-xs mt-1">
+              Ahorro en USD: <span class="font-semibold">{{ formatUsd(savedUsdView) }}</span>
+              · aprox {{ formatCurrency(savedArsView) }}
+            </p>
           </div>
           <!-- Pill Toggle Mensual/Anual -->
           <div class="flex items-center bg-white/10 backdrop-blur-sm rounded-full p-1 self-start sm:self-auto">
@@ -175,6 +179,12 @@
           </div>
           <h3 class="text-sm font-semibold text-slate-900 mb-1 truncate">{{ card.name }}</h3>
           <p class="text-lg font-bold text-slate-900">{{ formatCurrency(card.amount) }}</p>
+          <p
+            v-if="card.cardCredits > 0"
+            class="text-[11px] text-slate-500 mt-1 leading-snug"
+          >
+            Neto: gasto {{ formatCurrency(card.grossAmount) }} menos créditos {{ formatCurrency(card.cardCredits) }}
+          </p>
           <p class="text-xs text-slate-400 mt-1">{{ card.bank }}</p>
         </div>
 
@@ -613,6 +623,8 @@ import { useExpensesStore } from '@/stores/expenses'
 import { useIncomesStore } from '@/stores/incomes'
 import { useCardsStore } from '@/stores/cards'
 import { useCategoriesStore } from '@/stores/categories'
+import { useSavingsStore } from '@/stores/savings'
+import { incomes as incomesApi, expenses as expensesApi } from '@/lib/api'
 import { Doughnut, Bar } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -668,12 +680,14 @@ const expensesStore = useExpensesStore()
 const incomesStore = useIncomesStore()
 const cardsStore = useCardsStore()
 const categoriesStore = useCategoriesStore()
+const savingsStore = useSavingsStore()
 
 const isAnnual = ref(false)
 const showAllCards = ref(false)
 const showSavingsHelp = ref(false)
 const savingsHelpRef = ref(null)
 const isLoading = ref(true)
+const previousMonthCarry = ref(0)
 
 const currentChartIndex = ref(0)
 const touchStartX = ref(0)
@@ -685,8 +699,24 @@ const currentYear = new Date().getFullYear()
 const formatCurrency = (amount) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount)
 
+const formatUsd = (amount) =>
+  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(amount || 0)
+
 const formatDate = (date) =>
   format(parseISO(date), 'dd/MM/yyyy', { locale: es })
+
+const isPaidExpenseRow = (row) => {
+  const code = row.payment_status?.code
+  if (code) return code === 'pagada'
+  return row.payment_status_id === 2
+}
+
+const directExpenseCountsTowardBalance = (expense) => {
+  if (expense.available_cards?.type === 'Crédito') return isPaidExpenseRow(expense)
+  return true
+}
+
+const installmentCountsTowardBalance = (inst) => isPaidExpenseRow(inst)
 
 // --- Center text plugin for Doughnut ---
 const centerTextPlugin = {
@@ -790,10 +820,11 @@ const totalExpensesView = computed(() => {
     const direct = expensesStore.expenses
       .filter(e => !e.installments_count || e.installments_count === 1)
       .filter(e => directExpenseBelongsToPeriod(e, startDate, endDate))
+      .filter(directExpenseCountsTowardBalance)
       .reduce((sum, e) => sum + e.amount, 0)
     const inst = expensesStore.upcomingInstallments
       .filter(inst => {
-        if (inst.payment_status_id === 3) return false
+        if (!installmentCountsTowardBalance(inst)) return false
         const due = parseISO(inst.due_date)
         return due.getFullYear() === cy
       })
@@ -805,11 +836,12 @@ const totalExpensesView = computed(() => {
   const monthlyDirect = expensesStore.expenses
     .filter(e => !e.installments_count || e.installments_count === 1)
     .filter(e => directExpenseBelongsToPeriod(e, startDate, endDate))
+    .filter(directExpenseCountsTowardBalance)
     .reduce((sum, e) => sum + e.amount, 0)
 
   const monthlyInst = expensesStore.upcomingInstallments
     .filter(inst => {
-      if (inst.payment_status_id === 3) return false
+      if (!installmentCountsTowardBalance(inst)) return false
       const due = parseISO(inst.due_date)
       return due.getMonth() + 1 === cm && due.getFullYear() === cy
     })
@@ -820,16 +852,48 @@ const totalExpensesView = computed(() => {
 
 // --- Income total ---
 const totalIncomeView = computed(() =>
-  incomesStore.incomes.reduce((sum, inc) => sum + parseFloat(inc.amount), 0)
+  incomesStore.incomes
+    .filter((inc) => inc.affects_cash_balance !== false)
+    .reduce((sum, inc) => sum + parseFloat(inc.amount), 0)
 )
 
 // --- Balance & Savings ---
-const balanceView = computed(() => totalIncomeView.value - totalExpensesView.value)
+/** Ahorro neto del período (ARS): lo que sale del flujo disponible al mes/año. */
+const savingsNetForBalance = computed(() =>
+  isAnnual.value
+    ? savingsStore.netSavedInYear(currentYear)
+    : savingsStore.netSavedInMonth(currentMonth, currentYear)
+)
+
+const balanceView = computed(() => {
+  const net = totalIncomeView.value - totalExpensesView.value
+  const base = isAnnual.value ? net : previousMonthCarry.value + net
+  return base - savingsNetForBalance.value
+})
 
 const savingsPercentage = computed(() => {
   if (totalIncomeView.value <= 0) return 0
   return (balanceView.value / totalIncomeView.value) * 100
 })
+
+const savedUsdView = computed(() => savingsStore.totalSavedUsd || 0)
+const savedArsView = computed(() => savingsStore.totalSavedArs || 0)
+
+const loadPreviousMonthCarry = async () => {
+  const pm = currentMonth === 1 ? 12 : currentMonth - 1
+  const py = currentMonth === 1 ? currentYear - 1 : currentYear
+  try {
+    const [incomeRes, expenseRes] = await Promise.all([
+      incomesApi.getSummary({ month: pm, year: py }),
+      expensesApi.getMonthlyTotalWithInstallments(null, pm, py, {})
+    ])
+    const prevIncome = incomeRes?.data?.total || 0
+    const prevExpense = expenseRes?.data?.[0]?.total_expenses || 0
+    previousMonthCarry.value = prevIncome - prevExpense
+  } catch {
+    previousMonthCarry.value = 0
+  }
+}
 
 // --- Chart Data: Categories & Cards ---
 const chartColors = [
@@ -850,7 +914,7 @@ const chartData = computed(() => {
       const match = monthFilter
         ? due.getMonth() + 1 === cm && due.getFullYear() === cy
         : due.getFullYear() === cy
-      if (!match || inst.payment_status_id === 3) return
+      if (!match || !installmentCountsTowardBalance(inst)) return
 
       if (inst.expenses?.categories) {
         const cat = inst.expenses.categories.name || 'Sin categoría'
@@ -870,6 +934,7 @@ const chartData = computed(() => {
     expensesStore.expenses.forEach(expense => {
       if (expense.installments_count && expense.installments_count > 1) return
       if (!directExpenseBelongsToPeriod(expense, startDate, endDate)) return
+      if (!directExpenseCountsTowardBalance(expense)) return
 
       const cat = expense.categories?.name || 'Sin categoría'
       categories[cat] = (categories[cat] || 0) + expense.amount
@@ -927,8 +992,9 @@ const evolutionChartData = computed(() => {
   const getExpenseForMonth = (m, y) => {
     const inst = expensesStore.upcomingInstallments
       .filter(i => {
+        if (!installmentCountsTowardBalance(i)) return false
         const due = parseISO(i.due_date)
-        return due.getMonth() + 1 === m && due.getFullYear() === y && i.payment_status_id !== 3
+        return due.getMonth() + 1 === m && due.getFullYear() === y
       })
       .reduce((sum, i) => sum + i.amount, 0)
 
@@ -938,6 +1004,7 @@ const evolutionChartData = computed(() => {
         if (e.installments_count && e.installments_count > 1) return false
         return directExpenseBelongsToPeriod(e, startDate, endDate)
       })
+      .filter(directExpenseCountsTowardBalance)
       .reduce((sum, e) => sum + e.amount, 0)
 
     return inst + direct
@@ -945,6 +1012,7 @@ const evolutionChartData = computed(() => {
 
   const getIncomeForMonth = (m, y) => {
     return incomesStore.incomesForChart
+      .filter((inc) => inc.affects_cash_balance !== false)
       .filter(inc => {
         const d = parseISO(inc.income_date || inc.date || inc.created_at)
         return d.getMonth() + 1 === m && d.getFullYear() === y
@@ -1015,6 +1083,7 @@ const topExpensesChartData = computed(() => {
   expensesStore.expenses.forEach(e => {
     if (e.installments_count && e.installments_count > 1) return
     if (!directExpenseBelongsToPeriod(e, directRange.startDate, directRange.endDate)) return
+    if (!directExpenseCountsTowardBalance(e)) return
     allItems.push({ description: e.description || 'Sin descripción', amount: e.amount })
   })
 
@@ -1023,7 +1092,7 @@ const topExpensesChartData = computed(() => {
     const match = isAnnual.value
       ? due.getFullYear() === cy
       : due.getMonth() + 1 === cm && due.getFullYear() === cy
-    if (!match || inst.payment_status_id === 3) return
+    if (!match || !installmentCountsTowardBalance(inst)) return
     allItems.push({
       description: (inst.expenses?.description || 'Cuota') + ` (${inst.installment_number}/${inst.expenses?.installments_count || '?'})`,
       amount: inst.amount
@@ -1055,6 +1124,7 @@ const paymentTypeChartData = computed(() => {
   expensesStore.expenses.forEach(e => {
     if (e.installments_count && e.installments_count > 1) return
     if (!directExpenseBelongsToPeriod(e, typeRange.startDate, typeRange.endDate)) return
+    if (!directExpenseCountsTowardBalance(e)) return
     const type = e.available_cards?.type || 'Otro'
     typeMap[type] = (typeMap[type] || 0) + e.amount
   })
@@ -1064,7 +1134,7 @@ const paymentTypeChartData = computed(() => {
     const match = isAnnual.value
       ? due.getFullYear() === cy
       : due.getMonth() + 1 === cm && due.getFullYear() === cy
-    if (!match || inst.payment_status_id === 3) return
+    if (!match || !installmentCountsTowardBalance(inst)) return
     const type = inst.expenses?.available_cards?.type || 'Otro'
     typeMap[type] = (typeMap[type] || 0) + inst.amount
   })
@@ -1220,6 +1290,7 @@ let _mounted = true
 onMounted(async () => {
   isLoading.value = true
   expensesStore.clearFilters()
+  savingsStore.load()
 
   const safetyTimer = setTimeout(() => {
     if (_mounted) isLoading.value = false
@@ -1235,7 +1306,8 @@ onMounted(async () => {
       incomesStore.loadIncomes({ month: currentMonth, year: currentYear }),
       incomesStore.loadIncomesForChart([currentYear, currentYear - 1]),
       cardsStore.loadCards(),
-      categoriesStore.loadCategories()
+      categoriesStore.loadCategories(),
+      loadPreviousMonthCarry()
     ])
   } catch (err) {
     console.error('Error cargando dashboard:', err)
@@ -1273,7 +1345,8 @@ watch(isAnnual, async (annual) => {
       expensesStore.loadExpensesSummaryByType(annual),
       expensesStore.loadMonthlyTotals(currentMonth, currentYear),
       incomesStore.loadIncomes(incomeFilters),
-      incomesStore.loadIncomesForChart([currentYear, currentYear - 1])
+      incomesStore.loadIncomesForChart([currentYear, currentYear - 1]),
+      loadPreviousMonthCarry()
     ])
   } catch (err) {
     console.error('Error toggling annual view:', err)

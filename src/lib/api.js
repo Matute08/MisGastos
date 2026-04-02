@@ -2,6 +2,7 @@ import { config } from '../config/environment.js'
 import { getUserFriendlyError } from '../utils/errorMessages.js'
 
 const API_BASE_URL = config.API_BASE_URL;
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 class ApiClient {
   constructor() {
@@ -21,6 +22,49 @@ class ApiClient {
 
   syncTokenFromStorage() {
     this.token = localStorage.getItem('token');
+  }
+
+  getRetryConfig(endpoint) {
+    if (
+      endpoint.startsWith('/auth/login') ||
+      endpoint.startsWith('/auth/register')
+    ) {
+      return { attempts: 3, baseDelayMs: 1200, warmup: true };
+    }
+    return { attempts: 1, baseDelayMs: 0, warmup: false };
+  }
+
+  shouldRetryByStatus(status) {
+    return [502, 503, 504, 520, 522, 524].includes(status);
+  }
+
+  isNetworkLikeError(error) {
+    if (!error) return false;
+    const msg = `${error.message || ''}`.toLowerCase();
+    return (
+      error.name === 'TypeError' ||
+      msg.includes('failed to fetch') ||
+      msg.includes('network') ||
+      msg.includes('load failed') ||
+      msg.includes('fetch')
+    );
+  }
+
+  async waitBeforeRetry(attempt, baseDelayMs) {
+    const jitter = Math.floor(Math.random() * 300);
+    const delay = (baseDelayMs * Math.pow(2, attempt)) + jitter;
+    await sleep(delay);
+  }
+
+  async warmupServer() {
+    try {
+      await fetch(`${this.baseURL}/health`, {
+        method: 'GET',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+    } catch {
+      // Si falla el warmup, dejamos que el flujo principal con reintentos se encargue.
+    }
   }
 
   getHeaders() {
@@ -48,59 +92,106 @@ class ApiClient {
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
     this.syncTokenFromStorage();
+    const retryConfig = this.getRetryConfig(endpoint);
     const fetchConfig = {
       headers: this.getHeaders(),
       ...options,
     };
 
-    try {
-      const response = await fetch(url, fetchConfig);
-      const data = await this.parseJsonBody(response);
-
-      if (
-        response.status === 401 &&
-        this.token &&
-        !this.isCredentialExchangeEndpoint(endpoint)
-      ) {
-        const refreshed = await this.refreshToken();
-        if (refreshed) {
-          this.syncTokenFromStorage();
-          fetchConfig.headers = this.getHeaders();
-          const retryResponse = await fetch(url, fetchConfig);
-          const retryData = await this.parseJsonBody(retryResponse);
-          
-          if (!retryResponse.ok) {
-            const apiError = new Error(getUserFriendlyError({ 
-              message: retryData.error, 
-              statusCode: retryResponse.status 
-            }));
-            apiError.statusCode = retryResponse.status;
-            throw apiError;
-          }
-          return retryData;
-        } else {
-          this.clearToken();
-          window.location.href = '/login';
-          throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-        }
-      }
-
-      if (!response.ok) {
-        const apiError = new Error(data.error || `Error ${response.status}: ${response.statusText}`);
-        apiError.statusCode = response.status;
-        apiError.code = response.status;
-        throw apiError;
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error en petición API:', error);
-      // Convertir error técnico a mensaje amigable
-      const friendlyError = new Error(getUserFriendlyError(error));
-      friendlyError.originalError = error;
-      friendlyError.statusCode = error.statusCode || error.status;
-      throw friendlyError;
+    if (retryConfig.warmup) {
+      await this.warmupServer();
     }
+
+    let lastError = null;
+
+    for (let attempt = 0; attempt < retryConfig.attempts; attempt++) {
+      try {
+        const response = await fetch(url, fetchConfig);
+        const data = await this.parseJsonBody(response);
+
+        if (
+          response.status === 401 &&
+          this.token &&
+          !this.isCredentialExchangeEndpoint(endpoint)
+        ) {
+          const refreshed = await this.refreshToken();
+          if (refreshed) {
+            this.syncTokenFromStorage();
+            fetchConfig.headers = this.getHeaders();
+            const retryResponse = await fetch(url, fetchConfig);
+            const retryData = await this.parseJsonBody(retryResponse);
+
+            if (!retryResponse.ok) {
+              const apiError = new Error(getUserFriendlyError({
+                message: retryData.error,
+                statusCode: retryResponse.status
+              }));
+              apiError.statusCode = retryResponse.status;
+              throw apiError;
+            }
+            return retryData;
+          } else {
+            this.clearToken();
+            window.location.href = '/login';
+            throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+          }
+        }
+
+        if (!response.ok) {
+          const apiError = new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+          apiError.statusCode = response.status;
+          apiError.code = response.status;
+
+          const canRetryStatus =
+            attempt < retryConfig.attempts - 1 &&
+            this.shouldRetryByStatus(response.status) &&
+            this.isCredentialExchangeEndpoint(endpoint);
+
+          if (canRetryStatus) {
+            await this.waitBeforeRetry(attempt, retryConfig.baseDelayMs);
+            continue;
+          }
+
+          throw apiError;
+        }
+
+        return data;
+      } catch (error) {
+        lastError = error;
+
+        const canRetryNetwork =
+          attempt < retryConfig.attempts - 1 &&
+          this.isCredentialExchangeEndpoint(endpoint) &&
+          this.isNetworkLikeError(error);
+
+        if (canRetryNetwork) {
+          await this.waitBeforeRetry(attempt, retryConfig.baseDelayMs);
+          continue;
+        }
+
+        break;
+      }
+    }
+
+    if (
+      this.isCredentialExchangeEndpoint(endpoint) &&
+      (this.isNetworkLikeError(lastError) ||
+        this.shouldRetryByStatus(lastError?.statusCode || lastError?.status))
+    ) {
+      const wakeupError = new Error('El servidor se estaba activando. Espera unos segundos e intenta nuevamente.');
+      wakeupError.code = 'SERVER_WAKING_UP';
+      wakeupError.statusCode = lastError?.statusCode || lastError?.status;
+      wakeupError.isUserFriendly = true;
+      throw wakeupError;
+    }
+
+    if (lastError?.isUserFriendly) throw lastError;
+
+    console.error('Error en petición API:', lastError);
+    const friendlyError = new Error(getUserFriendlyError(lastError));
+    friendlyError.originalError = lastError;
+    friendlyError.statusCode = lastError?.statusCode || lastError?.status;
+    throw friendlyError;
   }
 
   async refreshToken() {
