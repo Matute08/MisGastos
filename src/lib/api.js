@@ -748,4 +748,19 @@ export const incomes = {
   }
 };
 
+export const savings = {
+  async list() {
+    return await apiClient.get('/savings');
+  },
+  async create(data) {
+    return await apiClient.post('/savings', data);
+  },
+  async update(id, data) {
+    return await apiClient.put(`/savings/${id}`, data);
+  },
+  async remove(id) {
+    return await apiClient.delete(`/savings/${id}`);
+  }
+};
+
 export { apiClient }; 

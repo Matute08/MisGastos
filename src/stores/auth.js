@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { auth } from '@/lib/api'
+import { useSavingsStore } from '@/stores/savings'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -222,6 +223,11 @@ export const useAuthStore = defineStore('auth', () => {
       userProfile.value = null
       persistUser(null)
       localStorage.removeItem('rememberedCredentials')
+      try {
+        useSavingsStore().reset()
+      } catch {
+        /* pinia no disponible */
+      }
       
       return { success: true }
     } catch (err) {

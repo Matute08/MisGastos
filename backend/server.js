@@ -18,6 +18,7 @@ import subcategoriesRoutes from './routes/subcategories.js';
 import availableCardsRoutes from './routes/availableCards.js';
 import userCardsRoutes from './routes/userCards.js';
 import incomesRoutes from './routes/incomes.js';
+import savingsRoutes from './routes/savings.js';
 
 dotenv.config();
 
@@ -150,6 +151,7 @@ app.get('/', (_req, res) => {
       availableCards: '/api/available-cards',
       userCards: '/api/user-cards',
       incomes: '/api/incomes',
+      savings: '/api/savings',
     }
   });
 });
@@ -163,6 +165,7 @@ app.use('/api/subcategories', subcategoriesRoutes);
 app.use('/api/available-cards', availableCardsRoutes);
 app.use('/api/user-cards', userCardsRoutes);
 app.use('/api/incomes', incomesRoutes);
+app.use('/api/savings', savingsRoutes);
 
 // 🧯 Error handler
 app.use((err, req, res, next) => {
