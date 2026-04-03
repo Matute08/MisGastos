@@ -866,7 +866,11 @@ const savingsNetForBalance = computed(() =>
 )
 
 const balanceView = computed(() => {
-  const net = totalIncomeView.value - totalExpensesView.value
+  const monthlyExpensesForBalance =
+    !isAnnual.value && expensesStore.monthlyTotals?.total_balance_expenses != null
+      ? expensesStore.monthlyTotals.total_balance_expenses
+      : totalExpensesView.value
+  const net = totalIncomeView.value - monthlyExpensesForBalance
   const base = isAnnual.value ? net : previousMonthCarry.value + net
   return base - savingsNetForBalance.value
 })

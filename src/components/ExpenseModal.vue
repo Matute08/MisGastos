@@ -313,6 +313,13 @@ const expensesStore = useExpensesStore()
 
 const paymentStatuses = computed(() => expensesStore.paymentStatuses || [])
 
+const toLocalDateInputValue = (date = new Date()) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const sanitizeAmount = (rawValue) => {
   const value = String(rawValue ?? '')
     .replace(/,/g, '.')
@@ -403,7 +410,7 @@ const resetForm = () => {
     card_id: '',
     category_id: '',
     subcategory_id: '',
-    purchase_date: new Date().toISOString().split('T')[0],
+    purchase_date: toLocalDateInputValue(),
     payment_type: 'single',
     installments_count: 1,
     payment_status_id: 1
@@ -486,7 +493,7 @@ const firstInstallmentDatePreview = computed(() => {
     const purchaseDate = new Date(form.value.purchase_date)
     const defaultDate = new Date(purchaseDate)
     defaultDate.setMonth(defaultDate.getMonth() + 1)
-    return defaultDate.toISOString().split('T')[0]
+    return toLocalDateInputValue(defaultDate)
   }
   return ''
 })
@@ -498,7 +505,7 @@ watch(
       const purchaseDate = new Date(nuevaFecha)
       const defaultDate = new Date(purchaseDate)
       defaultDate.setMonth(defaultDate.getMonth() + 1)
-      firstInstallmentDateManual.value = defaultDate.toISOString().split('T')[0]
+      firstInstallmentDateManual.value = toLocalDateInputValue(defaultDate)
     }
   },
   { immediate: true }
@@ -515,8 +522,7 @@ const handleSubmit = async () => {
 
   const formatDateForAPI = (dateString) => {
     if (!dateString) return null
-    const date = new Date(dateString)
-    return date.toISOString().split('T')[0]
+    return toLocalDateInputValue(new Date(dateString))
   }
   
   let firstInstallmentDate = null

@@ -520,43 +520,32 @@ export class ExpensesService {
         directExpenseBelongsToPeriod(expense, startDate, endDate)
       );
 
-      if (directError) throw directError;
+      // Cuotas por vencimiento del mes (lógica original para gastos y resúmenes).
+      let installmentsQuery = supabase
+        .from('installments')
+        .select(`
+          amount,
+          due_date,
+          updated_at,
+          expenses!inner(user_id, card_id, category_id),
+          payment_status(code)
+        `)
+        .eq('expenses.user_id', userId)
+        .gte('due_date', startDate)
+        .lt('due_date', endDate);
 
-      // Cuotas pagadas: imputar al mes en que se marcó pagada (updated_at), no solo al vencimiento.
-      // Así un adelanto de cuota con due_date en el mes siguiente descuenta el balance del mes actual.
-      const psRaw = filters.payment_status_id;
-      const psId =
-        psRaw != null && psRaw !== 'null' && psRaw !== ''
-          ? parseInt(String(psRaw), 10)
-          : null;
-      const includePaidInstallmentsByPaymentMonth = psId === null || psId === 2;
-
-      let installments = [];
-      if (includePaidInstallmentsByPaymentMonth) {
-        let installmentsQuery = supabase
-          .from('installments')
-          .select(`
-            amount,
-            updated_at,
-            expenses!inner(user_id, card_id, category_id),
-            payment_status(code)
-          `)
-          .eq('expenses.user_id', userId)
-          .eq('payment_status_id', 2)
-          .gte('updated_at', `${startDate}T00:00:00.000Z`)
-          .lt('updated_at', `${endDate}T00:00:00.000Z`);
-
-        if (filters.card_id && filters.card_id !== 'null' && filters.card_id !== null) {
-          installmentsQuery = installmentsQuery.eq('expenses.card_id', filters.card_id);
-        }
-        if (filters.category_id && filters.category_id !== 'null' && filters.category_id !== null) {
-          installmentsQuery = installmentsQuery.eq('expenses.category_id', filters.category_id);
-        }
-
-        const { data: instData, error: installmentsError } = await installmentsQuery;
-        if (installmentsError) throw installmentsError;
-        installments = instData || [];
+      if (filters.card_id && filters.card_id !== 'null' && filters.card_id !== null) {
+        installmentsQuery = installmentsQuery.eq('expenses.card_id', filters.card_id);
       }
+      if (filters.category_id && filters.category_id !== 'null' && filters.category_id !== null) {
+        installmentsQuery = installmentsQuery.eq('expenses.category_id', filters.category_id);
+      }
+      if (filters.payment_status_id && filters.payment_status_id !== 'null' && filters.payment_status_id !== null) {
+        installmentsQuery = installmentsQuery.eq('payment_status_id', filters.payment_status_id);
+      }
+
+      const { data: installments, error: installmentsError } = await installmentsQuery;
+      if (installmentsError) throw installmentsError;
 
       // Débito/transferencia/etc.: impactan el balance en el mes (efectivo).
       // Crédito: solo cuando está pagado (pago de resumen); pendiente/deuda no resta del balance.
@@ -577,14 +566,57 @@ export class ExpensesService {
       const totalCreditDirect = creditExpenses
         ?.reduce((sum, expense) => sum + expense.amount, 0) || 0;
 
-      const totalCreditInstallments = installments.reduce(
+      const totalCreditInstallments = installments?.reduce(
         (sum, installment) => sum + parseFloat(installment.amount),
         0
-      );
+      ) || 0;
 
       const totalCredit = totalCreditDirect + totalCreditInstallments;
 
       const totalExpenses = totalDebitTransfer + totalCredit;
+      // Ajuste solo para balance: cuota pagada este mes pero con vencimiento fuera del mes.
+      let advancePaidInstallmentsAdjustment = 0;
+      const paymentFilterId =
+        filters.payment_status_id != null && filters.payment_status_id !== 'null'
+          ? parseInt(String(filters.payment_status_id), 10)
+          : null;
+      const shouldCalculateAdvanceAdjustment =
+        paymentFilterId == null || (!Number.isNaN(paymentFilterId) && paymentFilterId === 2);
+
+      if (shouldCalculateAdvanceAdjustment) {
+        let advancePaidQuery = supabase
+          .from('installments')
+          .select(`
+            amount,
+            due_date,
+            updated_at,
+            expenses!inner(user_id, card_id, category_id),
+            payment_status(code)
+          `)
+          .eq('expenses.user_id', userId)
+          .eq('payment_status_id', 2)
+          .gte('updated_at', `${startDate}T00:00:00.000Z`)
+          .lt('updated_at', `${endDate}T00:00:00.000Z`);
+
+        if (filters.card_id && filters.card_id !== 'null' && filters.card_id !== null) {
+          advancePaidQuery = advancePaidQuery.eq('expenses.card_id', filters.card_id);
+        }
+        if (filters.category_id && filters.category_id !== 'null' && filters.category_id !== null) {
+          advancePaidQuery = advancePaidQuery.eq('expenses.category_id', filters.category_id);
+        }
+
+        const { data: advancePaidInstallments, error: advancePaidError } = await advancePaidQuery;
+        if (advancePaidError) throw advancePaidError;
+
+        advancePaidInstallmentsAdjustment = (advancePaidInstallments || [])
+          .filter((inst) => {
+            if (inst.payment_status?.code !== 'pagada') return false;
+            const dueDay = (inst.due_date || '').slice(0, 10);
+            return !(dueDay >= startDate && dueDay < endDate);
+          })
+          .reduce((sum, inst) => sum + parseFloat(inst.amount || 0), 0);
+      }
+      const totalBalanceExpenses = totalExpenses + advancePaidInstallmentsAdjustment;
 
     
 
@@ -594,6 +626,8 @@ export class ExpensesService {
           total_debit_transfer: totalDebitTransfer,
           total_credit: totalCredit,
           total_expenses: totalExpenses,
+          total_balance_expenses: totalBalanceExpenses,
+          advance_paid_installments_adjustment: advancePaidInstallmentsAdjustment,
           expenses_count: directExpenses?.length || 0,
           installments_count: installments?.length || 0
         }]
@@ -1292,7 +1326,10 @@ export class ExpensesService {
       // Actualizar el estado de pago de la cuota
       const { data, error } = await supabase
         .from('installments')
-        .update({ payment_status_id: paymentStatusId })
+        .update({
+          payment_status_id: paymentStatusId,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', installmentId)
         .select(`
           *,

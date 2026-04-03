@@ -190,10 +190,17 @@ const creditUserCards = computed(() =>
   (userCardsStore.cards || []).filter((c) => c.available_card?.type === 'Crédito')
 )
 
+const toLocalDateInputValue = (date = new Date()) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const form = ref({
   description: '',
   amount: '',
-  date: new Date().toISOString().split('T')[0],
+  date: toLocalDateInputValue(),
   affectsCashBalance: true,
   cardId: ''
 })
@@ -222,7 +229,7 @@ const initForm = () => {
     form.value = {
       description: props.income.description || '',
       amount: String(props.income.amount ?? ''),
-      date: props.income.income_date || props.income.date || new Date().toISOString().split('T')[0],
+      date: props.income.income_date || props.income.date || toLocalDateInputValue(),
       affectsCashBalance: props.income.affects_cash_balance !== false,
       cardId: props.income.card_id || ''
     }
@@ -230,7 +237,7 @@ const initForm = () => {
     form.value = {
       description: '',
       amount: '',
-      date: new Date().toISOString().split('T')[0],
+      date: toLocalDateInputValue(),
       affectsCashBalance: true,
       cardId: ''
     }
