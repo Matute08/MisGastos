@@ -410,6 +410,7 @@
                                     type="checkbox"
                                     :checked="selectAllExpenses"
                                     @change="toggleSelectAllExpenses"
+                                    :disabled="isBulkActionLoading"
                                 />
                                 <span class="text-sm font-medium text-slate-700">
                                     Seleccionar todos ({{ selectedExpensesCount }} seleccionados)
@@ -420,27 +421,42 @@
                         <div class="flex flex-wrap gap-2">
                             <button
                                 @click="bulkChangeStatus(2)"
-                                :disabled="selectedExpensesCount === 0"
+                                :disabled="selectedExpensesCount === 0 || isBulkActionLoading"
                                 class="btn-success !py-1.5 !px-3 !text-xs"
                             >
-                                Pagado
+                                <span v-if="isBulkActionLoading" class="inline-flex items-center gap-1">
+                                    <Loader2 class="h-3.5 w-3.5 animate-spin" />
+                                    Procesando...
+                                </span>
+                                <span v-else>Pagado</span>
                             </button>
                             <button
                                 @click="bulkChangeStatus(1)"
-                                :disabled="selectedExpensesCount === 0"
+                                :disabled="selectedExpensesCount === 0 || isBulkActionLoading"
                                 class="px-3 py-1.5 text-xs font-semibold bg-warning-500 text-white rounded-xl hover:bg-warning-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                             >
-                                 Pendiente
+                                <span v-if="isBulkActionLoading" class="inline-flex items-center gap-1">
+                                    <Loader2 class="h-3.5 w-3.5 animate-spin" />
+                                    Procesando...
+                                </span>
+                                <span v-else>Pendiente</span>
                             </button>
                             <button
                                 @click="bulkDeleteExpenses"
-                                :disabled="selectedExpensesCount === 0"
+                                :disabled="selectedExpensesCount === 0 || isBulkActionLoading"
                                 class="btn-danger !py-1.5 !px-3 !text-xs"
                             >
-                                Eliminar Seleccionados
+                                <span v-if="isBulkActionLoading" class="inline-flex items-center gap-1">
+                                    <Loader2 class="h-3.5 w-3.5 animate-spin" />
+                                    Procesando...
+                                </span>
+                                <span v-else>Eliminar Seleccionados</span>
                             </button>
                         </div>
                     </div>
+                    <p v-if="isBulkActionLoading" class="text-xs text-slate-600">
+                        Procesando cambios en los gastos seleccionados. Esto puede tardar unos segundos.
+                    </p>
                 </div>
             </div>
 
@@ -489,8 +505,8 @@
                         <tbody class="divide-y divide-slate-50">
                             <template v-if="paginatedExpensesDesktop.length > 0">
                                 <tr
-                                    v-for="(item, index) in paginatedExpensesDesktop"
-                                    :key="`${tableKey}-${Date.now()}-${item.is_installment ? 'installment-' + item.installment_id : 'expense-' + item.id}-${index}`"
+                                    v-for="item in paginatedExpensesDesktop"
+                                    :key="getExpenseRowKey(item)"
                                     class="hover:bg-slate-50/60 transition-colors duration-150"
                                 >
                                     <td v-if="isBulkMode" class="px-5 py-4 whitespace-nowrap">
@@ -586,6 +602,13 @@
                                     <td class="px-5 py-4 whitespace-nowrap text-sm">
                                         <div class="flex items-center gap-1">
                                             <button
+                                                @click="openPaymentStatusModal(item)"
+                                                class="p-1.5 rounded-lg text-success-600 hover:bg-success-50 transition-colors duration-200"
+                                                title="Cambiar estado"
+                                            >
+                                                <CheckCircle2 class="h-4 w-4" />
+                                            </button>
+                                            <button
                                                 @click="editExpense(item)"
                                                 class="p-1.5 rounded-lg text-primary-600 hover:bg-primary-50 transition-colors duration-200"
                                             >
@@ -596,14 +619,6 @@
                                                 class="p-1.5 rounded-lg text-danger-600 hover:bg-danger-50 transition-colors duration-200"
                                             >
                                                 <Trash2 class="h-4 w-4" />
-                                            </button>
-                                            <button
-                                                v-if="item.is_installment"
-                                                @click="showInstallments(item.expense_id, item.installment_number)"
-                                                class="p-1.5 rounded-lg text-primary-600 hover:bg-primary-50 transition-colors duration-200"
-                                                title="Ver cuota"
-                                            >
-                                                <CreditCard class="h-4 w-4" />
                                             </button>
                                         </div>
                                     </td>
@@ -661,18 +676,23 @@
                                         {{ formatDate(expense.purchase_date) }}
                                     </td>
                                     <td class="px-5 py-4 whitespace-nowrap">
-                                        <button
-                                            @click="togglePaidStatus(expense)"
+                                        <span
                                             :class="[
-                                                'cursor-pointer transition-colors duration-200',
                                                 getStatusBadgeClass(expense)
                                             ]"
                                         >
                                             {{ paymentStatusMap[expense.payment_status_id]?.label || "Sin estado" }}
-                                        </button>
+                                        </span>
                                     </td>
                                     <td class="px-5 py-4 whitespace-nowrap text-sm">
                                         <div class="flex items-center gap-1">
+                                            <button
+                                                @click="openPaymentStatusModal(expense)"
+                                                class="p-1.5 rounded-lg text-success-600 hover:bg-success-50 transition-colors duration-200"
+                                                title="Cambiar estado"
+                                            >
+                                                <CheckCircle2 class="h-4 w-4" />
+                                            </button>
                                             <button
                                                 @click="editExpense(expense)"
                                                 class="p-1.5 rounded-lg text-primary-600 hover:bg-primary-50 transition-colors duration-200"
@@ -733,8 +753,8 @@
             <div class="block md:hidden space-y-3">
                 <template v-if="paginatedExpenses.length > 0">
                     <div
-                        v-for="(item, index) in paginatedExpenses"
-                        :key="`${tableKey}-${Date.now()}-${item.is_installment ? 'installment-' + item.installment_id : 'expense-' + item.id}-${index}`"
+                        v-for="item in paginatedExpenses"
+                        :key="getExpenseRowKey(item)"
                         class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden"
                     >
                         <!-- Category color accent -->
@@ -831,12 +851,11 @@
                                                 Eliminar
                                             </button>
                                             <button
-                                                v-if="item.is_installment"
-                                                @click="showInstallments(item.expense_id, item.installment_number)"
-                                                class="w-full px-4 py-2.5 text-left text-sm text-primary-600 hover:bg-primary-50 flex items-center gap-2 font-medium"
+                                                @click="openPaymentStatusModal(item)"
+                                                class="w-full px-4 py-2.5 text-left text-sm text-success-700 hover:bg-success-50 flex items-center gap-2 font-medium"
                                             >
-                                                <CreditCard class="h-4 w-4" />
-                                                Ver cuota
+                                                <CheckCircle2 class="h-4 w-4" />
+                                                Cambiar estado
                                             </button>
                                         </div>
                                     </div>
@@ -876,7 +895,7 @@
                                 <div class="flex items-center justify-between">
                                     <span class="text-xs text-slate-500">Estado</span>
                                     <button
-                                        @click="item.is_installment ? showInstallments(item.expense_id, item.installment_number) : togglePaidStatus(item)"
+                                        @click="openPaymentStatusModal(item)"
                                         :class="[
                                             'transition-colors duration-200',
                                             getStatusBadgeClass(item)
@@ -985,6 +1004,13 @@
                                                 <Trash2 class="h-4 w-4" />
                                                 Eliminar
                                             </button>
+                                            <button
+                                                @click="openPaymentStatusModal(expense)"
+                                                class="w-full px-4 py-2.5 text-left text-sm text-success-700 hover:bg-success-50 flex items-center gap-2 font-medium"
+                                            >
+                                                <CheckCircle2 class="h-4 w-4" />
+                                                Cambiar estado
+                                            </button>
                                         </div>
                                     </div>
                                     
@@ -1006,7 +1032,7 @@
                                 <div class="flex items-center justify-between">
                                     <span class="text-xs text-slate-500">Estado</span>
                                     <button
-                                        @click="togglePaidStatus(expense)"
+                                        @click="openPaymentStatusModal(expense)"
                                         :class="[
                                             'cursor-pointer transition-colors duration-200',
                                             getStatusBadgeClass(expense)
@@ -1083,13 +1109,6 @@
         @save="saveExpense"
     />
 
-    <!-- Modal para ver cuotas -->
-    <InstallmentsList
-        v-if="showInstallmentsModal && selectedExpenseId"
-        :expense-id="selectedExpenseId"
-        @close="closeInstallmentsModal"
-    />
-
     <!-- Modal para gastos programados -->
     <ScheduledExpenseModal
         v-if="showScheduledModal"
@@ -1101,7 +1120,7 @@
     <div 
         :class="[
             'fixed bottom-24 lg:bottom-6 right-6 z-50 flex flex-col gap-3',
-            (showModal || showInstallmentsModal || showScheduledModal) ? 'hidden' : ''
+            (showModal || showScheduledModal) ? 'hidden' : ''
         ]"
     >
         <div v-if="showExpenseOptions" class="flex flex-col gap-2">
@@ -1142,7 +1161,6 @@ import { useExpensesStore } from "@/stores/expenses";
 import { useUserCardsStore } from "@/stores/userCards";
 import { useUserCategoriesStore } from "@/stores/userCategories";
 import ExpenseModal from "@/components/ExpenseModal.vue";
-import InstallmentsList from "@/components/InstallmentsList.vue";
 import ScheduledExpenseModal from "@/components/ScheduledExpenseModal.vue";
 import SkeletonSummary from "@/components/SkeletonSummary.vue";
 import SkeletonList from "@/components/SkeletonList.vue";
@@ -1160,6 +1178,7 @@ import {
     ChevronRight,
     MoreVertical,
     CheckCircle2,
+    Loader2,
     Calendar,
     X,
     UtensilsCrossed,
@@ -1238,10 +1257,12 @@ const filters = ref({
 const selectedExpenses = ref(new Set());
 const isBulkMode = ref(false);
 const selectAllExpenses = ref(false);
+const isBulkActionLoading = ref(false);
 
 const selectedExpensesCount = computed(() => selectedExpenses.value.size);
 
 const toggleBulkMode = () => {
+    if (isBulkActionLoading.value) return;
     isBulkMode.value = !isBulkMode.value;
     if (!isBulkMode.value) {
         selectedExpenses.value.clear();
@@ -1258,6 +1279,7 @@ const toggleExpenseSelection = (expenseId) => {
 };
 
 const toggleSelectAllExpenses = () => {
+    if (isBulkActionLoading.value) return;
     if (selectAllExpenses.value) {
         selectedExpenses.value.clear();
         selectAllExpenses.value = false;
@@ -1286,6 +1308,17 @@ const bulkDeleteExpenses = async () => {
 
     if (confirmed) {
         try {
+            isBulkActionLoading.value = true;
+            Swal.fire({
+                title: "Procesando...",
+                text: "Actualizando gastos seleccionados, por favor esperá.",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
             let successCount = 0;
             let errorCount = 0;
             
@@ -1311,6 +1344,7 @@ const bulkDeleteExpenses = async () => {
             selectedExpenses.value.clear();
             isBulkMode.value = false;
             selectAllExpenses.value = false;
+            Swal.close();
             
             await Swal.fire({
                 icon: successCount > 0 ? "success" : "error",
@@ -1320,11 +1354,14 @@ const bulkDeleteExpenses = async () => {
                     : "No se pudo eliminar ningún gasto.",
             });
         } catch (error) {
+            Swal.close();
             await Swal.fire({
                 icon: "error",
                 title: "Error inesperado",
                 text: error.message || "Ocurrió un error al eliminar los gastos.",
             });
+        } finally {
+            isBulkActionLoading.value = false;
         }
     }
 };
@@ -1347,6 +1384,17 @@ const bulkChangeStatus = async (newStatusId) => {
 
     if (confirmed) {
         try {
+            isBulkActionLoading.value = true;
+            Swal.fire({
+                title: "Procesando...",
+                text: "Actualizando gastos seleccionados, por favor esperá.",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
             let successCount = 0;
             let errorCount = 0;
             
@@ -1365,7 +1413,7 @@ const bulkChangeStatus = async (newStatusId) => {
                     
                     let result;
                     if (isInstallment) {
-                        result = await expensesStore.markInstallmentAsPaid(expenseId, newStatusId);
+                        result = await expensesStore.markInstallmentAsPaid(actualId, newStatusId);
                     } else {
                         result = await expensesStore.markAsPaid(actualId, newStatusId);
                     }
@@ -1390,6 +1438,7 @@ const bulkChangeStatus = async (newStatusId) => {
             selectedExpenses.value.clear();
             isBulkMode.value = false;
             selectAllExpenses.value = false;
+            Swal.close();
             
             await Swal.fire({
                 icon: successCount > 0 ? "success" : "error",
@@ -1399,11 +1448,14 @@ const bulkChangeStatus = async (newStatusId) => {
                     : "No se pudo actualizar ningún gasto.",
             });
         } catch (error) {
+            Swal.close();
             await Swal.fire({
                 icon: "error",
                 title: "Error inesperado",
                 text: error.message || "Ocurrió un error al actualizar los estados.",
             });
+        } finally {
+            isBulkActionLoading.value = false;
         }
     }
 };
@@ -1764,18 +1816,131 @@ const deleteExpense = async (expenseId, expenseItem = null) => {
     }
 };
 
-const togglePaidStatus = async (expense) => {
-    const currentStatus = paymentStatusMap[expense.payment_status_id]?.code;
-    const newStatus = currentStatus === "pagada" ? "pendiente" : "pagada";
-    const newStatusId = newStatus === "pagada" ? 2 : 1;
-    const result = await expensesStore.markAsPaid(expense.id, newStatusId);
+const resolvePaymentStatusId = (item) => {
+    const parsed = Number(item?.payment_status_id);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+};
+
+const resolvePaymentStatusCode = (statusId) => {
+    return paymentStatusMap[statusId]?.code || "pendiente";
+};
+
+const applyPaymentStatusUpdate = async (item, newStatusId) => {
+    if (!item) return { success: false, error: "Gasto inválido" };
+
+    const isInstallment = item.is_installment === true;
+    const targetId = isInstallment
+        ? (item.installment_id ?? item.id)
+        : item.id;
+
+    if (!targetId) {
+        return { success: false, error: "No se encontró el identificador del gasto" };
+    }
+
+    const result = isInstallment
+        ? await expensesStore.markInstallmentAsPaid(targetId, newStatusId)
+        : await expensesStore.markAsPaid(targetId, newStatusId);
+
+    if (!result?.success) return result;
+
+    if (filters.value?.month && filters.value?.year) {
+        await loadMonthlyData();
+    } else {
+        await expensesStore.loadExpenses();
+    }
+    await expensesStore.loadUpcomingInstallments(1000);
+
+    return result;
+};
+
+const openPaymentStatusModal = async (item) => {
+    if (!item) return;
+
+    const currentStatusId = resolvePaymentStatusId(item);
+    const currentStatusCode = resolvePaymentStatusCode(currentStatusId);
+    const itemTypeLabel = item.is_installment ? "cuota" : "gasto";
+    const itemTitle = item.description || `Actualizar ${itemTypeLabel}`;
+    const amount = item.is_installment ? (item.installment_amount ?? item.amount) : item.amount;
+
+    const { isConfirmed, value: selectedStatusId } = await Swal.fire({
+        title: "Actualizar estado",
+        html: `
+            <div style="text-align:left; margin-top:4px;">
+                <div style="padding:12px; border-radius:10px; background:#f8fafc; border:1px solid #e2e8f0; margin-bottom:12px;">
+                    <div style="font-size:0.78em; color:#64748b; margin-bottom:4px;">${itemTypeLabel.toUpperCase()}</div>
+                    <div style="font-size:0.95em; color:#0f172a; font-weight:600;">${itemTitle}</div>
+                    <div style="margin-top:6px; font-size:0.85em; color:#334155;">Monto: ${formatCurrency(amount || 0)}</div>
+                </div>
+                <div id="status-options" style="display:grid; gap:8px;">
+                    <label data-status-option="2" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; border:1px solid #d1fae5; background:#ecfdf5; cursor:pointer;">
+                        <input type="radio" name="payment-status-option" value="2" style="accent-color:#16a34a;" />
+                        <div>
+                            <div style="font-weight:600; color:#166534; font-size:0.9em;">Pagada</div>
+                            <div style="font-size:0.76em; color:#15803d;">Registrar que ya fue abonada</div>
+                        </div>
+                    </label>
+                    <label data-status-option="1" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; border:1px solid #fde68a; background:#fffbeb; cursor:pointer;">
+                        <input type="radio" name="payment-status-option" value="1" style="accent-color:#f59e0b;" />
+                        <div>
+                            <div style="font-weight:600; color:#92400e; font-size:0.9em;">Pendiente</div>
+                            <div style="font-size:0.76em; color:#b45309;">Aun no fue abonada</div>
+                        </div>
+                    </label>
+                </div>
+                <p style="margin:10px 2px 0; font-size:0.75em; color:#64748b;">
+                    Estado actual: <strong>${paymentStatusMap[currentStatusId]?.label || "Pendiente"}</strong>
+                </p>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: "Guardar estado",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#2563eb",
+        cancelButtonColor: "#64748b",
+        didOpen: () => {
+            const selector = `input[name="payment-status-option"][value="${currentStatusCode === "pagada" ? "2" : "1"}"]`;
+            const selectedInput = document.querySelector(selector);
+            if (selectedInput) selectedInput.checked = true;
+        },
+        preConfirm: () => {
+            const selected = document.querySelector('input[name="payment-status-option"]:checked');
+            if (!selected) {
+                Swal.showValidationMessage("Seleccioná un estado");
+                return null;
+            }
+            return Number(selected.value);
+        },
+    });
+
+    if (!isConfirmed || !selectedStatusId) return;
+    if (selectedStatusId === currentStatusId) return;
+
+    Swal.fire({
+        title: "Actualizando estado...",
+        text: "Guardando cambios, por favor esperá.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => Swal.showLoading(),
+    });
+
+    const result = await applyPaymentStatusUpdate(item, selectedStatusId);
+    Swal.close();
+
     if (result?.success) {
-        if (filters.value?.month && filters.value?.year) {
-            await loadMonthlyData();
-        } else {
-            await expensesStore.loadExpenses();
-        }
-        await expensesStore.loadUpcomingInstallments(1000);
+        await Swal.fire({
+            icon: "success",
+            title: "Estado actualizado",
+            text: `El ${itemTypeLabel} ahora figura como "${paymentStatusMap[selectedStatusId]?.label || "actualizado"}".`,
+            timer: 1800,
+            showConfirmButton: false,
+        });
+    } else {
+        await Swal.fire({
+            icon: "error",
+            title: "No se pudo actualizar",
+            text: result?.error || "Ocurrió un error al actualizar el estado.",
+        });
     }
 };
 
@@ -1869,10 +2034,57 @@ const saveExpense = async (expenseData) => {
     try {
         let result;
         if (editingExpense.value) {
-            result = await expensesStore.updateExpense(
-                editingExpense.value.id,
-                expenseData
-            );
+            const isScheduledEdit = editingExpense.value.is_scheduled === true;
+
+            if (isScheduledEdit) {
+                const updateScopeResult = await Swal.fire({
+                    title: "Actualizar gasto programado",
+                    text: "¿Querés aplicar el cambio solo a este mes o también a los meses futuros?",
+                    icon: "question",
+                    showCancelButton: true,
+                    showDenyButton: true,
+                    confirmButtonText: "Este y futuros",
+                    denyButtonText: "Solo este mes",
+                    cancelButtonText: "Cancelar",
+                    confirmButtonColor: "#7c3aed",
+                    denyButtonColor: "#3b82f6",
+                    cancelButtonColor: "#6b7280",
+                });
+
+                if (!updateScopeResult.isConfirmed && !updateScopeResult.isDenied) return;
+
+                if (updateScopeResult.isConfirmed) {
+                    const scheduledData = {
+                        description: expenseData.description,
+                        amount: expenseData.amount,
+                        card_id: expenseData.card_id,
+                        category_id: expenseData.category_id,
+                        subcategory_id: expenseData.subcategory_id || null,
+                        scheduled_start_month: editingExpense.value.scheduled_start_month,
+                        scheduled_months: editingExpense.value.scheduled_months ?? null,
+                        payment_status_id:
+                            editingExpense.value.payment_status_id ||
+                            expenseData.payment_status_id ||
+                            1,
+                    };
+
+                    result = await expensesStore.updateScheduledExpense(
+                        editingExpense.value.id,
+                        scheduledData
+                    );
+                } else if (updateScopeResult.isDenied) {
+                    result = await expensesStore.updateExpense(
+                        editingExpense.value.id,
+                        expenseData
+                    );
+                }
+            } else {
+                result = await expensesStore.updateExpense(
+                    editingExpense.value.id,
+                    expenseData
+                );
+            }
+
             if (!result.success) {
                 Swal.fire({
                     icon: "error",
@@ -1946,172 +2158,6 @@ const saveScheduledExpense = async (result) => {
     }
 };
 
-const toggleInstallmentPaid = async (item) => {
-    const currentStatus = item.payment_status_code;
-    const newStatusId = currentStatus === "pendiente" ? 2 : 1;
-    const result = await expensesStore.markInstallmentAsPaid(
-        item.installment_id,
-        newStatusId
-    );
-    if (result?.success && filters.value.month && filters.value.year) {
-        await loadMonthlyData();
-        await expensesStore.loadUpcomingInstallments(1000);
-    }
-};
-
-const showInstallmentsModal = ref(false);
-const selectedExpenseId = ref(null);
-
-const showInstallments = async (expenseId, installmentNumber = null) => {
-  try {
-    await expensesStore.loadInstallments(expenseId);
-    const cuota = expensesStore.installments.find(i => i.installment_number === installmentNumber) || expensesStore.installments[0];
-    
-    if (!cuota) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se encontró la cuota especificada.',
-        confirmButtonText: 'Entendido'
-      });
-      return;
-    }
-
-    const currentStatus = paymentStatusMap[cuota.payment_status_id]?.code || 'pendiente';
-    const isCurrentlyPaid = currentStatus === 'pagada';
-
-                 const { value: isPaid } = await Swal.fire({
-               title: `
-                 <div style="display: flex; align-items: center; gap: 8px;">
-                   <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #3b82f6, #6366f1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                     <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
-                       <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                     </svg>
-                   </div>
-                   <div style="font-size: 0.95em; font-weight: 600; color: #1f2937;">Cuota ${cuota.installment_number} de ${expensesStore.installments.length}</div>
-                 </div>
-               `,
-                     html: `
-                 <div style="text-align: left; font-size: 0.9em;">
-                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
-                     <div style="padding: 8px; background: #f8fafc; border-radius: 6px; border-left: 3px solid #3b82f6;">
-                       <div style="font-size: 0.75em; color: #6b7280; margin-bottom: 1px;">Monto</div>
-                       <div style="font-size: 0.9em; font-weight: 600; color: #3b82f6;">${formatCurrency(cuota.amount ?? cuota.installment_amount ?? 0)}</div>
-                     </div>
-                     
-                     <div style="padding: 8px; background: #f8fafc; border-radius: 6px; border-left: 3px solid #6366f1;">
-                       <div style="font-size: 0.75em; color: #6b7280; margin-bottom: 1px;">Vencimiento</div>
-                       <div style="font-size: 0.9em; font-weight: 600; color: #6366f1;">${formatDate(cuota.due_date)}</div>
-                     </div>
-                   </div>
-                   
-                   <div style="padding: 8px; background: #f8fafc; border-radius: 6px; border-left: 3px solid ${currentStatus === 'pagada' ? '#16a34a' : (currentStatus === 'en_deuda' ? '#dc2626' : '#f59e42')}; margin-bottom: 12px;">
-                     <div style="font-size: 0.75em; color: #6b7280; margin-bottom: 1px;">Estado actual</div>
-                     <div style="font-size: 0.9em; font-weight: 600; color: ${currentStatus === 'pagada' ? '#16a34a' : (currentStatus === 'en_deuda' ? '#dc2626' : '#f59e42')};">
-                       ${paymentStatusMap[cuota.payment_status_id]?.label || 'Sin estado'}
-                     </div>
-                   </div>
-                   
-                   <div style="padding: 10px; background: ${isCurrentlyPaid ? '#fef3c7' : '#ecfdf5'}; border-radius: 6px; border: 1px solid ${isCurrentlyPaid ? '#f59e0b' : '#10b981'};">
-                     <label style="display: flex; align-items: center; cursor: pointer; font-size: 0.85em; color: #374151;">
-                       <input type="checkbox" id="swal-paid-checkbox" ${isCurrentlyPaid ? 'checked' : ''} style="margin-right: 8px; transform: scale(1.1); accent-color: #3b82f6; margin:10px" />
-                       <span style="font-weight: 600; margin-left:10px">Marcar como pagada</span>
-                     </label>
-                     <div style="margin-top: 2px; font-size: 0.75em; color: #6b7280;">
-                       ${isCurrentlyPaid ? 'Desmarcar para cambiar a pendiente' : 'Marcar para confirmar el pago'}
-                     </div>
-                   </div>
-                 </div>
-               `,
-                     width: 320,
-      showCancelButton: true,
-      confirmButtonText: 'Confirmar',
-      cancelButtonText: 'Cancelar',
-      focusConfirm: false,
-      customClass: {
-        popup: 'swal2-modal-custom',
-        confirmButton: 'swal2-confirm-custom',
-        cancelButton: 'swal2-cancel-custom'
-      },
-      preConfirm: () => {
-        const checked = document.getElementById('swal-paid-checkbox').checked;
-        return checked;
-      }
-    });
-
-    if (isPaid !== undefined && (isPaid !== isCurrentlyPaid)) {
-      Swal.fire({
-        title: 'Procesando...',
-        html: '<div style="display:flex;flex-direction:column;align-items:center;"><div class="spinner" style="width:32px;height:32px;border:3px solid #f3f3f3;border-top:3px solid #3b82f6;border-radius:50%;animation:spin 1s linear infinite;"></div><p style="margin-top:12px;font-size:0.9em;">Actualizando estado...</p></div>',
-        showConfirmButton: false,
-        allowOutsideClick: false,
-        width: 300,
-        customClass: {
-          popup: 'swal2-modal-custom'
-        }
-      });
-
-      const newStatusId = isPaid ? 2 : 1;
-      const result = await expensesStore.markInstallmentAsPaid(cuota.id, newStatusId);
-      
-      Swal.close();
-      
-      if (result && result.success) {
-        await loadMonthlyData();
-        await Swal.fire({
-          icon: isPaid ? 'success' : 'info',
-          title: isPaid ? '¡Cuota pagada!' : 'Cuota pendiente',
-          html: `
-            <div style='display:flex;flex-direction:column;align-items:center;'>
-              <div style='width:48px;height:48px;background:${isPaid ? '#16a34a' : '#f59e42'};border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:12px;'>
-                <svg width='24' height='24' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='2'>
-                  <path d='M5 13l4 4L19 7'/>
-                </svg>
-              </div>
-              <p style='font-size:1em;color:#374151;margin-bottom:4px;'>Estado actualizado</p>
-              <p style='font-size:0.9em;color:#6b7280;'>${isPaid ? 'La cuota fue marcada como pagada' : 'La cuota está pendiente de pago'}</p>
-            </div>
-          `,
-          width: 320,
-          timer: 2000,
-          showConfirmButton: false,
-          customClass: {
-            popup: 'swal2-modal-custom'
-          }
-        });
-      } else {
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error al actualizar',
-          html: `
-            <div style='display:flex;flex-direction:column;align-items:center;'>
-              <div style='width:48px;height:48px;background:#dc2626;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:12px;'>
-                <svg width='24' height='24' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='2'>
-                  <path d='M6 18L18 6M6 6l12 12'/>
-                </svg>
-              </div>
-              <p style='font-size:1em;color:#374151;margin-bottom:4px;'>No se pudo actualizar</p>
-              <p style='font-size:0.9em;color:#6b7280;'>${result && result.error ? result.error : 'Error desconocido'}</p>
-            </div>
-          `,
-          width: 320,
-          confirmButtonText: 'Entendido',
-          customClass: {
-            popup: 'swal2-modal-custom',
-            confirmButton: 'swal2-confirm-custom'
-          }
-        });
-      }
-    }
-  } catch (error) {
-    console.error('Error al mostrar cuotas:', error);
-  }
-};
-const closeInstallmentsModal = () => {
-    showInstallmentsModal.value = false;
-    selectedExpenseId.value = null;
-};
-
 const formatCurrency = (amount) => {
     return new Intl.NumberFormat("es-AR", {
         style: "currency",
@@ -2122,6 +2168,12 @@ const formatCurrency = (amount) => {
 
 const formatDate = (date) => {
     return format(parseISO(date), "dd/MM/yyyy", { locale: es });
+};
+
+const getExpenseRowKey = (item) => {
+    if (!item) return "row-unknown";
+    if (item.is_installment) return `installment-${item.installment_id ?? item.id}`;
+    return `expense-${item.id ?? item.expense_id}`;
 };
 
 const showDirectExpenses = ref(false);

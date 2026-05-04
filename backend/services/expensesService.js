@@ -1564,6 +1564,62 @@ export class ExpensesService {
     }
   }
 
+  // Actualizar gasto programado desde una instancia actual (este y futuros)
+  static async updateScheduledExpense(userId, scheduledExpenseId, expenseData) {
+    try {
+      const { data: originalExpense, error: fetchError } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('id', scheduledExpenseId)
+        .eq('user_id', userId)
+        .eq('is_scheduled', true)
+        .single();
+
+      if (fetchError || !originalExpense) {
+        throw new Error('Gasto programado no encontrado');
+      }
+
+      if (!expenseData.scheduled_start_month) {
+        throw new Error('scheduled_start_month es requerido para gastos programados');
+      }
+
+      const updates = {
+        description: expenseData.description,
+        amount: expenseData.amount,
+        card_id: expenseData.card_id,
+        category_id: expenseData.category_id,
+        subcategory_id: expenseData.subcategory_id || null,
+        payment_status_id: expenseData.payment_status_id || 1,
+        scheduled_start_month: expenseData.scheduled_start_month,
+        scheduled_months: expenseData.scheduled_months ?? null,
+        scheduled_end_month: expenseData.scheduled_end_month || originalExpense.scheduled_end_month || null
+      };
+
+      const { data, error } = await supabase
+        .from('expenses')
+        .update(updates)
+        .eq('user_id', userId)
+        .eq('is_scheduled', true)
+        .eq('is_active', true)
+        .eq('scheduled_start_month', originalExpense.scheduled_start_month)
+        .eq('description', originalExpense.description)
+        .eq('amount', originalExpense.amount)
+        .eq('card_id', originalExpense.card_id)
+        .gte('purchase_date', originalExpense.purchase_date)
+        .select();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data || [],
+        message: `Se actualizaron ${(data || []).length} gasto(s) programado(s) desde este mes en adelante`
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Cancelar gasto programado (marcar como inactivo)
   static async cancelScheduledExpense(userId, scheduledExpenseId) {
     try {

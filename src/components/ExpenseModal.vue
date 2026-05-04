@@ -520,9 +520,20 @@ const handleSubmit = async () => {
     return
   }
 
-  const formatDateForAPI = (dateString) => {
-    if (!dateString) return null
-    return toLocalDateInputValue(new Date(dateString))
+  const formatDateForAPI = (dateValue) => {
+    if (!dateValue) return null
+
+    // Evita corrimientos por zona horaria cuando ya viene en formato YYYY-MM-DD.
+    if (typeof dateValue === 'string') {
+      const trimmedValue = dateValue.trim()
+      const plainDateMatch = trimmedValue.match(/^(\d{4}-\d{2}-\d{2})/)
+      if (plainDateMatch) return plainDateMatch[1]
+    }
+
+    const parsedDate = dateValue instanceof Date ? dateValue : new Date(dateValue)
+    if (Number.isNaN(parsedDate.getTime())) return null
+
+    return toLocalDateInputValue(parsedDate)
   }
   
   let firstInstallmentDate = null

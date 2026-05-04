@@ -627,7 +627,10 @@ export const expenses = {
   },
 
   async markInstallmentAsPaid(id, payment_status_id) {
-    const response = await apiClient.put(`/expenses/installment-${id}/mark-as-paid`, {
+    const normalizedId = String(id).startsWith('installment-')
+      ? String(id).replace('installment-', '')
+      : id;
+    const response = await apiClient.put(`/expenses/installment-${normalizedId}/mark-as-paid`, {
       payment_status_id
     });
     return response;
