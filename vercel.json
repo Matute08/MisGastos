@@ -14,7 +14,8 @@
   ],
   "build": {
     "env": {
-      "VITE_API_URL": "https://fascinating-bridie-misgastos-e524faff.koyeb.app/api"
+      "VITE_API_URL": "https://fascinating-bridie-misgastos-e524faff.koyeb.app/api",
+      "VITE_APP_NAME": "GastoZen"
     }
   }
 }

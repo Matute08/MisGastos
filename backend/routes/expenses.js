@@ -194,8 +194,8 @@ router.post('/', authenticateToken, validateExpense, async (req, res) => {
 
 // PUT /api/expenses/:id - Actualizar gasto
 router.put('/:id', authenticateToken, verifyExpenseOwnership, async (req, res) => {
+  const { id } = req.params;
   try {
-    const { id } = req.params;
     const updates = req.body;
 
     // IMPORTANTE: Aunque el gasto sea parte de un gasto programado (is_scheduled = true),
@@ -241,8 +241,8 @@ router.delete('/:id/scheduled', authenticateToken, async (req, res) => {
 
 // DELETE /api/expenses/:id - Eliminar gasto
 router.delete('/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
   try {
-    const { id } = req.params;
     const { deleteOption } = req.body; // Puede ser 'future' para gastos programados
 
     logger.debug('Eliminando gasto', { expenseId: id, deleteOption, body: req.body });

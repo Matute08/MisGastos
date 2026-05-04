@@ -555,7 +555,8 @@ export const expenses = {
   },
 
   async deleteExpense(id, deleteOption = null) {
-    const response = await apiClient.delete(`/expenses/${id}`, { deleteOption });
+    const payload = deleteOption ? { deleteOption } : undefined;
+    const response = await apiClient.delete(`/expenses/${id}`, payload);
     return response;
   },
 

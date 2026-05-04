@@ -497,14 +497,10 @@
                                         <input
                                             type="checkbox"
                                             :checked="selectedExpenses.has(
-                                                item.is_installment
-                                                    ? `installment-${item.installment_id}`
-                                                    : `expense-${item.id}`
+                                                `expense-${item.id}`
                                             )"
                                             @change="toggleExpenseSelection(
-                                                item.is_installment
-                                                    ? `installment-${item.installment_id}`
-                                                    : `expense-${item.id}`
+                                                `expense-${item.id}`
                                             )"
                                         />
                                     </td>
@@ -590,14 +586,12 @@
                                     <td class="px-5 py-4 whitespace-nowrap text-sm">
                                         <div class="flex items-center gap-1">
                                             <button
-                                                v-if="!item.is_installment"
                                                 @click="editExpense(item)"
                                                 class="p-1.5 rounded-lg text-primary-600 hover:bg-primary-50 transition-colors duration-200"
                                             >
                                                 <Edit class="h-4 w-4" />
                                             </button>
                                             <button
-                                                v-if="!item.is_installment"
                                                 @click="deleteExpense(item.id, item)"
                                                 class="p-1.5 rounded-lg text-danger-600 hover:bg-danger-50 transition-colors duration-200"
                                             >
@@ -757,16 +751,8 @@
                                     <div v-if="isBulkMode" class="flex-shrink-0">
                                         <input
                                             type="checkbox"
-                                            :checked="selectedExpenses.has(
-                                                item.is_installment
-                                                    ? item.installment_id
-                                                    : item.id
-                                            )"
-                                            @change="toggleExpenseSelection(
-                                                item.is_installment
-                                                    ? item.installment_id
-                                                    : item.id
-                                            )"
+                                            :checked="selectedExpenses.has(`expense-${item.id}`)"
+                                            @change="toggleExpenseSelection(`expense-${item.id}`)"
                                         />
                                     </div>
                                     
@@ -831,7 +817,6 @@
                                             class="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-10 min-w-[140px]"
                                         >
                                             <button
-                                                v-if="!item.is_installment"
                                                 @click="editExpense(item)"
                                                 class="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium"
                                             >
@@ -839,7 +824,6 @@
                                                 Editar
                                             </button>
                                             <button
-                                                v-if="!item.is_installment"
                                                 @click="deleteExpense(item.id, item)"
                                                 class="w-full px-4 py-2.5 text-left text-sm text-danger-600 hover:bg-danger-50 flex items-center gap-2 font-medium"
                                             >
@@ -925,8 +909,8 @@
                                     <div v-if="isBulkMode" class="flex-shrink-0">
                                         <input
                                             type="checkbox"
-                                            :checked="selectedExpenses.has(expense.id)"
-                                            @change="toggleExpenseSelection(expense.id)"
+                                            :checked="selectedExpenses.has(`expense-${expense.id}`)"
+                                            @change="toggleExpenseSelection(`expense-${expense.id}`)"
                                         />
                                     </div>
                                     
@@ -1278,8 +1262,8 @@ const toggleSelectAllExpenses = () => {
         selectedExpenses.value.clear();
         selectAllExpenses.value = false;
     } else {
-        const allExpenseIds = filteredExpensesToShow.value.map(item => 
-            item.is_installment ? item.installment_id : item.id
+        const allExpenseIds = filteredExpensesToShow.value
+            .map(item => `expense-${item.id}`
         );
         selectedExpenses.value = new Set(allExpenseIds);
         selectAllExpenses.value = true;
@@ -1305,7 +1289,11 @@ const bulkDeleteExpenses = async () => {
             let successCount = 0;
             let errorCount = 0;
             
-            for (const expenseId of selectedExpenses.value) {
+            for (const selectedId of selectedExpenses.value) {
+                const expenseId = selectedId.startsWith('expense-')
+                    ? selectedId.replace('expense-', '')
+                    : selectedId;
+
                 const result = await expensesStore.deleteExpense(expenseId);
                 if (result.success) {
                     successCount++;

@@ -974,6 +974,16 @@ export class ExpensesService {
   // Actualizar gasto existente
   static async updateExpense(id, updates) {
     try {
+      const { data: existingExpense, error: existingExpenseError } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (existingExpenseError || !existingExpense) {
+        throw new Error('Gasto no encontrado');
+      }
+
       const { data, error } = await supabase
         .from('expenses')
         .update(updates)
@@ -982,6 +992,72 @@ export class ExpensesService {
         .single();
 
       if (error) throw error;
+
+      const mergedExpense = { ...existingExpense, ...data };
+      const amountChanged = updates.amount !== undefined && Number(updates.amount) !== Number(existingExpense.amount);
+      const installmentsChanged =
+        updates.installments_count !== undefined &&
+        Number(updates.installments_count) !== Number(existingExpense.installments_count);
+      const firstInstallmentDateChanged =
+        updates.first_installment_date !== undefined &&
+        String(updates.first_installment_date || '') !== String(existingExpense.first_installment_date || '');
+      const shouldRebuildInstallments = amountChanged || installmentsChanged || firstInstallmentDateChanged;
+
+      if (shouldRebuildInstallments) {
+        const nextInstallmentsCount = Number(mergedExpense.installments_count || 1);
+
+        const { data: previousInstallments } = await supabase
+          .from('installments')
+          .select('installment_number, payment_status_id')
+          .eq('expense_id', id);
+
+        const previousStatusByNumber = {};
+        (previousInstallments || []).forEach((item) => {
+          previousStatusByNumber[item.installment_number] = item.payment_status_id;
+        });
+
+        const { error: deleteInstallmentsError } = await supabase
+          .from('installments')
+          .delete()
+          .eq('expense_id', id);
+
+        if (deleteInstallmentsError) throw deleteInstallmentsError;
+
+        if (nextInstallmentsCount > 1) {
+          const baseDateString = mergedExpense.first_installment_date || mergedExpense.purchase_date;
+          if (!baseDateString) {
+            throw new Error('No se pudo recalcular cuotas: falta fecha de primera cuota');
+          }
+
+          const baseDate = new Date(baseDateString);
+          if (Number.isNaN(baseDate.getTime())) {
+            throw new Error('No se pudo recalcular cuotas: fecha inválida');
+          }
+
+          const preserveStatuses = nextInstallmentsCount === Number(existingExpense.installments_count || 1);
+          const installmentAmount = Number(mergedExpense.amount) / nextInstallmentsCount;
+          const rebuiltInstallments = [];
+
+          for (let i = 1; i <= nextInstallmentsCount; i++) {
+            const dueDate = new Date(baseDate);
+            dueDate.setMonth(dueDate.getMonth() + (i - 1));
+
+            rebuiltInstallments.push({
+              expense_id: id,
+              installment_number: i,
+              amount: installmentAmount,
+              due_date: dueDate.toISOString().split('T')[0],
+              payment_status_id: preserveStatuses ? (previousStatusByNumber[i] || 1) : 1
+            });
+          }
+
+          const { error: createInstallmentsError } = await supabase
+            .from('installments')
+            .insert(rebuiltInstallments);
+
+          if (createInstallmentsError) throw createInstallmentsError;
+        }
+      }
 
       return {
         success: true,
@@ -1074,7 +1150,7 @@ export class ExpensesService {
           .eq('expense_id', id);
 
         if (installmentsError) {
-          logger.error('Error eliminando cuotas:', { error: installmentsError.message, expenseId });
+          logger.error('Error eliminando cuotas:', { error: installmentsError.message, expenseId: id });
         }
 
         // Luego eliminar el gasto
