@@ -2,8 +2,8 @@
   <div class="space-y-4">
     <!-- Header de cuotas -->
     <div class="flex justify-between items-center">
-      <h3 class="text-lg font-semibold text-slate-900">Cuotas</h3>
-      <div class="flex items-center gap-2 text-sm text-slate-600">
+      <h3 class="text-lg font-semibold text-slate-900 dark:text-gray-100">Cuotas</h3>
+      <div class="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400">
         <span>{{ summary.paid_installments || 0 }}/{{ summary.total_installments || 0 }} pagadas</span>
         <span class="text-success-600 font-medium">
           {{ formatCurrency(summary.paid_amount || 0) }}
@@ -12,33 +12,33 @@
     </div>
 
     <!-- Resumen de cuotas -->
-    <div class="bg-slate-50 rounded-lg p-4">
+    <div class="bg-slate-50 dark:bg-gray-700 rounded-lg p-4">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
         <div>
-          <p class="text-slate-600">Total cuotas</p>
+          <p class="text-slate-600 dark:text-gray-400">Total cuotas</p>
           <p class="font-semibold">{{ summary.total_installments || 0 }}</p>
         </div>
         <div>
-          <p class="text-slate-600">Pagadas</p>
+          <p class="text-slate-600 dark:text-gray-400">Pagadas</p>
           <p class="font-semibold text-success-600">{{ summary.paid_installments || 0 }}</p>
         </div>
         <div>
-          <p class="text-slate-600">Pendientes</p>
+          <p class="text-slate-600 dark:text-gray-400">Pendientes</p>
           <p class="font-semibold text-warning-600">{{ summary.pending_installments || 0 }}</p>
         </div>
         <div>
-          <p class="text-slate-600">Pendiente</p>
+          <p class="text-slate-600 dark:text-gray-400">Pendiente</p>
           <p class="font-semibold text-danger-600">{{ formatCurrency(summary.pending_amount || 0) }}</p>
         </div>
       </div>
       
       <!-- Barra de progreso -->
       <div class="mt-3">
-        <div class="flex justify-between text-xs text-slate-500 mb-1">
+        <div class="flex justify-between text-xs text-slate-500 dark:text-gray-400 mb-1">
           <span>Progreso</span>
           <span>{{ Math.round(((summary.paid_installments || 0) / (summary.total_installments || 1)) * 100) }}%</span>
         </div>
-        <div class="w-full bg-slate-200 rounded-full h-2">
+        <div class="w-full bg-slate-200 dark:bg-gray-600 rounded-full h-2">
           <div 
             class="bg-success-600 h-2 rounded-full transition-all duration-300"
             :style="{ width: `${((summary.paid_installments || 0) / (summary.total_installments || 1)) * 100}%` }"
@@ -52,7 +52,7 @@
       <div 
         v-for="installment in installments" 
         :key="installment.id"
-        class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+        class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 dark:bg-gray-700 transition-colors"
         :class="{ 'border-success-200 bg-success-50': installment.payment_status_code === 'pagada' }"
       >
         <div class="flex items-center gap-3">
@@ -70,14 +70,14 @@
           <!-- Información de la cuota -->
           <div>
             <div class="flex items-center gap-2">
-              <span class="font-medium text-slate-900">
+              <span class="font-medium text-slate-900 dark:text-gray-100">
                 Cuota {{ installment.installment_number }}
               </span>
-              <span class="text-sm text-slate-500">
+              <span class="text-sm text-slate-500 dark:text-gray-400">
                 de {{ installment.expense?.installments_count || 0 }}
               </span>
             </div>
-            <div class="text-sm text-slate-600">
+            <div class="text-sm text-slate-600 dark:text-gray-400">
               Vence: {{ formatDate(installment.due_date) }}
             </div>
           </div>
@@ -85,7 +85,7 @@
         
         <!-- Monto y estado -->
         <div class="text-right">
-          <div class="font-semibold text-slate-900">
+          <div class="font-semibold text-slate-900 dark:text-gray-100">
             {{ formatCurrency(installment.amount) }}
           </div>
           <div class="text-xs">
@@ -101,8 +101,8 @@
     </div>
 
     <!-- Estado vacío -->
-    <div v-else class="text-center py-8 text-slate-500">
-      <CreditCard class="w-12 h-12 mx-auto mb-3 text-slate-300" />
+    <div v-else class="text-center py-8 text-slate-500 dark:text-gray-400">
+      <CreditCard class="w-12 h-12 mx-auto mb-3 text-slate-300 dark:text-gray-600" />
       <p>No hay cuotas para mostrar</p>
     </div>
 

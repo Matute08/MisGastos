@@ -1,12 +1,12 @@
 <template>
-  <div v-if="showInstallPrompt" class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50 p-4">
+  <div v-if="showInstallPrompt" class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-slate-200 dark:border-gray-700 shadow-lg z-50 p-4">
     <div class="max-w-md mx-auto">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-3">
           <img src="/miwalletlogo.png" alt="MisGastos" class="w-8 h-8" />
           <div>
-            <h3 class="text-sm font-medium text-slate-900">Instalar MisGastos</h3>
-            <p class="text-xs text-slate-500">Accede rápidamente desde tu pantalla de inicio</p>
+            <h3 class="text-sm font-medium text-slate-900 dark:text-gray-100">Instalar MisGastos</h3>
+            <p class="text-xs text-slate-500 dark:text-gray-400">Accede rápidamente desde tu pantalla de inicio</p>
           </div>
         </div>
         <div class="flex space-x-2">
@@ -18,7 +18,7 @@
           </button>
           <button
             @click="dismissPrompt"
-            class="text-slate-500 hover:text-slate-700 px-2 py-2 rounded-md text-sm transition-colors duration-200"
+            class="text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200 px-2 py-2 rounded-md text-sm transition-colors duration-200"
           >
             <X class="h-4 w-4" />
           </button>
@@ -59,9 +59,7 @@ const installPWA = async () => {
   const { outcome } = await deferredPrompt.value.userChoice
 
   if (outcome === 'accepted') {
-    // Usuario aceptó instalar la PWA
   } else {
-    // Usuario rechazó instalar la PWA
   }
 
   deferredPrompt.value = null

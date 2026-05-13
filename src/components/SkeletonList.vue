@@ -9,7 +9,8 @@ defineProps({
     <div
       v-for="i in count"
       :key="i"
-      class="bg-white rounded-2xl border border-slate-100 p-4 shadow-soft flex items-center gap-4"
+      class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-100 dark:border-gray-700 p-4 shadow-soft dark:shadow-none flex items-center gap-4 animate-fade-in"
+      :style="{ animationDelay: `${i * 0.05}s`, animationFillMode: 'backwards' }"
     >
       <div class="skeleton h-10 w-10 !rounded-full shrink-0" />
       <div class="flex-1 space-y-2">

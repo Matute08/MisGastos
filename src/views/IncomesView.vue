@@ -3,19 +3,27 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
       <div>
-        <h1 class="text-2xl font-bold text-slate-900">Ingresos</h1>
-        <p class="text-slate-500">Gestiona tus ingresos y fuentes de dinero</p>
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-gray-100">Ingresos</h1>
+        <p class="text-slate-500 dark:text-gray-400">Gestiona tus ingresos y fuentes de dinero</p>
       </div>
-      <button @click="openCreateModal" class="btn-primary inline-flex items-center gap-2">
+      <div class="flex items-center gap-2">
+        <ExportButton
+          :data="exportableIncomes"
+          filename="ingresos.csv"
+          :columns="incomeCsvColumns"
+          label="Exportar CSV"
+        />
+        <button @click="openCreateModal" class="btn-primary inline-flex items-center gap-2">
         <Plus class="h-4 w-4" />
         Nuevo Ingreso
       </button>
+    </div>
     </div>
 
     <!-- Resumen del mes -->
     <div class="space-y-4">
       <div class="text-center mb-2">
-        <h2 class="text-xl font-semibold text-slate-800">{{ monthYearTitle }}</h2>
+        <h2 class="text-xl font-semibold text-slate-800 dark:text-gray-200">{{ monthYearTitle }}</h2>
       </div>
 
       <!-- Loading skeleton -->
@@ -36,23 +44,23 @@
           <div class="flex-1">
             <div class="grid grid-cols-3 gap-4 text-center">
               <div>
-                <p class="text-sm text-slate-500">Total al balance</p>
+                <p class="text-sm text-slate-500 dark:text-gray-400">Total al balance</p>
                 <p class="text-2xl font-bold text-success-600">{{ formatCurrency(incomesStore.totalIncome) }}</p>
                 <p
                   v-if="incomesStore.totalCardCreditIncome > 0"
-                  class="text-xs text-slate-500 mt-2 max-w-[14rem] mx-auto leading-snug"
+                  class="text-xs text-slate-500 dark:text-gray-400 mt-2 max-w-[14rem] mx-auto leading-snug"
                 >
                   Créditos en tarjeta (no suman al balance):
-                  <span class="font-semibold text-violet-700">{{ formatCurrency(incomesStore.totalCardCreditIncome) }}</span>
+                  <span class="font-semibold text-violet-700 dark:text-violet-400">{{ formatCurrency(incomesStore.totalCardCreditIncome) }}</span>
                 </p>
               </div>
               <div>
-                <p class="text-sm text-slate-500">Cantidad</p>
+                <p class="text-sm text-slate-500 dark:text-gray-400">Cantidad</p>
                 <p class="text-2xl font-bold text-primary-600">{{ incomesStore.incomes.length }}</p>
               </div>
               <div>
-                <p class="text-sm text-slate-500">Promedio (efectivo)</p>
-                <p class="text-2xl font-bold text-slate-700">{{ formatCurrency(averageIncome) }}</p>
+                <p class="text-sm text-slate-500 dark:text-gray-400">Promedio (efectivo)</p>
+                <p class="text-2xl font-bold text-slate-700 dark:text-gray-300">{{ formatCurrency(averageIncome) }}</p>
               </div>
             </div>
           </div>
@@ -72,24 +80,24 @@
             </button>
           </div>
           <div class="space-y-2.5">
-            <div class="flex items-center justify-between py-1.5 border-l-4 border-success-500 pl-3 rounded-r-lg bg-success-50/40">
-              <span class="text-xs text-slate-700 font-semibold">Total al balance</span>
+            <div class="flex items-center justify-between py-1.5 border-l-4 border-success-500 pl-3 rounded-r-lg bg-success-50/40 dark:bg-success-900/20">
+              <span class="text-xs text-slate-700 dark:text-gray-300 font-semibold">Total al balance</span>
               <span class="text-base font-bold text-success-600 tabular-nums">{{ formatCurrency(incomesStore.totalIncome) }}</span>
             </div>
             <div
               v-if="incomesStore.totalCardCreditIncome > 0"
-              class="flex items-start justify-between gap-2 py-1.5 border-l-4 border-violet-400 pl-3 rounded-r-lg bg-violet-50/50"
+              class="flex items-start justify-between gap-2 py-1.5 border-l-4 border-violet-400 pl-3 rounded-r-lg bg-violet-50/50 dark:bg-violet-900/20"
             >
-              <span class="text-xs text-slate-600">Créditos en tarjeta</span>
-              <span class="text-sm font-semibold text-violet-800 tabular-nums text-right">{{ formatCurrency(incomesStore.totalCardCreditIncome) }}</span>
+              <span class="text-xs text-slate-600 dark:text-gray-400">Créditos en tarjeta</span>
+              <span class="text-sm font-semibold text-violet-800 dark:text-violet-300 tabular-nums text-right">{{ formatCurrency(incomesStore.totalCardCreditIncome) }}</span>
             </div>
-            <div class="flex items-center justify-between py-1.5 border-l-4 border-primary-500 pl-3 rounded-r-lg bg-primary-50/30">
-              <span class="text-xs text-slate-600 font-medium">Cantidad</span>
+            <div class="flex items-center justify-between py-1.5 border-l-4 border-primary-500 pl-3 rounded-r-lg bg-primary-50/30 dark:bg-primary-900/20">
+              <span class="text-xs text-slate-600 dark:text-gray-400 font-medium">Cantidad</span>
               <span class="text-sm font-bold text-primary-600 tabular-nums">{{ incomesStore.incomes.length }}</span>
             </div>
-            <div class="flex items-center justify-between py-1.5 border-l-4 border-slate-400 pl-3 rounded-r-lg bg-slate-50/50">
-              <span class="text-xs text-slate-600 font-medium">Promedio</span>
-              <span class="text-sm font-bold text-slate-700 tabular-nums">{{ formatCurrency(averageIncome) }}</span>
+            <div class="flex items-center justify-between py-1.5 border-l-4 border-slate-400 pl-3 rounded-r-lg bg-slate-50/50 dark:bg-gray-700/50">
+              <span class="text-xs text-slate-600 dark:text-gray-400 font-medium">Promedio</span>
+              <span class="text-sm font-bold text-slate-700 dark:text-gray-300 tabular-nums">{{ formatCurrency(averageIncome) }}</span>
             </div>
           </div>
         </div>
@@ -97,10 +105,10 @@
     </div>
 
     <!-- Error -->
-    <div v-if="incomesStore.error" class="bg-danger-50 border border-danger-100 rounded-xl p-4">
+    <div v-if="incomesStore.error" class="bg-danger-50 dark:bg-danger-900/20 border border-danger-100 dark:border-danger-800 rounded-xl p-4">
       <div class="flex items-start gap-3">
         <RefreshCw class="h-5 w-5 text-danger-500 flex-shrink-0 mt-0.5" />
-        <p class="text-sm text-danger-700">{{ incomesStore.error }}</p>
+        <p class="text-sm text-danger-700 dark:text-danger-300">{{ incomesStore.error }}</p>
       </div>
     </div>
 
@@ -109,15 +117,15 @@
       <!-- Desktop skeleton table -->
       <div class="hidden md:block card">
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-slate-100">
-            <thead class="bg-slate-50/80">
+          <table class="min-w-full divide-y divide-slate-100 dark:divide-gray-700">
+            <thead class="bg-slate-50/80 dark:bg-gray-700/80">
               <tr>
                 <th v-for="i in 5" :key="i" class="px-6 py-3 text-left">
                   <div class="skeleton h-4 w-20"></div>
                 </th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-slate-100">
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-slate-100 dark:divide-gray-700">
               <tr v-for="i in 5" :key="i">
                 <td class="px-6 py-4"><div class="skeleton h-4 w-32"></div></td>
                 <td class="px-6 py-4"><div class="skeleton h-4 w-24"></div></td>
@@ -150,45 +158,41 @@
 
     <!-- Income list -->
     <div v-else class="space-y-4 pb-20">
-      <!-- Empty state -->
-      <div v-if="incomesStore.incomes.length === 0" class="card text-center py-12">
-        <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Wallet class="h-8 w-8 text-slate-400" />
-        </div>
-        <h3 class="text-lg font-semibold text-slate-900 mb-1">No hay ingresos registrados</h3>
-        <p class="text-slate-500 mb-4">Comienza agregando tu primer ingreso del mes</p>
-        <button @click="openCreateModal" class="btn-primary inline-flex items-center gap-2 mx-auto">
-          <Plus class="h-4 w-4" />
-          Nuevo Ingreso
-        </button>
-      </div>
+      <EmptyState
+        v-if="incomesStore.incomes.length === 0"
+        icon="Wallet"
+        title="No hay ingresos registrados"
+        description="Comienza agregando tu primer ingreso del mes"
+        actionLabel="Nuevo Ingreso"
+        @action="openCreateModal"
+      />
 
       <!-- Desktop table -->
-      <div v-else class="hidden md:block card !p-0 overflow-hidden">
+      <div v-if="incomesStore.incomes.length > 0" class="hidden md:block card !p-0 overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-slate-100">
-            <thead class="bg-slate-50/80">
+          <table class="min-w-full divide-y divide-slate-100 dark:divide-gray-700">
+            <thead class="bg-slate-50/80 dark:bg-gray-700/80">
               <tr>
-                <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Descripción</th>
-                <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Origen</th>
-                <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Monto</th>
-                <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Fecha</th>
-                <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Acciones</th>
+                <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">Descripción</th>
+                <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">Origen</th>
+                <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">Monto</th>
+                <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">Fecha</th>
+                <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-slate-50">
-              <tr v-for="income in incomesStore.incomes" :key="income.id" class="hover:bg-slate-50/60 transition-colors">
-                <td class="px-6 py-4 text-sm text-slate-900 font-medium">{{ income.description }}</td>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-slate-50 dark:divide-gray-700">
+              <tr v-for="income in incomesStore.incomes" :key="income.id" class="hover:bg-slate-50/60 dark:hover:bg-gray-700/60 transition-colors">
+                <td class="px-6 py-4 text-sm text-slate-900 dark:text-gray-100 font-medium">{{ income.description }}</td>
                 <td class="px-6 py-4">
                   <span
                     v-if="income.affects_cash_balance !== false"
-                    class="inline-flex text-xs font-medium text-emerald-800 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md"
+                    class="inline-flex text-xs font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-800 px-2 py-0.5 rounded-md"
                   >
                     Balance
                   </span>
                   <span
                     v-else
-                    class="inline-flex text-xs font-medium text-violet-800 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-md"
+                    class="inline-flex text-xs font-medium text-violet-800 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/30 border border-violet-100 dark:border-violet-800 px-2 py-0.5 rounded-md"
                   >
                     Tarjeta · {{ cardLabel(income) }}
                   </span>
@@ -196,9 +200,9 @@
                 <td class="px-6 py-4 text-sm font-bold" :class="income.affects_cash_balance !== false ? 'text-success-600' : 'text-violet-700'">
                   {{ formatCurrency(income.amount) }}
                 </td>
-                <td class="px-6 py-4 text-sm text-slate-500">
+                <td class="px-6 py-4 text-sm text-slate-500 dark:text-gray-400">
                   <div class="flex items-center gap-1.5">
-                    <Calendar class="h-3.5 w-3.5 text-slate-400" />
+                    <Calendar class="h-3.5 w-3.5 text-slate-400 dark:text-gray-500" />
                     {{ formatDate(income.income_date) }}
                   </div>
                 </td>
@@ -206,14 +210,14 @@
                   <div class="flex items-center gap-2">
                     <button
                       @click="openEditModal(income)"
-                      class="text-slate-400 hover:text-primary-600 transition-colors p-1 rounded-lg hover:bg-primary-50"
+                      class="text-slate-400 dark:text-gray-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors p-1 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/30"
                       title="Editar"
                     >
                       <Pencil class="h-4 w-4" />
                     </button>
                     <button
                       @click="confirmDelete(income)"
-                      class="text-slate-400 hover:text-danger-600 transition-colors p-1 rounded-lg hover:bg-danger-50"
+                      class="text-slate-400 dark:text-gray-500 hover:text-danger-600 dark:hover:text-danger-400 transition-colors p-1 rounded-lg hover:bg-danger-50 dark:hover:bg-danger-900/30"
                       title="Eliminar"
                     >
                       <Trash2 class="h-4 w-4" />
@@ -227,7 +231,7 @@
       </div>
 
       <!-- Mobile cards -->
-      <div v-if="incomesStore.incomes.length > 0" class="block md:hidden space-y-3">
+      <TransitionGroup v-if="incomesStore.incomes.length > 0" name="list" tag="div" class="block md:hidden space-y-3">
         <div
           v-for="income in incomesStore.incomes"
           :key="income.id"
@@ -235,19 +239,19 @@
         >
           <div class="flex justify-between items-start mb-2">
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold text-slate-900 truncate">{{ income.description }}</p>
+              <p class="text-sm font-semibold text-slate-900 dark:text-gray-100 truncate">{{ income.description }}</p>
               <div class="flex flex-wrap items-center gap-1.5 mt-1">
-                <Calendar class="h-3 w-3 text-slate-400 shrink-0" />
-                <p class="text-xs text-slate-500">{{ formatDate(income.income_date) }}</p>
+                <Calendar class="h-3 w-3 text-slate-400 dark:text-gray-500 shrink-0" />
+                <p class="text-xs text-slate-500 dark:text-gray-400">{{ formatDate(income.income_date) }}</p>
                 <span
                   v-if="income.affects_cash_balance !== false"
-                  class="text-[10px] font-medium text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded"
+                  class="text-[10px] font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded"
                 >
                   Balance
                 </span>
                 <span
                   v-else
-                  class="text-[10px] font-medium text-violet-800 bg-violet-50 px-1.5 py-0.5 rounded"
+                  class="text-[10px] font-medium text-violet-800 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/30 px-1.5 py-0.5 rounded"
                 >
                   Tarjeta · {{ cardLabel(income) }}
                 </span>
@@ -260,22 +264,22 @@
               {{ formatCurrency(income.amount) }}
             </p>
           </div>
-          <div class="flex items-center justify-end gap-3 mt-3 pt-3 border-t border-slate-100">
+          <div class="flex items-center justify-end gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-gray-700">
             <button
               @click="openEditModal(income)"
-              class="text-slate-400 hover:text-primary-600 transition-colors p-1.5 rounded-lg hover:bg-primary-50"
+              class="text-slate-400 dark:text-gray-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors p-1.5 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/30"
             >
               <Pencil class="h-4 w-4" />
             </button>
             <button
               @click="confirmDelete(income)"
-              class="text-slate-400 hover:text-danger-600 transition-colors p-1.5 rounded-lg hover:bg-danger-50"
+              class="text-slate-400 dark:text-gray-500 hover:text-danger-600 dark:hover:text-danger-400 transition-colors p-1.5 rounded-lg hover:bg-danger-50 dark:hover:bg-danger-900/30"
             >
               <Trash2 class="h-4 w-4" />
             </button>
           </div>
         </div>
-      </div>
+      </TransitionGroup>
     </div>
 
     <!-- Modal -->
@@ -298,6 +302,8 @@ import { es } from 'date-fns/locale'
 import { Wallet, Plus, ChevronLeft, ChevronRight, Pencil, Trash2, RefreshCw, Calendar } from 'lucide-vue-next'
 import Swal from 'sweetalert2'
 import IncomeModal from '@/components/IncomeModal.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import ExportButton from '@/components/ExportButton.vue'
 
 const incomesStore = useIncomesStore()
 const expensesStore = useExpensesStore()
@@ -326,6 +332,22 @@ const averageIncome = computed(() => {
   const count = cashIncomesCount.value
   if (count === 0) return 0
   return incomesStore.totalIncome / count
+})
+
+const incomeCsvColumns = [
+  { key: 'description', label: 'Descripción' },
+  { key: 'amount', label: 'Monto' },
+  { key: 'date', label: 'Fecha' },
+  { key: 'type', label: 'Tipo' }
+]
+
+const exportableIncomes = computed(() => {
+  return incomesStore.incomes.map(i => ({
+    description: i.description || '',
+    amount: i.amount ?? 0,
+    date: i.income_date || '',
+    type: i.affects_cash_balance !== false ? 'Balance' : 'Tarjeta'
+  }))
 })
 
 const cardLabel = (income) => {

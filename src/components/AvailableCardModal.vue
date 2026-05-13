@@ -10,7 +10,7 @@
       aria-labelledby="available-card-modal-title"
     >
       <div 
-        class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" 
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" 
         @wheel.stop 
         @touchmove.stop 
         @scroll.stop
@@ -19,13 +19,13 @@
         tabindex="-1"
       >
       <!-- Header -->
-      <div class="flex justify-between items-center p-6 border-b border-gray-200">
-        <h3 id="available-card-modal-title" class="text-lg font-semibold text-gray-900">
+      <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+        <h3 id="available-card-modal-title" class="text-lg font-semibold text-gray-900 dark:text-gray-100">
           {{ card ? 'Editar Cuenta Disponible' : 'Nueva Cuenta Disponible' }}
         </h3>
         <button
           @click="$emit('close')"
-          class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 dark:text-gray-400 dark:text-gray-500 transition-colors duration-200"
           aria-label="Cerrar modal"
           type="button"
         >
@@ -37,7 +37,7 @@
       <form @submit.prevent="onSubmit" class="p-6 space-y-4" novalidate>
         <!-- Nombre de la cuenta -->
         <div>
-          <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+          <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Nombre de la cuenta *
           </label>
           <input
@@ -58,7 +58,7 @@
 
         <!-- Tipo de cuenta -->
         <div>
-          <label for="type" class="block text-sm font-medium text-gray-700 mb-2">
+          <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Tipo de cuenta *
           </label>
           <select
@@ -82,9 +82,9 @@
 
         <!-- Banco -->
         <div>
-          <label for="bank" class="block text-sm font-medium text-gray-700 mb-2">
+          <label for="bank" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Banco <span v-if="type !== 'Ninguna'" class="text-red-500">*</span>
-            <span v-else class="text-gray-500">(No aplica)</span>
+            <span v-else class="text-gray-500 dark:text-gray-400 dark:text-gray-500">(No aplica)</span>
           </label>
           <input
             id="bank"
@@ -94,10 +94,10 @@
             :class="[
               'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200',
               type === 'Ninguna' 
-                ? 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed focus:ring-gray-400' 
+                ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 dark:text-gray-500 cursor-not-allowed focus:ring-gray-400' 
                 : errors.bank 
                   ? 'border-red-500 focus:ring-red-500' 
-                  : 'border-gray-300 focus:ring-blue-500 focus:border-transparent'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-transparent'
             ]"
             :placeholder="type === 'Ninguna' ? 'No aplica para efectivo/transferencia' : 'Ej: Santander'"
             aria-describedby="bank-error"
@@ -108,7 +108,7 @@
           <p v-if="errors.bank" id="bank-error" class="mt-1 text-sm text-red-600" role="alert">
             {{ errors.bank }}
           </p>
-          <p v-if="type === 'Ninguna'" class="text-xs text-gray-500 mt-1">
+          <p v-if="type === 'Ninguna'" class="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-1">
             Para pagos en efectivo o transferencias no se requiere especificar banco
           </p>
         </div>
@@ -146,7 +146,7 @@
           <button
             type="button"
             @click="$emit('close')"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             aria-label="Cancelar y cerrar modal"
           >
             Cancelar

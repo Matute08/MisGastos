@@ -1,8 +1,8 @@
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-2xl font-bold text-slate-900">Ahorros</h1>
-      <p class="text-slate-500">Registra ahorro en pesos o compra de dolares con cotizacion.</p>
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-gray-100">Ahorros</h1>
+      <p class="text-slate-500 dark:text-gray-400">Registra ahorro en pesos o compra de dolares con cotizacion.</p>
     </div>
 
     <div class="card space-y-4">
@@ -11,12 +11,12 @@
           <h3 class="card-title">Nuevo ahorro</h3>
           <p class="card-subtitle">Estos movimientos no son gasto, se registran aparte.</p>
           <p v-if="saveError" class="mt-2 text-sm text-danger-600">{{ saveError }}</p>
-          <p v-if="savingsStore.lastLoadError" class="mt-1 text-xs text-amber-700">
+          <p v-if="savingsStore.lastLoadError" class="mt-1 text-xs text-amber-700 dark:text-amber-400">
             No se pudo sincronizar con el servidor; mostrando datos locales si los hay. {{ savingsStore.lastLoadError }}
           </p>
         </div>
         <div class="text-right">
-          <p class="text-xs text-slate-500">Ahorro del mes</p>
+          <p class="text-xs text-slate-500 dark:text-gray-400">Ahorro del mes</p>
           <p class="text-base font-bold text-emerald-600">{{ formatCurrency(savingsInCurrentMonth) }}</p>
         </div>
       </div>
@@ -62,8 +62,8 @@
               placeholder="Cotizacion"
             />
           </div>
-          <p v-if="form.type === 'dolares'" class="mt-1 text-xs text-slate-500">
-            Total en pesos: <span class="font-semibold text-slate-700">{{ formatCurrency(dollarPreviewArs) }}</span>
+          <p v-if="form.type === 'dolares'" class="mt-1 text-xs text-slate-500 dark:text-gray-400">
+            Total en pesos: <span class="font-semibold text-slate-700 dark:text-gray-300">{{ formatCurrency(dollarPreviewArs) }}</span>
           </p>
         </div>
 
@@ -110,7 +110,7 @@
               class="input-field w-full"
               placeholder="Monto usado en ARS"
             />
-            <p class="mt-1 text-xs text-slate-500">
+            <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">
               Disponible ARS: <span class="font-semibold">{{ formatCurrency(savingsStore.totalSavedArs) }}</span>
             </p>
           </div>
@@ -131,9 +131,9 @@
               class="input-field w-full"
               placeholder="Cotizacion de uso"
             />
-            <p class="sm:col-span-2 mt-1 text-xs text-slate-500">
+            <p class="sm:col-span-2 mt-1 text-xs text-slate-500 dark:text-gray-400">
               Disponible USD: <span class="font-semibold">{{ savingsStore.totalSavedUsd.toFixed(2) }}</span>
-              · Total en pesos: <span class="font-semibold text-slate-700">{{ formatCurrency(usageDollarPreviewArs) }}</span>
+              · Total en pesos: <span class="font-semibold text-slate-700 dark:text-gray-300">{{ formatCurrency(usageDollarPreviewArs) }}</span>
             </p>
           </div>
         </div>
@@ -150,7 +150,7 @@
         </div>
         <div
           v-if="usageError"
-          class="md:col-span-12 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          class="md:col-span-12 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-3 py-2 text-sm text-red-800 dark:text-red-300"
           role="alert"
         >
           {{ usageError }}
@@ -167,15 +167,15 @@
         <div
           v-for="item in savingsStore.sortedRecords"
           :key="item.id"
-          class="flex items-center justify-between rounded-lg border border-slate-200 p-3"
+          class="flex items-center justify-between rounded-lg border border-slate-200 dark:border-gray-600 p-3"
         >
           <div>
-            <p class="text-sm font-semibold text-slate-800">
+            <p class="text-sm font-semibold text-slate-800 dark:text-gray-200">
               {{ item.direction === 'out'
                 ? (item.type === 'dolares' ? 'Uso de USD' : 'Uso de ARS')
                 : (item.type === 'dolares' ? 'Compra USD' : 'Ahorro ARS') }}
             </p>
-            <p class="text-xs text-slate-500">
+            <p class="text-xs text-slate-500 dark:text-gray-400">
               {{ formatDate(item.date) }}
               <span v-if="item.type === 'dolares'"> · {{ item.dollars }} USD @ {{ item.exchange_rate }}</span>
               <span v-if="item.note"> · {{ item.note }}</span>
@@ -185,19 +185,19 @@
             </p>
           </div>
           <div class="flex items-center gap-2">
-            <p class="text-sm font-bold text-slate-700">{{ formatCurrency(item.amount_ars) }}</p>
+            <p class="text-sm font-bold text-slate-700 dark:text-gray-300">{{ formatCurrency(item.amount_ars) }}</p>
             <button
               v-if="item.direction !== 'out'"
               @click="toggleStatus(item)"
               class="text-xs px-2 py-1 rounded-md border"
-              :class="item.status === 'ahorrado' ? 'text-amber-700 border-amber-300 bg-amber-50' : 'text-emerald-700 border-emerald-300 bg-emerald-50'"
+              :class="item.status === 'ahorrado' ? 'text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20' : 'text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20'"
             >
               {{ item.status === 'ahorrado' ? 'Marcar usado' : 'Reactivar' }}
             </button>
             <button
               v-if="item.direction !== 'out'"
               @click="startEdit(item)"
-              class="text-primary-600 hover:text-primary-700 text-xs px-2 py-1 rounded-md border border-primary-200 bg-primary-50"
+              class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-xs px-2 py-1 rounded-md border border-primary-200 dark:border-primary-700 bg-primary-50 dark:bg-primary-900/20"
             >
               Editar
             </button>
@@ -206,9 +206,12 @@
             </button>
           </div>
         </div>
-        <p v-if="savingsStore.sortedRecords.length === 0" class="text-sm text-slate-500">
-          Aun no hay ahorros registrados.
-        </p>
+        <EmptyState
+          v-if="savingsStore.sortedRecords.length === 0"
+          icon="PiggyBank"
+          title="No hay ahorros registrados"
+          description="Comienza registrando tu primer ahorro con el formulario de arriba"
+        />
       </div>
     </div>
   </div>
@@ -220,6 +223,7 @@ import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Trash2 } from 'lucide-vue-next'
 import { useSavingsStore } from '@/stores/savings'
+import EmptyState from '@/components/EmptyState.vue'
 
 const savingsStore = useSavingsStore()
 

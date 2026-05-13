@@ -2,12 +2,15 @@
   <!-- Desktop Sidebar (lg+) -->
   <aside
     v-if="authStore.isAuthenticated && authStore.isAuthReady"
-    class="hidden lg:flex lg:flex-col fixed inset-y-0 left-0 w-60 bg-white border-r border-gray-200/80 z-40"
+    class="hidden lg:flex lg:flex-col fixed inset-y-0 left-0 w-60 bg-white dark:bg-gray-800 border-r border-gray-200/80 dark:border-gray-700/80 z-40"
   >
     <!-- Logo -->
-    <div class="flex items-center gap-3 px-6 h-16 border-b border-gray-100">
-      <img src="/miwalletlogo.png" alt="MisGastos" class="h-9 w-7" />
-      <span class="text-lg font-bold tracking-tight text-gray-900">MisGastos</span>
+    <div class="flex items-center justify-between px-6 h-16 border-b border-gray-100 dark:border-gray-700">
+      <div class="flex items-center gap-3">
+        <img src="/miwalletlogo.png" alt="MisGastos" class="h-9 w-7" />
+        <span class="text-lg font-bold tracking-tight text-gray-900 dark:text-gray-100">MisGastos</span>
+      </div>
+      <DarkModeToggle />
     </div>
 
     <!-- Nav Items -->
@@ -19,15 +22,15 @@
         :class="[
           'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
           isActive(item.name)
-            ? 'bg-primary-50 text-primary-600 border-l-[3px] border-primary-600 pl-[9px]'
-            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 border-l-[3px] border-primary-600 pl-[9px]'
+            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
         ]"
       >
         <component
           :is="item.icon"
           :class="[
             'h-5 w-5 shrink-0 transition-colors duration-200',
-            isActive(item.name) ? 'text-primary-600' : 'text-gray-400 group-hover:text-gray-600'
+            isActive(item.name) ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'
           ]"
         />
         {{ item.label }}
@@ -35,22 +38,22 @@
     </nav>
 
     <!-- User Section -->
-    <div class="border-t border-gray-100 p-3">
+    <div class="border-t border-gray-100 dark:border-gray-700 p-3">
       <div class="relative" ref="userMenuRef">
         <button
           @click="toggleUserMenu"
-          class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left hover:bg-gray-50 transition-colors duration-200"
+          class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
         >
-          <div class="h-9 w-9 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-sm font-semibold shrink-0">
+          <div class="h-9 w-9 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 flex items-center justify-center text-sm font-semibold shrink-0">
             {{ userInitials }}
           </div>
           <div class="flex-1 min-w-0">
-            <div class="text-sm font-medium text-gray-900 truncate">{{ userName }}</div>
-            <div class="text-xs text-gray-500 truncate">{{ userRoleDisplay }}</div>
+            <div class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ userName }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ userRoleDisplay }}</div>
           </div>
           <ChevronDown
             :class="[
-              'h-4 w-4 text-gray-400 transition-transform duration-200',
+              'h-4 w-4 text-gray-400 dark:text-gray-500 transition-transform duration-200',
               showUserMenu ? 'rotate-180' : ''
             ]"
           />
@@ -67,38 +70,38 @@
         >
           <div
             v-if="showUserMenu"
-            class="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-xl shadow-soft-lg border border-gray-200 py-1 z-50"
+            class="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-gray-800 rounded-xl shadow-soft-lg dark:shadow-none dark:border dark:border-gray-700 border border-gray-200 py-1 z-50"
           >
             <button
               @click="goToProfile"
-              class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+              class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
             >
-              <UserCircle class="h-4 w-4 text-gray-400" />
+              <UserCircle class="h-4 w-4 text-gray-400 dark:text-gray-500" />
               Mi Perfil
             </button>
 
             <button
               @click="goToCategories"
-              class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+              class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
             >
-              <Tag class="h-4 w-4 text-gray-400" />
+              <Tag class="h-4 w-4 text-gray-400 dark:text-gray-500" />
               Categorías
             </button>
 
             <button
               v-if="authStore.isAdmin"
               @click="goToAdminCards"
-              class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+              class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
             >
-              <CreditCard class="h-4 w-4 text-gray-400" />
+              <CreditCard class="h-4 w-4 text-gray-400 dark:text-gray-500" />
               Admin Cuentas
             </button>
 
-            <div class="border-t border-gray-100 my-1"></div>
+            <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
 
             <button
               @click="signOut"
-              class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-danger-600 hover:bg-danger-50 transition-colors duration-150"
+              class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/30 transition-colors duration-150"
             >
               <LogOut class="h-4 w-4" />
               Cerrar sesión
@@ -112,7 +115,7 @@
   <!-- Mobile Bottom Navigation (< lg) -->
   <nav
     v-if="authStore.isAuthenticated && authStore.isAuthReady"
-    class="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-200/80 shadow-[0_-2px_10px_-3px_rgba(0,0,0,0.06)] z-50"
+    class="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-gray-800 border-t border-gray-200/80 dark:border-gray-700/80 shadow-[0_-2px_10px_-3px_rgba(0,0,0,0.06)] dark:shadow-none z-50"
   >
     <Transition
       enter-active-class="transition ease-out duration-150"
@@ -125,38 +128,38 @@
       <div
         v-if="showUserMenu"
         ref="mobileUserMenuRef"
-        class="absolute bottom-full right-3 mb-2 w-56 bg-white rounded-xl shadow-soft-lg border border-gray-200 py-1"
+        class="absolute bottom-full right-3 mb-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-soft-lg dark:shadow-none dark:border dark:border-gray-700 border border-gray-200 py-1"
       >
         <button
           @click="goToProfile"
-          class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+          class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
         >
-          <UserCircle class="h-4 w-4 text-gray-400" />
+          <UserCircle class="h-4 w-4 text-gray-400 dark:text-gray-500" />
           Mi Perfil
         </button>
 
         <button
           @click="goToCategories"
-          class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+          class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
         >
-          <Tag class="h-4 w-4 text-gray-400" />
+          <Tag class="h-4 w-4 text-gray-400 dark:text-gray-500" />
           Categorías
         </button>
 
         <button
           v-if="authStore.isAdmin"
           @click="goToAdminCards"
-          class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+          class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
         >
-          <CreditCard class="h-4 w-4 text-gray-400" />
+          <CreditCard class="h-4 w-4 text-gray-400 dark:text-gray-500" />
           Admin Cuentas
         </button>
 
-        <div class="border-t border-gray-100 my-1"></div>
+        <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
 
         <button
           @click="signOut"
-          class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-danger-600 hover:bg-danger-50 transition-colors duration-150"
+          class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/30 transition-colors duration-150"
         >
           <LogOut class="h-4 w-4" />
           Cerrar sesión
@@ -179,21 +182,21 @@
           <div
             :class="[
               'flex items-center justify-center rounded-full transition-all duration-200 mb-0.5',
-              showUserMenu ? 'bg-primary-100 h-8 w-12' : 'h-8 w-8'
+              showUserMenu ? 'bg-primary-100 dark:bg-primary-900/40 h-8 w-12' : 'h-8 w-8'
             ]"
         >
             <component
               :is="item.icon"
               :class="[
                 'transition-all duration-200',
-                showUserMenu ? 'h-[22px] w-[22px] text-primary-600' : 'h-5 w-5 text-gray-400'
+                showUserMenu ? 'h-[22px] w-[22px] text-primary-600 dark:text-primary-400' : 'h-5 w-5 text-gray-400 dark:text-gray-500'
               ]"
             />
           </div>
           <span
             :class="[
               'text-[10px] font-medium transition-colors duration-200 leading-tight',
-              showUserMenu ? 'text-primary-600' : 'text-gray-500'
+              showUserMenu ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 dark:text-gray-400'
             ]"
           >
             {{ item.label }}
@@ -208,7 +211,7 @@
             :class="[
               'flex items-center justify-center rounded-full transition-all duration-200 mb-0.5',
               isActive(item.name)
-                ? 'bg-primary-100 h-8 w-12'
+                ? 'bg-primary-100 dark:bg-primary-900/40 h-8 w-12'
                 : 'h-8 w-8'
             ]"
           >
@@ -217,15 +220,15 @@
               :class="[
                 'transition-all duration-200',
                 isActive(item.name)
-                  ? 'h-[22px] w-[22px] text-primary-600'
-                  : 'h-5 w-5 text-gray-400'
+                  ? 'h-[22px] w-[22px] text-primary-600 dark:text-primary-400'
+                  : 'h-5 w-5 text-gray-400 dark:text-gray-500'
               ]"
             />
           </div>
           <span
             :class="[
               'text-[10px] font-medium transition-colors duration-200 leading-tight',
-              isActive(item.name) ? 'text-primary-600' : 'text-gray-500'
+              isActive(item.name) ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 dark:text-gray-400'
             ]"
           >
             {{ item.label }}
@@ -240,6 +243,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import DarkModeToggle from '@/components/DarkModeToggle.vue'
 import {
   BarChart3,
   Receipt,

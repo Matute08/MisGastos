@@ -2,12 +2,12 @@
   <div class="space-y-6">
     <!-- Header (mobile) -->
     <div class="lg:hidden">
-      <h1 class="text-2xl font-bold text-slate-900">Dashboard</h1>
-      <p class="text-slate-500">Resumen de tus finanzas</p>
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-gray-100">Dashboard</h1>
+        <p class="text-slate-500 dark:text-gray-400">Resumen de tus finanzas</p>
     </div>
 
     <!-- Hero Balance Card -->
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 p-6 sm:p-8 shadow-glow">
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 p-6 sm:p-8 shadow-glow animate-glow-pulse">
       <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE4YzEuNjU3IDAgMy0xLjM0MyAzLTNzLTEuMzQzLTMtMy0zLTMgMS4zNDMtMyAzIDEuMzQzIDMgMyAzem0wIDM2YzEuNjU3IDAgMy0xLjM0MyAzLTNzLTEuMzQzLTMtMy0zLTMgMS4zNDMtMyAzIDEuMzQzIDMgMyAzem0tMTgtMThjMS42NTcgMCAzLTEuMzQzIDMtM3MtMS4zNDMtMy0zLTMtMyAxLjM0My0zIDMgMS4zNDMgMyAzIDN6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-40"></div>
       <div class="relative z-10">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -19,6 +19,12 @@
             <h1 v-else class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
               {{ formatCurrency(balanceView) }}
             </h1>
+            <ComparisonBadge
+              v-if="!isLoading"
+              :current-value="balanceView"
+              :previous-value="previousPeriodBalance"
+              class="text-white/80 mt-1"
+            />
             <p v-if="!isAnnual" class="text-primary-100 text-xs mt-1">
               Ahorro en USD: <span class="font-semibold">{{ formatUsd(savedUsdView) }}</span>
               · aprox {{ formatCurrency(savedArsView) }}
@@ -81,43 +87,56 @@
     <!-- Stats Row (3 cards) -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <!-- Ingresos del Mes -->
-      <div class="bg-white rounded-2xl shadow-soft border-l-4 border-success-500 p-5 flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-success-50 flex items-center justify-center flex-shrink-0">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-soft dark:shadow-none dark:border dark:border-gray-700 border-l-4 border-success-500 p-5 flex items-center gap-4 card-hover animate-fade-in" style="animation-delay: 0.05s; animation-fill-mode: backwards;">
+        <div class="w-12 h-12 rounded-xl bg-success-50 dark:bg-success-900/30 flex items-center justify-center flex-shrink-0">
           <Wallet class="w-6 h-6 text-success-500" />
         </div>
         <div class="min-w-0">
-          <p class="text-sm text-slate-500 truncate">{{ isAnnual ? 'Ingresos del Año' : 'Ingresos del Mes' }}</p>
+          <p class="text-sm text-slate-500 dark:text-gray-400 truncate">{{ isAnnual ? 'Ingresos del Año' : 'Ingresos del Mes' }}</p>
           <template v-if="isLoading">
             <div class="skeleton h-7 w-28 mt-1"></div>
           </template>
-          <p v-else class="text-xl font-bold text-slate-900 truncate">{{ formatCurrency(totalIncomeView) }}</p>
+          <p v-else class="text-xl font-bold text-slate-900 dark:text-gray-100 truncate">{{ formatCurrency(totalIncomeView) }}</p>
+          <ComparisonBadge
+            v-if="!isLoading"
+            :current-value="totalIncomeView"
+            :previous-value="previousPeriodIncome"
+            class="mt-1"
+          />
         </div>
       </div>
       <!-- Gastos del Mes -->
-      <div class="bg-white rounded-2xl shadow-soft border-l-4 border-danger-500 p-5 flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-danger-50 flex items-center justify-center flex-shrink-0">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-soft dark:shadow-none dark:border dark:border-gray-700 border-l-4 border-danger-500 p-5 flex items-center gap-4 card-hover animate-fade-in" style="animation-delay: 0.1s; animation-fill-mode: backwards;">
+        <div class="w-12 h-12 rounded-xl bg-danger-50 dark:bg-danger-900/30 flex items-center justify-center flex-shrink-0">
           <Receipt class="w-6 h-6 text-danger-500" />
         </div>
         <div class="min-w-0">
-          <p class="text-sm text-slate-500 truncate">{{ isAnnual ? 'Gastos del Año' : 'Gastos del Mes' }}</p>
+          <p class="text-sm text-slate-500 dark:text-gray-400 truncate">{{ isAnnual ? 'Gastos del Año' : 'Gastos del Mes' }}</p>
           <template v-if="isLoading">
             <div class="skeleton h-7 w-28 mt-1"></div>
           </template>
-          <p v-else class="text-xl font-bold text-slate-900 truncate">{{ formatCurrency(totalExpensesView) }}</p>
+          <p v-else class="text-xl font-bold text-slate-900 dark:text-gray-100 truncate">{{ formatCurrency(totalExpensesView) }}</p>
+          <ComparisonBadge
+            v-if="!isLoading"
+            :current-value="totalExpensesView"
+            :previous-value="previousPeriodExpenses"
+            :inverse="true"
+            class="mt-1"
+          />
         </div>
       </div>
       <!-- Ahorro -->
-      <div ref="savingsHelpRef" class="bg-white rounded-2xl shadow-soft border-l-4 border-primary-500 p-5 flex items-center gap-4 relative">
-        <div class="w-12 h-12 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0">
+      <div ref="savingsHelpRef" class="bg-white dark:bg-gray-800 rounded-2xl shadow-soft dark:shadow-none dark:border dark:border-gray-700 border-l-4 border-primary-500 p-5 flex items-center gap-4 relative card-hover animate-fade-in" style="animation-delay: 0.15s; animation-fill-mode: backwards;">
+        <div class="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
           <PiggyBank class="w-6 h-6 text-primary-500" />
         </div>
         <div class="min-w-0 flex-1">
-          <p class="text-sm text-slate-500 truncate flex items-center gap-1.5">
+          <p class="text-sm text-slate-500 dark:text-gray-400 truncate flex items-center gap-1.5">
             Ahorro
             <button
               type="button"
               @click.stop="showSavingsHelp = !showSavingsHelp"
-              class="inline-flex items-center justify-center w-4 h-4 rounded-full text-slate-400 hover:text-primary-500 hover:bg-primary-50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-200"
+              class="inline-flex items-center justify-center w-4 h-4 rounded-full text-slate-400 dark:text-gray-500 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-200"
               :aria-expanded="showSavingsHelp"
               aria-label="Explicación del porcentaje de ahorro"
             >
@@ -166,48 +185,50 @@
         <SkeletonCard v-for="i in 4" :key="`skeleton-card-${i}`" />
       </template>
       <template v-else>
-        <div
-          v-for="card in displayedCreditCards"
-          :key="card.id"
-          class="bg-white rounded-2xl shadow-soft border border-slate-100 p-4 hover:shadow-soft-lg transition-shadow duration-200"
-        >
-          <div class="flex items-center justify-between mb-3">
-            <div class="w-8 h-8 bg-primary-50 rounded-lg flex items-center justify-center">
-              <CreditCard class="h-5 w-5 text-primary-600" />
-            </div>
-            <span class="text-xs text-slate-400 font-medium">{{ isAnnual ? 'Año' : 'Mes' }}</span>
-          </div>
-          <h3 class="text-sm font-semibold text-slate-900 mb-1 truncate">{{ card.name }}</h3>
-          <p class="text-lg font-bold text-slate-900">{{ formatCurrency(card.amount) }}</p>
-          <p
-            v-if="card.cardCredits > 0"
-            class="text-[11px] text-slate-500 mt-1 leading-snug"
+          <div
+            v-for="(card, index) in displayedCreditCards"
+            :key="card.id"
+            class="bg-white dark:bg-gray-800 rounded-2xl shadow-soft dark:shadow-none dark:border dark:border-gray-700 border border-slate-100 p-4 card-hover animate-fade-in"
+            :style="{ animationDelay: `${0.2 + index * 0.05}s`, animationFillMode: 'backwards' }"
           >
-            Neto: gasto {{ formatCurrency(card.grossAmount) }} menos créditos {{ formatCurrency(card.cardCredits) }}
-          </p>
-          <p class="text-xs text-slate-400 mt-1">{{ card.bank }}</p>
-        </div>
-
-        <div
-          v-if="(expensesStore.creditCardsSummary || []).length > 4"
-          class="bg-white rounded-2xl shadow-soft border-2 border-dashed border-slate-200 p-4 flex items-center justify-center hover:border-primary-400 transition-colors duration-200 cursor-pointer"
-          @click="showAllCards = !showAllCards"
-        >
-          <div class="text-center">
-            <div class="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center mx-auto mb-2">
-              <Plus class="h-5 w-5 text-slate-400" />
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-8 h-8 bg-primary-50 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                <CreditCard class="h-5 w-5 text-primary-600 dark:text-primary-400" />
+              </div>
+              <span class="text-xs text-slate-400 dark:text-gray-500 font-medium">{{ isAnnual ? 'Año' : 'Mes' }}</span>
             </div>
-            <p class="text-xs text-slate-500 font-medium">
-              {{ showAllCards ? 'Ver menos' : `Ver ${(expensesStore.creditCardsSummary || []).length - 4} más` }}
+            <h3 class="text-sm font-semibold text-slate-900 dark:text-gray-100 mb-1 truncate">{{ card.name }}</h3>
+            <p class="text-lg font-bold text-slate-900 dark:text-gray-100">{{ formatCurrency(card.amount) }}</p>
+            <p
+              v-if="card.cardCredits > 0"
+              class="text-[11px] text-slate-500 dark:text-gray-400 mt-1 leading-snug"
+            >
+              Neto: gasto {{ formatCurrency(card.grossAmount) }} menos créditos {{ formatCurrency(card.cardCredits) }}
             </p>
+            <p class="text-xs text-slate-400 dark:text-gray-500 mt-1">{{ card.bank }}</p>
           </div>
-        </div>
+
+          <div
+            v-if="(expensesStore.creditCardsSummary || []).length > 4"
+            class="bg-white dark:bg-gray-800 rounded-2xl shadow-soft dark:shadow-none border-2 border-dashed border-slate-200 dark:border-gray-600 p-4 flex items-center justify-center hover:border-primary-400 dark:hover:border-primary-500 dark:hover:border-primary-500 transition-all duration-200 cursor-pointer hover:shadow-soft-lg active:scale-[0.98] animate-fade-in"
+            style="animation-delay: 0.4s; animation-fill-mode: backwards;"
+            @click="showAllCards = !showAllCards"
+          >
+            <div class="text-center">
+              <div class="w-8 h-8 bg-slate-50 dark:bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <Plus class="h-5 w-5 text-slate-400 dark:text-gray-500" />
+              </div>
+              <p class="text-xs text-slate-500 dark:text-gray-400 font-medium">
+                {{ showAllCards ? 'Ver menos' : `Ver ${(expensesStore.creditCardsSummary || []).length - 4} más` }}
+              </p>
+            </div>
+          </div>
       </template>
     </div>
 
     <!-- Account Summary -->
     <SkeletonSummary v-if="isLoading" :items="3" />
-    <div v-else class="card">
+    <div v-else class="card animate-slide-up" style="animation-fill-mode: backwards;">
       <div class="card-header">
         <h3 class="card-title">Resumen de Cuentas</h3>
         <p class="card-subtitle">Distribución por tipo de cuenta</p>
@@ -216,24 +237,24 @@
         <div
           v-for="summary in expensesStore.expensesSummaryByType"
           :key="summary.type"
-          class="flex items-center justify-between py-2 border-b border-slate-50"
+          class="flex items-center justify-between py-2 border-b border-slate-50 dark:border-gray-700"
         >
           <div class="flex items-center">
-            <div class="w-6 h-6 bg-primary-50 rounded-md flex items-center justify-center mr-3">
-              <CreditCard class="h-4 w-4 text-primary-600" />
+            <div class="w-6 h-6 bg-primary-50 dark:bg-primary-900/30 rounded-md flex items-center justify-center mr-3">
+              <CreditCard class="h-4 w-4 text-primary-600 dark:text-primary-400" />
             </div>
-            <span class="text-sm font-medium text-slate-600">{{ summary.type }}</span>
+            <span class="text-sm font-medium text-slate-600 dark:text-gray-300">{{ summary.type }}</span>
           </div>
-          <span class="text-lg font-bold text-slate-900">{{ formatCurrency(summary.total) }}</span>
+          <span class="text-lg font-bold text-slate-900 dark:text-gray-100">{{ formatCurrency(summary.total) }}</span>
         </div>
-        <div class="flex items-center justify-between py-2 border-t-2 border-slate-200 pt-3">
+        <div class="flex items-center justify-between py-2 border-t-2 border-slate-200 dark:border-gray-600 pt-3">
           <div class="flex items-center">
-            <div class="w-6 h-6 bg-primary-100 rounded-md flex items-center justify-center mr-3">
-              <DollarSign class="h-4 w-4 text-primary-600" />
+            <div class="w-6 h-6 bg-primary-100 dark:bg-primary-900/40 rounded-md flex items-center justify-center mr-3">
+              <DollarSign class="h-4 w-4 text-primary-600 dark:text-primary-400" />
             </div>
-            <span class="text-sm font-semibold text-slate-700">{{ isAnnual ? 'Total Año' : 'Total Mes' }}</span>
+            <span class="text-sm font-semibold text-slate-700 dark:text-gray-300">{{ isAnnual ? 'Total Año' : 'Total Mes' }}</span>
           </div>
-          <span class="text-xl font-bold text-slate-900">{{ formatCurrency(totalExpensesView) }}</span>
+          <span class="text-xl font-bold text-slate-900 dark:text-gray-100">{{ formatCurrency(totalExpensesView) }}</span>
         </div>
       </div>
     </div>
@@ -245,10 +266,20 @@
       </template>
       <template v-else>
         <!-- Doughnut: Gastos por Categoría -->
-        <div class="card">
+        <div class="card animate-fade-in" style="animation-delay: 0.1s; animation-fill-mode: backwards;">
           <div class="card-header">
-            <h3 class="card-title">Gastos por Categoría</h3>
-            <p class="card-subtitle">Distribución de gastos</p>
+            <div class="flex items-center justify-between w-full">
+              <div>
+                <h3 class="card-title">Gastos por Categoría</h3>
+                <p class="card-subtitle">Distribución de gastos</p>
+              </div>
+              <ExportButton
+                :data="categoryChartExport.data"
+                filename="gastos-por-categoria.csv"
+                :columns="categoryChartExport.columns"
+                label="Exportar CSV"
+              />
+            </div>
           </div>
           <div class="h-72 flex items-center justify-center">
             <Doughnut
@@ -257,14 +288,24 @@
               :options="doughnutOptions"
               :plugins="[centerTextPlugin]"
             />
-            <p v-else class="text-slate-400 text-sm">No hay datos para mostrar</p>
+            <p v-else class="text-slate-400 dark:text-gray-500 text-sm">No hay datos para mostrar</p>
           </div>
         </div>
         <!-- Bar: Gastos por Cuenta -->
-        <div class="card">
+        <div class="card animate-fade-in" style="animation-delay: 0.2s; animation-fill-mode: backwards;">
           <div class="card-header">
-            <h3 class="card-title">Gastos por Cuenta</h3>
-            <p class="card-subtitle">Distribución por tarjeta/cuenta</p>
+            <div class="flex items-center justify-between w-full">
+              <div>
+                <h3 class="card-title">Gastos por Cuenta</h3>
+                <p class="card-subtitle">Distribución por tarjeta/cuenta</p>
+              </div>
+              <ExportButton
+                :data="cardsChartExport.data"
+                filename="gastos-por-cuenta.csv"
+                :columns="cardsChartExport.columns"
+                label="Exportar CSV"
+              />
+            </div>
           </div>
           <div class="h-72">
             <Bar
@@ -278,10 +319,20 @@
           </div>
         </div>
         <!-- Bar: Ingresos vs Gastos -->
-        <div class="card">
+        <div class="card animate-fade-in" style="animation-delay: 0.3s; animation-fill-mode: backwards;">
           <div class="card-header">
-            <h3 class="card-title">Ingresos vs Gastos</h3>
-            <p class="card-subtitle">{{ isAnnual ? 'Evolución mensual del año' : 'Últimos 6 meses' }}</p>
+            <div class="flex items-center justify-between w-full">
+              <div>
+                <h3 class="card-title">Ingresos vs Gastos</h3>
+                <p class="card-subtitle">{{ isAnnual ? 'Evolución mensual del año' : 'Últimos 6 meses' }}</p>
+              </div>
+              <ExportButton
+                :data="evolutionChartExport.data"
+                filename="ingresos-vs-gastos.csv"
+                :columns="evolutionChartExport.columns"
+                label="Exportar CSV"
+              />
+            </div>
           </div>
           <div class="h-72">
             <Bar
@@ -295,10 +346,20 @@
           </div>
         </div>
         <!-- Bar Horizontal: Top 5 Gastos -->
-        <div class="card">
+        <div class="card animate-fade-in" style="animation-delay: 0.4s; animation-fill-mode: backwards;">
           <div class="card-header">
-            <h3 class="card-title">Top 5 Gastos</h3>
-            <p class="card-subtitle">{{ isAnnual ? 'Mayores gastos del año' : 'Mayores gastos del mes' }}</p>
+            <div class="flex items-center justify-between w-full">
+              <div>
+                <h3 class="card-title">Top 5 Gastos</h3>
+                <p class="card-subtitle">{{ isAnnual ? 'Mayores gastos del año' : 'Mayores gastos del mes' }}</p>
+              </div>
+              <ExportButton
+                :data="topExpensesChartExport.data"
+                filename="top-5-gastos.csv"
+                :columns="topExpensesChartExport.columns"
+                label="Exportar CSV"
+              />
+            </div>
           </div>
           <div class="h-72">
             <Bar
@@ -312,10 +373,20 @@
           </div>
         </div>
         <!-- Doughnut: Tipo de Pago -->
-        <div class="card">
+        <div class="card animate-fade-in" style="animation-delay: 0.5s; animation-fill-mode: backwards;">
           <div class="card-header">
-            <h3 class="card-title">Por Tipo de Pago</h3>
-            <p class="card-subtitle">Débito, crédito y transferencias</p>
+            <div class="flex items-center justify-between w-full">
+              <div>
+                <h3 class="card-title">Por Tipo de Pago</h3>
+                <p class="card-subtitle">Débito, crédito y transferencias</p>
+              </div>
+              <ExportButton
+                :data="paymentTypeChartExport.data"
+                filename="tipo-de-pago.csv"
+                :columns="paymentTypeChartExport.columns"
+                label="Exportar CSV"
+              />
+            </div>
           </div>
           <div class="h-72 flex items-center justify-center">
             <Doughnut
@@ -444,7 +515,7 @@
             @click="currentChartIndex = index"
             :class="[
               'w-2.5 h-2.5 rounded-full transition-all duration-200',
-              currentChartIndex === index ? 'bg-primary-600 scale-110' : 'bg-slate-300 hover:bg-slate-400'
+              currentChartIndex === index ? 'bg-primary-600 scale-110' : 'bg-slate-300 dark:bg-gray-600 hover:bg-slate-400 dark:hover:bg-gray-500'
             ]"
             :aria-label="`Ir al gráfico ${index + 1}`"
           ></button>
@@ -453,18 +524,18 @@
         <button
           v-if="!isLoading && currentChartIndex > 0"
           @click="currentChartIndex--"
-          class="absolute left-1 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur rounded-full p-2 shadow-soft border border-slate-100"
+          class="absolute left-1 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 backdrop-blur rounded-full p-2 shadow-soft dark:shadow-none border border-slate-100 dark:border-gray-700"
           aria-label="Gráfico anterior"
         >
-          <ChevronLeft class="w-4 h-4 text-slate-600" />
+          <ChevronLeft class="w-4 h-4 text-slate-600 dark:text-gray-300" />
         </button>
         <button
           v-if="!isLoading && currentChartIndex < availableCharts.length - 1"
           @click="currentChartIndex++"
-          class="absolute right-1 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur rounded-full p-2 shadow-soft border border-slate-100"
+          class="absolute right-1 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 backdrop-blur rounded-full p-2 shadow-soft dark:shadow-none border border-slate-100 dark:border-gray-700"
           aria-label="Gráfico siguiente"
         >
-          <ChevronRight class="w-4 h-4 text-slate-600" />
+          <ChevronRight class="w-4 h-4 text-slate-600 dark:text-gray-300" />
         </button>
       </div>
     </div>
@@ -473,7 +544,7 @@
     <div v-if="isLoading" class="hidden lg:block">
       <SkeletonTable :columns="6" :rows="5" />
     </div>
-    <div v-else-if="upcomingInstallmentsList.length > 0" class="hidden lg:block card">
+    <div v-else-if="upcomingInstallmentsList.length > 0" class="hidden lg:block card animate-slide-up" style="animation-delay: 0.1s; animation-fill-mode: backwards;">
       <div class="card-header">
         <h3 class="card-title">Próximos Vencimientos</h3>
         <p class="card-subtitle">Pagos próximos a vencer</p>
@@ -481,26 +552,26 @@
       <div class="overflow-x-auto -mx-6">
         <table class="min-w-full">
           <thead>
-            <tr class="bg-slate-50/80">
-              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Descripción</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Tarjeta</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Categoría</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Monto</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Vencimiento</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Estado</th>
+            <tr class="bg-slate-50/80 dark:bg-gray-700/80">
+              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">Descripción</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">Tarjeta</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">Categoría</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">Monto</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">Vencimiento</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-50">
+          <tbody class="divide-y divide-slate-50 dark:divide-gray-700">
             <tr
               v-for="(inst, idx) in paginatedUpcomingInstallments"
               :key="inst.id"
-              :class="idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'"
-              class="hover:bg-primary-50/30 transition-colors"
+              :class="idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-slate-50/40 dark:bg-gray-800/50'"
+              class="hover:bg-primary-50/30 dark:hover:bg-primary-900/20 transition-colors"
             >
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-gray-100">
                 {{ inst.expenses?.description || 'Cuota' }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-gray-300">
                 {{ inst.expenses?.available_cards?.name || 'Sin tarjeta' }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
@@ -514,10 +585,10 @@
                   {{ inst.expenses?.categories?.name || 'Sin categoría' }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-gray-100">
                 {{ formatCurrency(inst.amount) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-gray-300">
                 {{ formatDate(inst.due_date) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
@@ -530,21 +601,21 @@
         </table>
       </div>
       <!-- Pagination -->
-      <div v-if="totalVencimientosPages > 1" class="flex items-center justify-center gap-2 pt-4 border-t border-slate-100 mt-4">
+      <div v-if="totalVencimientosPages > 1" class="flex items-center justify-center gap-2 pt-4 border-t border-slate-100 dark:border-gray-700 mt-4">
         <button
           @click="setVencimientosPage(vencimientosPage - 1)"
           :disabled="vencimientosPage === 1"
-          class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          class="p-2 rounded-lg text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft class="w-4 h-4" />
         </button>
-        <span class="text-sm text-slate-600 px-3">
+        <span class="text-sm text-slate-600 dark:text-gray-300 px-3">
           Página {{ vencimientosPage }} de {{ totalVencimientosPages }}
         </span>
         <button
           @click="setVencimientosPage(vencimientosPage + 1)"
           :disabled="vencimientosPage === totalVencimientosPages"
-          class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          class="p-2 rounded-lg text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronRight class="w-4 h-4" />
         </button>
@@ -556,28 +627,28 @@
       <SkeletonList :count="5" />
     </div>
     <div v-else-if="upcomingInstallmentsList.length > 0" class="block lg:hidden">
-      <div class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-100">
-          <h3 class="text-lg font-bold text-slate-900">Próximos Vencimientos</h3>
-          <p class="text-sm text-slate-500 mt-0.5">Pagos próximos a vencer</p>
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-soft dark:shadow-none border border-slate-100 dark:border-gray-700 overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 dark:border-gray-700">
+          <h3 class="text-lg font-bold text-slate-900 dark:text-gray-100">Próximos Vencimientos</h3>
+          <p class="text-sm text-slate-500 dark:text-gray-400 mt-0.5">Pagos próximos a vencer</p>
         </div>
-        <div class="divide-y divide-slate-50">
+        <div class="divide-y divide-slate-50 dark:divide-gray-700">
           <div v-for="inst in paginatedUpcomingInstallments" :key="inst.id" class="p-4">
             <div class="flex items-center justify-between mb-2">
               <span :class="inst.payment_status_id === 3 ? 'badge-danger' : 'badge-warning'">
                 {{ inst.payment_status_id === 3 ? 'En deuda' : 'Pendiente' }}
               </span>
-              <span class="text-xs text-slate-400 font-medium">{{ formatDate(inst.due_date) }}</span>
+              <span class="text-xs text-slate-400 dark:text-gray-500 font-medium">{{ formatDate(inst.due_date) }}</span>
             </div>
             <div class="flex items-center justify-between mb-2">
-              <h4 class="font-semibold text-slate-900 text-sm truncate mr-2">
+              <h4 class="font-semibold text-slate-900 dark:text-gray-100 text-sm truncate mr-2">
                 {{ inst.expenses?.description || 'Cuota' }}
               </h4>
-              <span class="text-lg font-bold text-slate-900 flex-shrink-0">{{ formatCurrency(inst.amount) }}</span>
+              <span class="text-lg font-bold text-slate-900 dark:text-gray-100 flex-shrink-0">{{ formatCurrency(inst.amount) }}</span>
             </div>
-            <div class="flex items-center gap-2 text-xs text-slate-500">
+            <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-gray-400">
               <span>{{ inst.expenses?.available_cards?.name || 'Sin cuenta' }}</span>
-              <span class="text-slate-300">•</span>
+              <span class="text-slate-300 dark:text-gray-600">•</span>
               <span
                 class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
                 :style="{
@@ -591,21 +662,21 @@
           </div>
         </div>
         <!-- Mobile Pagination -->
-        <div v-if="totalVencimientosPages > 1" class="px-5 py-3 border-t border-slate-100">
+        <div v-if="totalVencimientosPages > 1" class="px-5 py-3 border-t border-slate-100 dark:border-gray-700">
           <div class="flex items-center justify-between">
             <button
               @click="setVencimientosPage(vencimientosPage - 1)"
               :disabled="vencimientosPage === 1"
-              class="flex items-center gap-1 text-sm text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed"
+              class="flex items-center gap-1 text-sm text-slate-500 dark:text-gray-400 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ChevronLeft class="w-4 h-4" />
               <span>Anterior</span>
             </button>
-            <span class="text-sm text-slate-500">{{ vencimientosPage }} de {{ totalVencimientosPages }}</span>
+            <span class="text-sm text-slate-500 dark:text-gray-400">{{ vencimientosPage }} de {{ totalVencimientosPages }}</span>
             <button
               @click="setVencimientosPage(vencimientosPage + 1)"
               :disabled="vencimientosPage === totalVencimientosPages"
-              class="flex items-center gap-1 text-sm text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed"
+              class="flex items-center gap-1 text-sm text-slate-500 dark:text-gray-400 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <span>Siguiente</span>
               <ChevronRight class="w-4 h-4" />
@@ -650,13 +721,16 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
-  HelpCircle
+  HelpCircle,
+  Download
 } from 'lucide-vue-next'
 import SkeletonCard from '@/components/SkeletonCard.vue'
 import SkeletonSummary from '@/components/SkeletonSummary.vue'
 import SkeletonChart from '@/components/SkeletonChart.vue'
 import SkeletonTable from '@/components/SkeletonTable.vue'
 import SkeletonList from '@/components/SkeletonList.vue'
+import ExportButton from '@/components/ExportButton.vue'
+import ComparisonBadge from '@/components/ComparisonBadge.vue'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import {
@@ -694,6 +768,10 @@ const touchStartX = ref(0)
 
 const currentMonth = new Date().getMonth() + 1
 const currentYear = new Date().getFullYear()
+
+const previousPeriodIncome = ref(0)
+const previousPeriodExpenses = ref(0)
+const previousPeriodBalance = ref(0)
 
 // --- Utility ---
 const formatCurrency = (amount) =>
@@ -1288,6 +1366,91 @@ const paymentTypeDoughnutOptions = {
   }
 }
 
+// --- Chart Export Data ---
+const categoryChartExport = computed(() => {
+  const labels = chartData.value.categories.labels
+  const data = chartData.value.categories.datasets[0]?.data || []
+  return {
+    columns: [{ key: 'label', label: 'Categoría' }, { key: 'value', label: 'Monto' }],
+    data: labels.map((label, i) => ({ label, value: data[i] || 0 }))
+  }
+})
+
+const cardsChartExport = computed(() => {
+  const labels = chartData.value.cards.labels
+  const data = chartData.value.cards.datasets[0]?.data || []
+  return {
+    columns: [{ key: 'label', label: 'Cuenta' }, { key: 'value', label: 'Monto' }],
+    data: labels.map((label, i) => ({ label, value: data[i] || 0 }))
+  }
+})
+
+const evolutionChartExport = computed(() => {
+  const labels = evolutionChartData.value.labels
+  const datasets = evolutionChartData.value.datasets || []
+  const columns = [
+    { key: 'periodo', label: 'Período' },
+    ...datasets.map(ds => ({ key: ds.label, label: ds.label }))
+  ]
+  const data = labels.map((label, i) => {
+    const row = { periodo: label }
+    datasets.forEach(ds => { row[ds.label] = ds.data[i] || 0 })
+    return row
+  })
+  return { columns, data }
+})
+
+const topExpensesChartExport = computed(() => {
+  const labels = topExpensesChartData.value.labels
+  const data = topExpensesChartData.value.datasets[0]?.data || []
+  return {
+    columns: [{ key: 'label', label: 'Gasto' }, { key: 'value', label: 'Monto' }],
+    data: labels.map((label, i) => ({ label, value: data[i] || 0 }))
+  }
+})
+
+const paymentTypeChartExport = computed(() => {
+  const labels = paymentTypeChartData.value.labels
+  const data = paymentTypeChartData.value.datasets[0]?.data || []
+  return {
+    columns: [{ key: 'label', label: 'Tipo' }, { key: 'value', label: 'Monto' }],
+    data: labels.map((label, i) => ({ label, value: data[i] || 0 }))
+  }
+})
+
+// --- Period Comparison ---
+const loadPeriodComparison = async () => {
+  if (isAnnual.value) {
+    const prevYear = currentYear - 1
+    try {
+      const [incomeRes, expenseRes] = await Promise.all([
+        incomesApi.getSummary({ year: prevYear }),
+        expensesApi.getMonthlyTotalWithInstallments(null, null, prevYear, {})
+      ])
+      previousPeriodIncome.value = incomeRes?.data?.total || 0
+      previousPeriodExpenses.value = expenseRes?.data?.[0]?.total_expenses || 0
+    } catch {
+      previousPeriodIncome.value = 0
+      previousPeriodExpenses.value = 0
+    }
+  } else {
+    const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1
+    const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear
+    try {
+      const [incomeRes, expenseRes] = await Promise.all([
+        incomesApi.getSummary({ month: prevMonth, year: prevYear }),
+        expensesApi.getMonthlyTotalWithInstallments(prevMonth, prevYear, {})
+      ])
+      previousPeriodIncome.value = incomeRes?.data?.total || 0
+      previousPeriodExpenses.value = expenseRes?.data?.[0]?.total_expenses || 0
+    } catch {
+      previousPeriodIncome.value = 0
+      previousPeriodExpenses.value = 0
+    }
+  }
+  previousPeriodBalance.value = previousPeriodIncome.value - previousPeriodExpenses.value
+}
+
 // --- Data Loading ---
 let _mounted = true
 
@@ -1311,7 +1474,8 @@ onMounted(async () => {
       incomesStore.loadIncomesForChart([currentYear, currentYear - 1]),
       cardsStore.loadCards(),
       categoriesStore.loadCategories(),
-      loadPreviousMonthCarry()
+      loadPreviousMonthCarry(),
+      loadPeriodComparison()
     ])
   } catch (err) {
     console.error('Error cargando dashboard:', err)
@@ -1350,7 +1514,8 @@ watch(isAnnual, async (annual) => {
       expensesStore.loadMonthlyTotals(currentMonth, currentYear),
       incomesStore.loadIncomes(incomeFilters),
       incomesStore.loadIncomesForChart([currentYear, currentYear - 1]),
-      loadPreviousMonthCarry()
+      loadPreviousMonthCarry(),
+      loadPeriodComparison()
     ])
   } catch (err) {
     console.error('Error toggling annual view:', err)

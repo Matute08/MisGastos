@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
@@ -73,6 +74,7 @@ export default {
         'shimmer': 'shimmer 2s infinite linear',
         'fade-in': 'fadeIn 0.3s ease-out',
         'slide-up': 'slideUp 0.3s ease-out',
+        'glow-pulse': 'glowPulse 3s ease-in-out infinite',
       },
       keyframes: {
         shimmer: {
@@ -86,6 +88,10 @@ export default {
         slideUp: {
           '0%': { opacity: '0', transform: 'translateY(10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        glowPulse: {
+          '0%, 100%': { boxShadow: '0 0 20px -5px rgba(99, 102, 241, 0.3)' },
+          '50%': { boxShadow: '0 0 30px -3px rgba(99, 102, 241, 0.5)' },
         },
       },
     },

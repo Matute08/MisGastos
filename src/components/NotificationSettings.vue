@@ -2,8 +2,8 @@
   <div class="card">
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h3 class="text-lg font-semibold text-slate-900">Notificaciones</h3>
-        <p class="text-sm text-slate-600">Gestiona las notificaciones de la aplicación</p>
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-gray-100">Notificaciones</h3>
+        <p class="text-sm text-slate-600 dark:text-gray-400">Gestiona las notificaciones de la aplicación</p>
       </div>
       <Bell class="h-6 w-6 text-primary-600" />
     </div>
@@ -24,10 +24,10 @@
     <!-- Configuraciones -->
     <div v-else class="space-y-6">
       <!-- Permisos -->
-      <div class="flex items-center justify-between p-4 bg-slate-50 rounded-md">
+      <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-gray-700 rounded-md">
         <div>
-          <h4 class="text-sm font-medium text-slate-900">Permisos de notificación</h4>
-          <p class="text-sm text-slate-600">
+          <h4 class="text-sm font-medium text-slate-900 dark:text-gray-100">Permisos de notificación</h4>
+          <p class="text-sm text-slate-600 dark:text-gray-400">
             Estado: 
             <span :class="{
               'text-success-600': permission === 'granted',
@@ -55,39 +55,39 @@
       </div>
 
       <!-- Notificaciones de pagos -->
-      <div class="border border-slate-200 rounded-md p-4">
+      <div class="border border-slate-200 dark:border-gray-700 rounded-md p-4">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h4 class="text-sm font-medium text-slate-900">Recordatorios de pago</h4>
-            <p class="text-sm text-slate-600">Recibe notificaciones cuando se acerquen las fechas de pago</p>
+            <h4 class="text-sm font-medium text-slate-900 dark:text-gray-100">Recordatorios de pago</h4>
+            <p class="text-sm text-slate-600 dark:text-gray-400">Recibe notificaciones cuando se acerquen las fechas de pago</p>
           </div>
           <Switch v-model="paymentNotifications" />
         </div>
 
         <div v-if="paymentNotifications" class="space-y-3">
           <div class="flex items-center justify-between">
-            <span class="text-sm text-slate-700">Notificar 3 días antes</span>
+            <span class="text-sm text-slate-700 dark:text-gray-300">Notificar 3 días antes</span>
             <input
               v-model="notificationDays"
               type="number"
               min="1"
               max="7"
-              class="w-16 px-2 py-1 text-sm border border-slate-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+              class="w-16 px-2 py-1 text-sm border border-slate-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
           
-          <div class="text-xs text-slate-500">
+          <div class="text-xs text-slate-500 dark:text-gray-400">
             Se verificará automáticamente cada hora
           </div>
         </div>
       </div>
 
       <!-- Notificaciones de gastos -->
-      <div class="border border-slate-200 rounded-md p-4">
+      <div class="border border-slate-200 dark:border-gray-700 rounded-md p-4">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h4 class="text-sm font-medium text-slate-900">Resúmenes semanales</h4>
-            <p class="text-sm text-slate-600">Recibe un resumen de tus gastos semanalmente</p>
+            <h4 class="text-sm font-medium text-slate-900 dark:text-gray-100">Resúmenes semanales</h4>
+            <p class="text-sm text-slate-600 dark:text-gray-400">Recibe un resumen de tus gastos semanalmente</p>
           </div>
           <Switch v-model="weeklyReports" />
         </div>
@@ -105,7 +105,7 @@
       </div>
 
       <!-- Información adicional -->
-      <div class="text-xs text-slate-500 text-center">
+      <div class="text-xs text-slate-500 dark:text-gray-400 text-center">
         <p>Las notificaciones funcionan incluso cuando la app está cerrada</p>
         <p>Puedes desactivarlas en cualquier momento desde la configuración del navegador</p>
       </div>

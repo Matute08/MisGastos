@@ -2,8 +2,8 @@
   <div class="max-w-4xl mx-auto p-6">
     <!-- Header -->
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-slate-900">Perfil de Usuario</h1>
-      <p class="text-slate-600 mt-2">Gestiona tu información personal y configuración</p>
+      <h1 class="text-3xl font-bold text-slate-900 dark:text-gray-100">Perfil de Usuario</h1>
+      <p class="text-slate-600 dark:text-gray-400 mt-2">Gestiona tu información personal y configuración</p>
     </div>
 
     <!-- Loading -->
@@ -25,27 +25,27 @@
     <div v-else-if="authStore.userProfile" class="space-y-6">
       <!-- Información Básica -->
       <div class="card">
-        <h2 class="text-xl font-semibold text-slate-900 mb-4">Información Básica</h2>
+        <h2 class="text-xl font-semibold text-slate-900 dark:text-gray-100 mb-4">Información Básica</h2>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">Email</label>
-            <p class="text-slate-900 bg-slate-50 px-3 py-2 rounded-md">{{ authStore.userProfile.email }}</p>
+            <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Email</label>
+            <p class="text-slate-900 dark:text-gray-100 bg-slate-50 dark:bg-gray-700 px-3 py-2 rounded-md">{{ authStore.userProfile.email }}</p>
           </div>
           
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">Rol</label>
+            <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Rol</label>
             <div class="flex items-center space-x-2">
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                 :class="roleBadgeClass">
                 {{ roleDisplayName }}
               </span>
-              <span class="text-sm text-slate-500">{{ authStore.userProfile.role_descripcion }}</span>
+              <span class="text-sm text-slate-500 dark:text-gray-400">{{ authStore.userProfile.role_descripcion }}</span>
             </div>
           </div>
           
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">Nombre</label>
+            <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Nombre</label>
             <input 
               v-model="editingProfile.nombre_perfil"
               type="text"
@@ -55,8 +55,8 @@
           </div>
           
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">Fecha de Registro</label>
-            <p class="text-slate-900 bg-slate-50 px-3 py-2 rounded-md">
+            <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Fecha de Registro</label>
+            <p class="text-slate-900 dark:text-gray-100 bg-slate-50 dark:bg-gray-700 px-3 py-2 rounded-md">
               {{ formatDate(authStore.userProfile.auth_created_at) }}
             </p>
           </div>
@@ -84,13 +84,13 @@
 
       <!-- Información del Rol -->
       <div class="card">
-        <h2 class="text-xl font-semibold text-slate-900 mb-4">Información del Rol</h2>
+        <h2 class="text-xl font-semibold text-slate-900 dark:text-gray-100 mb-4">Información del Rol</h2>
         
         <div class="space-y-4">
-          <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+          <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-gray-700 rounded-lg">
             <div>
-              <h3 class="font-medium text-slate-900">Permisos de Administrador</h3>
-              <p class="text-sm text-slate-600">Acceso completo al sistema</p>
+              <h3 class="font-medium text-slate-900 dark:text-gray-100">Permisos de Administrador</h3>
+              <p class="text-sm text-slate-600 dark:text-gray-400">Acceso completo al sistema</p>
             </div>
             <div class="flex items-center">
               <CheckCircle v-if="authStore.isAdmin" class="h-5 w-5 text-success-500" />
@@ -98,10 +98,10 @@
             </div>
           </div>
           
-          <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+          <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-gray-700 rounded-lg">
             <div>
-              <h3 class="font-medium text-slate-900">Permisos de Moderador</h3>
-              <p class="text-sm text-slate-600">Acceso intermedio al sistema</p>
+              <h3 class="font-medium text-slate-900 dark:text-gray-100">Permisos de Moderador</h3>
+              <p class="text-sm text-slate-600 dark:text-gray-400">Acceso intermedio al sistema</p>
             </div>
             <div class="flex items-center">
               <CheckCircle v-if="authStore.hasModeratorAccess" class="h-5 w-5 text-success-500" />
@@ -109,10 +109,10 @@
             </div>
           </div>
           
-          <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+          <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-gray-700 rounded-lg">
             <div>
-              <h3 class="font-medium text-slate-900">Permisos de Usuario</h3>
-              <p class="text-sm text-slate-600">Acceso básico al sistema</p>
+              <h3 class="font-medium text-slate-900 dark:text-gray-100">Permisos de Usuario</h3>
+              <p class="text-sm text-slate-600 dark:text-gray-400">Acceso básico al sistema</p>
             </div>
             <div class="flex items-center">
               <CheckCircle class="h-5 w-5 text-success-500" />
@@ -123,7 +123,7 @@
 
       <!-- Panel de Administración (Solo para Admins) -->
       <div v-if="authStore.isAdmin" class="card">
-        <h2 class="text-xl font-semibold text-slate-900 mb-4">Panel de Administración</h2>
+        <h2 class="text-xl font-semibold text-slate-900 dark:text-gray-100 mb-4">Panel de Administración</h2>
         
         <div class="space-y-4">
           <div class="p-4 bg-primary-50 border border-primary-200 rounded-lg">
@@ -151,9 +151,9 @@
 
     <!-- Estado Vacío -->
     <div v-else class="text-center py-12">
-      <User class="mx-auto h-12 w-12 text-slate-400" />
-      <h3 class="mt-4 text-lg font-medium text-slate-900">No se pudo cargar el perfil</h3>
-      <p class="mt-2 text-slate-600">Intenta recargar la página</p>
+      <User class="mx-auto h-12 w-12 text-slate-400 dark:text-gray-500" />
+      <h3 class="mt-4 text-lg font-medium text-slate-900 dark:text-gray-100">No se pudo cargar el perfil</h3>
+      <p class="mt-2 text-slate-600 dark:text-gray-400">Intenta recargar la página</p>
     </div>
   </div>
 </template>
@@ -195,7 +195,7 @@ const roleBadgeClass = computed(() => {
     'moderator': 'bg-warning-100 text-warning-800',
     'user': 'bg-primary-100 text-primary-800'
   }
-  return classMap[authStore.userProfile?.role_nombre] || 'bg-slate-100 text-slate-800'
+  return classMap[authStore.userProfile?.role_nombre] || 'bg-slate-100 dark:bg-gray-700 text-slate-800 dark:text-gray-200'
 })
 
 // Inicializar formulario

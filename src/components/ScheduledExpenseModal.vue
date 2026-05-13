@@ -1,13 +1,13 @@
 <template>
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overscroll-none" @wheel.prevent @scroll.prevent>
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full min-w-0 max-h-[90vh] overflow-y-auto overflow-x-hidden" @wheel.stop @touchmove.stop @scroll.stop>
-      <div class="flex justify-between items-center p-6 border-b border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full min-w-0 max-h-[90vh] overflow-y-auto overflow-x-hidden" @wheel.stop @touchmove.stop @scroll.stop>
+      <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
           {{ scheduledExpense ? 'Editar Gasto Programado' : 'Nuevo Gasto Programado' }}
         </h3>
         <button
           @click="$emit('close')"
-          class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 dark:text-gray-400 dark:text-gray-500 transition-colors duration-200"
         >
           <X class="h-5 w-5" />
         </button>
@@ -15,7 +15,7 @@
 
       <form @submit.prevent="handleSubmit" class="p-6 space-y-4 min-w-0">
         <div>
-          <label for="description" class="block text-sm font-medium text-gray-700">
+          <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Descripción
           </label>
           <input
@@ -29,7 +29,7 @@
         </div>
 
         <div>
-          <label for="amount" class="block text-sm font-medium text-gray-700">
+          <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Monto
           </label>
           <input
@@ -50,7 +50,7 @@
         </div>
 
         <div>
-          <label for="card_id" class="block text-sm font-medium text-gray-700">
+          <label for="card_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Tarjeta
           </label>
           <select
@@ -71,7 +71,7 @@
         </div>
 
         <div>
-          <label for="category_id" class="block text-sm font-medium text-gray-700">
+          <label for="category_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Categoría
           </label>
           <select
@@ -93,7 +93,7 @@
         </div>
 
         <div v-if="form.category_id">
-          <label for="subcategory_id" class="block text-sm font-medium text-gray-700">
+          <label for="subcategory_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Subcategoría
           </label>
           <select
@@ -113,7 +113,7 @@
         </div>
 
         <div v-if="scheduledExpense">
-          <label for="payment_status_id" class="block text-sm font-medium text-gray-700">
+          <label for="payment_status_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Estado de pago
           </label>
           <select
@@ -129,13 +129,13 @@
               {{ status.label }}
             </option>
           </select>
-          <p class="mt-1 text-xs text-gray-500">
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">
             Este estado se aplicará a los gastos generados a partir de ahora
           </p>
         </div>
 
         <div>
-          <label for="scheduled_start_month" class="block text-sm font-medium text-gray-700">
+          <label for="scheduled_start_month" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Mes de inicio
           </label>
           <input
@@ -148,7 +148,7 @@
         </div>
 
         <div class="space-y-3">
-          <label class="block text-sm font-medium text-gray-700">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Duración del gasto programado
           </label>
           
@@ -160,12 +160,12 @@
                 value="limited"
                 class="mr-2"
               />
-              <span class="text-sm text-gray-700">Por un número específico de meses</span>
+              <span class="text-sm text-gray-700 dark:text-gray-300">Por un número específico de meses</span>
             </label>
           </div>
 
           <div v-if="durationType === 'limited'" class="ml-6">
-            <label for="scheduled_months" class="block text-sm font-medium text-gray-700">
+            <label for="scheduled_months" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Número de meses
             </label>
             <input
@@ -187,7 +187,7 @@
                 value="unlimited"
                 class="mr-2"
               />
-              <span class="text-sm text-gray-700">Indefinido (hasta que lo canceles)</span>
+              <span class="text-sm text-gray-700 dark:text-gray-300">Indefinido (hasta que lo canceles)</span>
             </label>
           </div>
         </div>

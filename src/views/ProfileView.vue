@@ -2,18 +2,18 @@
   <div class="space-y-6 max-w-2xl mx-auto">
     <!-- Header -->
     <div>
-      <h1 class="text-2xl font-bold text-slate-900">Mi Perfil</h1>
-      <p class="text-slate-500">Administra tu información personal</p>
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-gray-100">Mi Perfil</h1>
+      <p class="text-slate-500 dark:text-gray-400">Administra tu información personal</p>
     </div>
 
     <!-- Avatar & Name -->
     <div class="card text-center py-8">
-      <div class="w-20 h-20 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+      <div class="w-20 h-20 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 flex items-center justify-center text-2xl font-bold mx-auto mb-4">
         {{ userInitials }}
       </div>
-      <h2 class="text-xl font-bold text-slate-900">{{ authStore.userProfile?.nombre_perfil || 'Usuario' }}</h2>
-      <p class="text-sm text-slate-500 mt-1">{{ userEmail }}</p>
-      <span class="inline-flex items-center mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-200">
+      <h2 class="text-xl font-bold text-slate-900 dark:text-gray-100">{{ authStore.userProfile?.nombre_perfil || 'Usuario' }}</h2>
+      <p class="text-sm text-slate-500 dark:text-gray-400 mt-1">{{ userEmail }}</p>
+      <span class="inline-flex items-center mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 ring-1 ring-inset ring-primary-200 dark:ring-primary-700">
         {{ userRoleDisplay }}
       </span>
     </div>
@@ -27,11 +27,11 @@
 
       <form @submit.prevent="handleUpdateProfile" class="space-y-4">
         <div>
-          <label for="profile-name" class="block text-sm font-semibold text-slate-700 mb-1.5">
+          <label for="profile-name" class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
             Nombre
           </label>
           <div class="relative">
-            <UserIcon class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <UserIcon class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-gray-500" />
             <input
               id="profile-name"
               v-model="form.nombre"
@@ -43,56 +43,56 @@
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+          <label class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
             Email
           </label>
           <div class="relative">
-            <Mail class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Mail class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-gray-500" />
             <input
               :value="userEmail"
               type="email"
               disabled
-              class="input-field !pl-10 bg-slate-50 text-slate-500 cursor-not-allowed"
+              class="input-field !pl-10 bg-slate-50 dark:bg-gray-700 text-slate-500 dark:text-gray-400 cursor-not-allowed"
             />
           </div>
-          <p class="text-xs text-slate-400 mt-1">El email no se puede modificar</p>
+          <p class="text-xs text-slate-400 dark:text-gray-500 mt-1">El email no se puede modificar</p>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+          <label class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
             Rol
           </label>
           <div class="relative">
-            <Shield class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Shield class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-gray-500" />
             <input
               :value="userRoleDisplay"
               type="text"
               disabled
-              class="input-field !pl-10 bg-slate-50 text-slate-500 cursor-not-allowed"
+              class="input-field !pl-10 bg-slate-50 dark:bg-gray-700 text-slate-500 dark:text-gray-400 cursor-not-allowed"
             />
           </div>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+          <label class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
             Miembro desde
           </label>
           <div class="relative">
-            <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-gray-500" />
             <input
               :value="memberSince"
               type="text"
               disabled
-              class="input-field !pl-10 bg-slate-50 text-slate-500 cursor-not-allowed"
+              class="input-field !pl-10 bg-slate-50 dark:bg-gray-700 text-slate-500 dark:text-gray-400 cursor-not-allowed"
             />
           </div>
         </div>
 
-        <div v-if="successMsg" class="bg-success-50 border border-success-100 rounded-xl p-3">
-          <p class="text-sm text-success-700">{{ successMsg }}</p>
+        <div v-if="successMsg" class="bg-success-50 dark:bg-success-900/20 border border-success-100 dark:border-success-800 rounded-xl p-3">
+          <p class="text-sm text-success-700 dark:text-success-300">{{ successMsg }}</p>
         </div>
-        <div v-if="errorMsg" class="bg-danger-50 border border-danger-100 rounded-xl p-3">
-          <p class="text-sm text-danger-700">{{ errorMsg }}</p>
+        <div v-if="errorMsg" class="bg-danger-50 dark:bg-danger-900/20 border border-danger-100 dark:border-danger-800 rounded-xl p-3">
+          <p class="text-sm text-danger-700 dark:text-danger-300">{{ errorMsg }}</p>
         </div>
 
         <div class="flex justify-end pt-2">
@@ -109,11 +109,11 @@
     </div>
 
     <!-- Danger Zone -->
-    <div class="card border-danger-200">
+    <div class="card border-danger-200 dark:border-danger-800">
       <div class="flex items-center justify-between">
         <div>
-          <h3 class="text-sm font-semibold text-slate-900">Cerrar Sesión</h3>
-          <p class="text-xs text-slate-500 mt-0.5">Salir de tu cuenta en este dispositivo</p>
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-gray-100">Cerrar Sesión</h3>
+          <p class="text-xs text-slate-500 dark:text-gray-400 mt-0.5">Salir de tu cuenta en este dispositivo</p>
         </div>
         <button @click="handleSignOut" class="btn-danger !py-2 !px-4 text-sm">
           <LogOut class="h-4 w-4 mr-1.5 inline-block" />
