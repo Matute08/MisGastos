@@ -1,8 +1,5 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 @layer base {
   html {
@@ -88,7 +85,8 @@
   }
 
   .card-interactive {
-    @apply card transition-all duration-200 ease-out;
+    @apply bg-white rounded-2xl border border-slate-100 p-6 transition-all duration-200 ease-out;
+    @apply dark:bg-gray-800 dark:border-gray-700;
   }
   .card-interactive:hover {
     @apply shadow-soft-lg -translate-y-0.5;
@@ -117,17 +115,17 @@
   }
 
   .badge-success {
-    @apply badge bg-success-50 text-success-700 ring-1 ring-inset ring-success-200;
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-success-50 text-success-700 ring-1 ring-inset ring-success-200;
     @apply dark:bg-success-900/30 dark:text-success-300 dark:ring-success-700;
   }
 
   .badge-warning {
-    @apply badge bg-warning-50 text-warning-700 ring-1 ring-inset ring-warning-200;
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-warning-50 text-warning-700 ring-1 ring-inset ring-warning-200;
     @apply dark:bg-warning-900/30 dark:text-warning-300 dark:ring-warning-700;
   }
 
   .badge-danger {
-    @apply badge bg-danger-50 text-danger-700 ring-1 ring-inset ring-danger-200;
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-danger-50 text-danger-700 ring-1 ring-inset ring-danger-200;
     @apply dark:bg-danger-900/30 dark:text-danger-300 dark:ring-danger-700;
   }
 
