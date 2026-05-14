@@ -3,10 +3,10 @@
         <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
-                <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">
+                <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-gray-100">
                     Categorías
                 </h1>
-                <p class="text-sm sm:text-base text-slate-500 mt-1">
+                <p class="text-sm sm:text-base text-slate-500 dark:text-gray-400 mt-1">
                     {{
                         authStore.isAdmin
                             ? "Administra las categorías del sistema"
@@ -56,7 +56,7 @@
             <div
                 v-for="category in categoriesStore.categories.filter(c => c && c.id)"
                 :key="category.id"
-                class="group relative bg-white rounded-2xl shadow-soft border border-slate-100 hover:shadow-soft-lg hover:border-slate-200 transition-all duration-300 cursor-pointer overflow-visible"
+                class="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-soft border border-slate-100 dark:border-gray-700 hover:shadow-soft-lg hover:border-slate-200 dark:hover:border-gray-600 transition-all duration-300 cursor-pointer overflow-visible"
                 @click="toggleCategory(category)"
             >
                 <!-- Contenido de la categoría -->
@@ -74,13 +74,13 @@
                     </div>
 
                     <!-- Nombre de la categoría -->
-                    <h3 class="text-sm sm:text-base md:text-lg font-bold text-slate-900 mb-2 leading-tight">
+                    <h3 class="text-sm sm:text-base md:text-lg font-bold text-slate-900 dark:text-gray-100 mb-2 leading-tight">
                         {{ category.name }}
                     </h3>
 
                     <!-- Badge de subcategorías -->
                     <span
-                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600"
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-400"
                     >
                         <Folder class="h-3 w-3" />
                         {{ getSubcategoriesForCategory(category.id).length }}
@@ -102,7 +102,7 @@
                     >
                         <button
                             @click.stop="toggleCategoryMenu(category.id)"
-                            class="p-2 bg-white/90 backdrop-blur-sm rounded-xl text-slate-500 hover:text-slate-700 hover:bg-white transition-all duration-200 shadow-sm border border-slate-100"
+                            class="p-2 bg-white dark:bg-gray-800/90 backdrop-blur-sm rounded-xl text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300 dark:text-gray-300 hover:bg-white dark:bg-gray-800 transition-all duration-200 shadow-sm border border-slate-100 dark:border-gray-700"
                         >
                             <MoreVertical class="h-4 w-4" />
                         </button>
@@ -110,15 +110,15 @@
                         <!-- Menú desplegable -->
                         <div
                             v-if="activeCategoryMenu === category.id"
-                            class="absolute right-0 w-36 bg-white rounded-xl shadow-soft-lg py-1.5 z-[9999] border border-slate-100"
+                            class="absolute right-0 w-36 bg-white dark:bg-gray-800 rounded-xl shadow-soft-lg py-1.5 z-[9999] border border-slate-100 dark:border-gray-700"
                             style="top: calc(100% + 6px)"
                         >
                             <button
                                 v-if="categoriesStore.canEditCategory()"
                                 @click="editCategory(category)"
-                                class="flex items-center gap-2.5 w-full text-left px-3.5 py-2.5 text-sm text-slate-700 hover:bg-slate-50 rounded-lg mx-auto transition-colors duration-200"
+                                class="flex items-center gap-2.5 w-full text-left px-3.5 py-2.5 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700 dark:bg-gray-700 rounded-lg mx-auto transition-colors duration-200"
                             >
-                                <Edit class="h-4 w-4 text-slate-400" />
+                                <Edit class="h-4 w-4 text-slate-400 dark:text-gray-500" />
                                 Editar
                             </button>
                             <button
@@ -139,17 +139,17 @@
                 v-if="categoriesStore.categories.length === 0"
                 class="col-span-full flex flex-col items-center justify-center py-16 sm:py-20"
             >
-                <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-100 flex items-center justify-center mb-5">
-                    <Tag class="h-8 w-8 sm:h-10 sm:w-10 text-slate-400" />
+                <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-100 dark:bg-gray-700 flex items-center justify-center mb-5">
+                    <Tag class="h-8 w-8 sm:h-10 sm:w-10 text-slate-400 dark:text-gray-500" />
                 </div>
-                <h3 class="text-lg sm:text-xl font-bold text-slate-900">
+                <h3 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-gray-100">
                     {{
                         authStore.isAdmin
                             ? "No hay categorías"
                             : "No hay categorías disponibles"
                     }}
                 </h3>
-                <p class="mt-2 text-sm sm:text-base text-slate-500 text-center max-w-sm">
+                <p class="mt-2 text-sm sm:text-base text-slate-500 dark:text-gray-400 text-center max-w-sm">
                     {{
                         authStore.isAdmin
                             ? "Comienza agregando tu primera categoría"
@@ -175,11 +175,11 @@
             @wheel.prevent @touchmove.prevent @scroll.prevent
         >
             <div
-                class="bg-white rounded-2xl shadow-soft-lg max-w-md w-full max-h-[75vh] overflow-hidden animate-fade-in"
+                class="bg-white dark:bg-gray-800 rounded-2xl shadow-soft-lg max-w-md w-full max-h-[75vh] overflow-hidden animate-fade-in"
                 @wheel.stop @touchmove.stop @scroll.stop
             >
                 <!-- Header del modal -->
-                <div class="flex justify-between items-center p-5 sm:p-6 border-b border-slate-100">
+                <div class="flex justify-between items-center p-5 sm:p-6 border-b border-slate-100 dark:border-gray-700">
                     <div class="flex items-center gap-3">
                         <div
                             class="w-10 h-10 rounded-full flex items-center justify-center"
@@ -192,15 +192,15 @@
                             />
                         </div>
                         <div>
-                            <h3 class="text-lg font-bold text-slate-900">
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-gray-100">
                                 {{ selectedCategoryForSubcategory?.name }}
                             </h3>
-                            <p class="text-xs text-slate-500">Subcategorías</p>
+                            <p class="text-xs text-slate-500 dark:text-gray-400">Subcategorías</p>
                         </div>
                     </div>
                     <button
                         @click="closeSubcategoriesModal"
-                        class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all duration-200"
+                        class="p-2 text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 dark:bg-gray-700 rounded-xl transition-all duration-200"
                     >
                         <X class="h-5 w-5" />
                     </button>
@@ -213,7 +213,7 @@
                             selectedCategoryForSubcategory?.id
                         ).filter(s => s && s.id)"
                         :key="subcategory.id"
-                        class="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors duration-200"
+                        class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-gray-700 rounded-xl hover:bg-slate-100 dark:hover:bg-gray-700 dark:bg-gray-700 transition-colors duration-200"
                     >
                         <div class="flex items-center gap-3">
                             <div
@@ -223,7 +223,7 @@
                                     ringColor: subcategory.color + '40',
                                 }"
                             ></div>
-                            <span class="text-sm font-medium text-slate-700">
+                            <span class="text-sm font-medium text-slate-700 dark:text-gray-300">
                                 {{ subcategory.name }}
                             </span>
                         </div>
@@ -232,14 +232,14 @@
                             <button
                                 v-if="subcategoriesStore.canEditSubcategory() && subcategory && subcategory.id"
                                 @click="editSubcategory(subcategory)"
-                                class="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200"
+                                class="p-1.5 text-slate-400 dark:text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200"
                             >
                                 <Edit class="h-3.5 w-3.5" />
                             </button>
                             <button
                                 v-if="subcategoriesStore.canDeleteSubcategory() && subcategory && subcategory.id"
                                 @click="deleteSubcategory(subcategory.id)"
-                                class="p-1.5 text-slate-400 hover:text-danger-600 hover:bg-danger-50 rounded-lg transition-all duration-200"
+                                class="p-1.5 text-slate-400 dark:text-gray-500 hover:text-danger-600 hover:bg-danger-50 rounded-lg transition-all duration-200"
                             >
                                 <Trash2 class="h-3.5 w-3.5" />
                             </button>
@@ -255,10 +255,10 @@
                         "
                         class="text-center py-10"
                     >
-                        <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-gray-700 flex items-center justify-center mx-auto mb-3">
                             <Folder class="h-6 w-6 text-slate-300" />
                         </div>
-                        <p class="text-sm text-slate-500">Sin subcategorías</p>
+                        <p class="text-sm text-slate-500 dark:text-gray-400">Sin subcategorías</p>
                     </div>
 
                     <!-- Botón agregar subcategoría -->

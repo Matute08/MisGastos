@@ -10,7 +10,7 @@
     aria-labelledby="category-modal-title"
   >
     <div 
-      class="bg-white rounded-2xl shadow-soft max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-100" 
+      class="bg-white dark:bg-gray-800 rounded-2xl shadow-soft max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-100 dark:border-gray-700" 
       @wheel.stop 
       @touchmove.stop 
       @scroll.stop
@@ -18,13 +18,13 @@
       ref="modalRef"
     >
       <!-- Header -->
-      <div class="flex justify-between items-center p-6 border-b border-slate-200">
-        <h3 id="category-modal-title" class="text-lg font-semibold text-slate-900">
+      <div class="flex justify-between items-center p-6 border-b border-slate-200 dark:border-gray-700">
+        <h3 id="category-modal-title" class="text-lg font-semibold text-slate-900 dark:text-gray-100">
           {{ category ? 'Editar Categoría' : 'Nueva Categoría' }}
         </h3>
         <button
           @click="$emit('close')"
-          class="text-slate-400 hover:text-slate-600 transition-colors duration-200"
+          class="text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:text-gray-400 transition-colors duration-200"
           aria-label="Cerrar modal"
           type="button"
         >
@@ -36,7 +36,7 @@
       <form @submit.prevent="onSubmit" class="p-6 space-y-4" novalidate>
         <!-- Nombre -->
         <div>
-          <label for="name" class="block text-sm font-medium text-slate-700">
+          <label for="name" class="block text-sm font-medium text-slate-700 dark:text-gray-300">
             Nombre de la categoría
           </label>
           <input
@@ -57,7 +57,7 @@
 
         <!-- Color -->
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">
+          <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
             Color
           </label>
           <div class="grid grid-cols-6 gap-2" role="radiogroup" aria-label="Seleccionar color">
@@ -68,7 +68,7 @@
               @click="handleColorSelect(color)"
               :class="[
                 'w-8 h-8 rounded-full border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-                colorValue === color ? 'border-slate-900 scale-110' : 'border-slate-300 hover:scale-105'
+                colorValue === color ? 'border-slate-900 scale-110' : 'border-slate-300 dark:border-gray-600 hover:scale-105'
               ]"
               :style="{ backgroundColor: color }"
               :aria-label="`Seleccionar color ${color}`"
@@ -81,8 +81,8 @@
         </div>
 
         <!-- Vista previa -->
-        <div v-if="name && colorValue" class="p-3 bg-slate-50 rounded-lg" role="region" aria-label="Vista previa de la categoría">
-          <p class="text-sm text-slate-600 mb-2">Vista previa:</p>
+        <div v-if="name && colorValue" class="p-3 bg-slate-50 dark:bg-gray-700 rounded-lg" role="region" aria-label="Vista previa de la categoría">
+          <p class="text-sm text-slate-600 dark:text-gray-400 mb-2">Vista previa:</p>
           <span
             class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
             :style="{ backgroundColor: colorValue + '20', color: colorValue }"
@@ -94,18 +94,18 @@
         <!-- Subcategorías (solo para nuevas categorías) -->
         <div v-if="!category && form.name && form.color" class="border-t pt-4">
           <div class="flex items-center justify-between mb-3">
-            <h4 class="text-sm font-medium text-slate-700">Subcategorías (opcional)</h4>
+            <h4 class="text-sm font-medium text-slate-700 dark:text-gray-300">Subcategorías (opcional)</h4>
             <button
               type="button"
               @click="showSubcategoryInput = true"
-              class="text-sm text-primary-600 hover:text-primary-700 font-medium"
+              class="text-sm text-primary-600 hover:text-primary-700 dark:hover:text-primary-400 font-medium"
             >
               + Agregar subcategoría
             </button>
           </div>
           
           <!-- Input para nueva subcategoría -->
-          <div v-if="showSubcategoryInput" class="mb-3 p-3 bg-slate-50 rounded-lg">
+          <div v-if="showSubcategoryInput" class="mb-3 p-3 bg-slate-50 dark:bg-gray-700 rounded-lg">
             <div class="flex items-center space-x-2">
               <input
                 v-model="newSubcategoryName"
@@ -132,7 +132,7 @@
             </div>
           </div>
           
-          <div v-if="subcategories.length === 0" class="text-sm text-slate-500 italic">
+          <div v-if="subcategories.length === 0" class="text-sm text-slate-500 dark:text-gray-400 italic">
             Sin subcategorías
           </div>
           
@@ -140,10 +140,10 @@
             <div
               v-for="(subcategory, index) in subcategories"
               :key="index"
-              class="flex items-center space-x-2 p-2 bg-slate-50 rounded"
+              class="flex items-center space-x-2 p-2 bg-slate-50 dark:bg-gray-700 rounded"
             >
               <div
-                class="w-4 h-4 rounded-full border border-slate-300"
+                class="w-4 h-4 rounded-full border border-slate-300 dark:border-gray-600"
                 :style="{ backgroundColor: form.color }"
               ></div>
               <span class="text-sm flex-1">{{ subcategory.name }}</span>

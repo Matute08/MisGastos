@@ -1,6 +1,7 @@
 # Dependencias
 node_modules/
-
+.vscode
+.agents
 # Build
 /dist
 
@@ -11,6 +12,9 @@ node_modules/
 # Otros
 .DS_Store
 *.md
+
+# Skills
+skills-lock.json
 
 # Archivos de log
 # Logs de Winston (backend)

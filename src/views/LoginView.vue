@@ -23,33 +23,33 @@
     </div>
 
     <!-- Right Panel - Form -->
-    <div class="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-12 bg-white">
+    <div class="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-12 bg-white dark:bg-gray-900">
       <div class="w-full max-w-md">
         <!-- Mobile logo -->
         <div class="lg:hidden text-center mb-8">
-          <div class="mx-auto h-14 w-14 flex items-center justify-center rounded-full bg-primary-50">
-            <Wallet class="h-7 w-7 text-primary-600" />
+          <div class="mx-auto h-14 w-14 flex items-center justify-center rounded-full bg-primary-50 dark:bg-primary-900/30">
+            <Wallet class="h-7 w-7 text-primary-600 dark:text-primary-400" />
           </div>
-          <h1 class="mt-3 text-xl font-bold text-primary-700">MisGastos</h1>
+          <h1 class="mt-3 text-xl font-bold text-primary-700 dark:text-primary-400">MisGastos</h1>
         </div>
 
         <!-- Heading -->
         <div class="text-center lg:text-left">
-          <div class="hidden lg:flex mb-6 h-12 w-12 items-center justify-center rounded-full bg-primary-50">
-            <Wallet class="h-6 w-6 text-primary-600" />
+          <div class="hidden lg:flex mb-6 h-12 w-12 items-center justify-center rounded-full bg-primary-50 dark:bg-primary-900/30">
+            <Wallet class="h-6 w-6 text-primary-600 dark:text-primary-400" />
           </div>
-          <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Bienvenido de vuelta</h2>
-          <p class="mt-2 text-sm text-gray-500">Ingresa a tu cuenta</p>
+          <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Bienvenido de vuelta</h2>
+          <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Ingresa a tu cuenta</p>
         </div>
 
         <!-- Form -->
         <form @submit.prevent="handleLogin" class="mt-8 space-y-5">
           <!-- Email -->
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">Correo electrónico</label>
+            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Correo electrónico</label>
             <div class="relative mt-1.5">
               <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <Mail class="h-5 w-5 text-gray-400" />
+                <Mail class="h-5 w-5 text-gray-400 dark:text-gray-500" />
               </div>
               <input
                 id="email"
@@ -65,10 +65,10 @@
 
           <!-- Password -->
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
+            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contraseña</label>
             <div class="relative mt-1.5">
               <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <Lock class="h-5 w-5 text-gray-400" />
+                <Lock class="h-5 w-5 text-gray-400 dark:text-gray-500" />
               </div>
               <input
                 id="password"
@@ -82,7 +82,7 @@
               <button
                 type="button"
                 @click="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors"
+                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 tabindex="-1"
               >
                 <Eye v-if="!showPassword" class="h-5 w-5" />
@@ -97,9 +97,9 @@
               id="rememberMe"
               v-model="rememberMe"
               type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
             />
-            <label for="rememberMe" class="ml-2 block text-sm text-gray-600">
+            <label for="rememberMe" class="ml-2 block text-sm text-gray-600 dark:text-gray-400">
               Recordar mis datos
             </label>
           </div>
@@ -107,10 +107,10 @@
           <!-- Error -->
           <div
             v-if="authStore.error"
-            class="flex items-start gap-3 rounded-lg bg-danger-50 border border-danger-200 p-4"
+            class="flex items-start gap-3 rounded-lg bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 p-4"
           >
             <AlertCircle class="h-5 w-5 text-danger-500 shrink-0 mt-0.5" />
-            <p class="text-sm text-danger-700">{{ authStore.error }}</p>
+            <p class="text-sm text-danger-700 dark:text-danger-300">{{ authStore.error }}</p>
           </div>
 
           <!-- Submit -->
@@ -127,9 +127,9 @@
           </button>
 
           <!-- Register link -->
-          <p class="text-center text-sm text-gray-500">
+          <p class="text-center text-sm text-gray-500 dark:text-gray-400">
             ¿No tienes cuenta?
-            <router-link to="/register" class="font-semibold text-primary-600 hover:text-primary-500 transition-colors">
+            <router-link to="/register" class="font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300 transition-colors">
               Regístrate aquí
             </router-link>
           </p>

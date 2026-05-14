@@ -11,7 +11,6 @@ class ApiClient {
     this.refreshPromise = null;
   }
 
-  /** Evita que un 401 en login/registro dispare refresh con un JWT viejo (causa bucles y errores genéricos). */
   isCredentialExchangeEndpoint(endpoint) {
     return (
       endpoint.startsWith('/auth/login') ||
@@ -63,7 +62,6 @@ class ApiClient {
         headers: { 'Cache-Control': 'no-cache' }
       });
     } catch {
-      // Si falla el warmup, dejamos que el flujo principal con reintentos se encargue.
     }
   }
 
@@ -230,7 +228,7 @@ class ApiClient {
 
   async validateToken() {
     if (!this.token) return false;
-    
+
     try {
       const response = await this.get('/auth/validate');
       return response.success;
@@ -240,7 +238,6 @@ class ApiClient {
   }
 
   async get(endpoint, params = {}) {
-    // Filtrar valores null/undefined y construir query string
     const cleanParams = Object.fromEntries(
       Object.entries(params).filter(([_, value]) => value !== null && value !== undefined)
     );
@@ -265,7 +262,6 @@ class ApiClient {
 
   async delete(endpoint, data = undefined) {
     const options = { method: 'DELETE' };
-    // Algunos backends (como Express) no aceptan body vacío en DELETE; solo lo enviamos si existe
     if (data !== undefined) {
       options.body = JSON.stringify(data);
     }
@@ -293,11 +289,11 @@ class ApiClient {
   isTokenExpiringSoon() {
     const expiresAt = localStorage.getItem('tokenExpiresAt');
     if (!expiresAt) return false;
-    
+
     const now = new Date().getTime();
     const expiresTime = parseInt(expiresAt);
     const timeUntilExpiry = expiresTime - now;
-    
+
     return timeUntilExpiry < (24 * 60 * 60 * 1000);
   }
 }
@@ -306,37 +302,52 @@ const apiClient = new ApiClient();
 
 export const auth = {
   async signUp(email, password, nombre_perfil) {
-    apiClient.clearToken();
-    const response = await apiClient.post('/auth/register', {
-      email,
-      password,
-      nombre_perfil
-    });
-    
-    if (response.success && response.token) {
-      apiClient.setToken(response.token);
+    try {
+      apiClient.clearToken();
+      const response = await apiClient.post('/auth/register', {
+        email,
+        password,
+        nombre_perfil
+      });
+
+      if (response.success && response.token) {
+        apiClient.setToken(response.token);
+      }
+
+      return response;
+    } catch (error) {
+      console.error('Error en signUp:', error);
+      throw error;
     }
-    
-    return response;
   },
 
   async signIn(email, password) {
-    apiClient.clearToken();
-    const response = await apiClient.post('/auth/login', {
-      email,
-      password
-    });
-    
-    if (response.success && response.token) {
-      apiClient.setToken(response.token);
+    try {
+      apiClient.clearToken();
+      const response = await apiClient.post('/auth/login', {
+        email,
+        password
+      });
+
+      if (response.success && response.token) {
+        apiClient.setToken(response.token);
+      }
+
+      return response;
+    } catch (error) {
+      console.error('Error en signIn:', error);
+      throw error;
     }
-    
-    return response;
   },
 
   async signOut() {
-    apiClient.clearToken();
-    return { success: true };
+    try {
+      apiClient.clearToken();
+      return { success: true };
+    } catch (error) {
+      console.error('Error en signOut:', error);
+      throw error;
+    }
   },
 
   async getUser() {
@@ -345,22 +356,36 @@ export const auth = {
       return response.data;
     } catch (error) {
       console.error('Error obteniendo perfil:', error);
-      // No retornar error aquí, getUser maneja el error internamente
       return null;
     }
   },
 
   async updateProfile(data) {
-    const response = await apiClient.put('/auth/profile', data);
-    return response;
+    try {
+      const response = await apiClient.put('/auth/profile', data);
+      return response;
+    } catch (error) {
+      console.error('Error en updateProfile:', error);
+      throw error;
+    }
   },
 
   async validateToken() {
-    return await apiClient.validateToken();
+    try {
+      return await apiClient.validateToken();
+    } catch (error) {
+      console.error('Error en validateToken:', error);
+      throw error;
+    }
   },
 
   async refreshToken() {
-    return await apiClient.refreshToken();
+    try {
+      return await apiClient.refreshToken();
+    } catch (error) {
+      console.error('Error en refreshToken:', error);
+      throw error;
+    }
   },
 
   isTokenExpiringSoon() {
@@ -397,7 +422,7 @@ export const availableCards = {
       return response;
     } catch (error) {
       console.error('Error en getAllAvailableCards:', error);
-      return { error: getUserFriendlyError(error) };
+      throw error;
     }
   },
 
@@ -407,7 +432,7 @@ export const availableCards = {
       return response;
     } catch (error) {
       console.error('Error en createAvailableCard:', error);
-      return { error: getUserFriendlyError(error) };
+      throw error;
     }
   },
 
@@ -417,7 +442,7 @@ export const availableCards = {
       return response;
     } catch (error) {
       console.error('Error en updateAvailableCard:', error);
-      return { error: getUserFriendlyError(error) };
+      throw error;
     }
   },
 
@@ -427,7 +452,7 @@ export const availableCards = {
       return response;
     } catch (error) {
       console.error('Error en deleteAvailableCard:', error);
-      return { error: getUserFriendlyError(error) };
+      throw error;
     }
   },
 
@@ -437,7 +462,7 @@ export const availableCards = {
       return response;
     } catch (error) {
       console.error('Error en getAvailableCardById:', error);
-      return { error: getUserFriendlyError(error) };
+      throw error;
     }
   }
 };
@@ -449,7 +474,7 @@ export const userCards = {
       return response;
     } catch (error) {
       console.error('Error en getUserCards:', error);
-      return { error: getUserFriendlyError(error) };
+      throw error;
     }
   },
 
@@ -461,7 +486,7 @@ export const userCards = {
       return response;
     } catch (error) {
       console.error('Error en linkCardToUser:', error);
-      return { error: getUserFriendlyError(error) };
+      throw error;
     }
   },
 
@@ -471,7 +496,7 @@ export const userCards = {
       return response;
     } catch (error) {
       console.error('Error en unlinkCardFromUser:', error);
-      return { error: getUserFriendlyError(error) };
+      throw error;
     }
   },
 
@@ -481,7 +506,7 @@ export const userCards = {
       return response;
     } catch (error) {
       console.error('Error en isCardLinkedToUser:', error);
-      return { error: getUserFriendlyError(error) };
+      throw error;
     }
   },
 
@@ -491,7 +516,7 @@ export const userCards = {
       return response;
     } catch (error) {
       console.error('Error en getUserCardStats:', error);
-      return { error: getUserFriendlyError(error) };
+      throw error;
     }
   }
 };
@@ -503,7 +528,7 @@ export const cards = {
       return response;
     } catch (error) {
       console.error('Error en getCards:', error);
-      return { error: getUserFriendlyError(error) };
+      throw error;
     }
   },
 
@@ -513,258 +538,512 @@ export const cards = {
       return response;
     } catch (error) {
       console.error('Error en createCard:', error);
-      return { error: getUserFriendlyError(error) };
+      throw error;
     }
   },
 
   async updateCard(id, updates) {
-    const response = await apiClient.put(`/cards/${id}`, updates);
-    return response;
+    try {
+      const response = await apiClient.put(`/cards/${id}`, updates);
+      return response;
+    } catch (error) {
+      console.error('Error en updateCard:', error);
+      throw error;
+    }
   },
 
   async deleteCard(id) {
-    const response = await apiClient.delete(`/cards/${id}`);
-    return response;
+    try {
+      const response = await apiClient.delete(`/cards/${id}`);
+      return response;
+    } catch (error) {
+      console.error('Error en deleteCard:', error);
+      throw error;
+    }
   },
 
   async getCardStats(id) {
-    const response = await apiClient.get(`/cards/${id}/stats`);
-    return response;
+    try {
+      const response = await apiClient.get(`/cards/${id}/stats`);
+      return response;
+    } catch (error) {
+      console.error('Error en getCardStats:', error);
+      throw error;
+    }
   },
 
   async getCardExpenses(id, filters = {}) {
-    const response = await apiClient.get(`/cards/${id}/expenses`, filters);
-    return response;
+    try {
+      const response = await apiClient.get(`/cards/${id}/expenses`, filters);
+      return response;
+    } catch (error) {
+      console.error('Error en getCardExpenses:', error);
+      throw error;
+    }
   }
 };
 
 export const expenses = {
   async getExpenses(userId, filters = {}) {
-    const response = await apiClient.get('/expenses', filters);
-    return response;
+    try {
+      const response = await apiClient.get('/expenses', filters);
+      return response;
+    } catch (error) {
+      console.error('Error en getExpenses:', error);
+      throw error;
+    }
   },
 
   async createExpense(expenseData) {
-    const response = await apiClient.post('/expenses', expenseData);
-    return response;
+    try {
+      const response = await apiClient.post('/expenses', expenseData);
+      return response;
+    } catch (error) {
+      console.error('Error en createExpense:', error);
+      throw error;
+    }
   },
 
   async updateExpense(id, updates) {
-    const response = await apiClient.put(`/expenses/${id}`, updates);
-    return response;
+    try {
+      const response = await apiClient.put(`/expenses/${id}`, updates);
+      return response;
+    } catch (error) {
+      console.error('Error en updateExpense:', error);
+      throw error;
+    }
   },
 
   async deleteExpense(id, deleteOption = null) {
-    const payload = deleteOption ? { deleteOption } : undefined;
-    const response = await apiClient.delete(`/expenses/${id}`, payload);
-    return response;
+    try {
+      const payload = deleteOption ? { deleteOption } : undefined;
+      const response = await apiClient.delete(`/expenses/${id}`, payload);
+      return response;
+    } catch (error) {
+      console.error('Error en deleteExpense:', error);
+      throw error;
+    }
   },
 
   async getMonthlyExpensesWithInstallments(userId, month, year, filters = {}) {
-    const params = { month, year, ...filters };
-    const response = await apiClient.get('/expenses/monthly', params);
-    return response;
+    try {
+      const params = { month, year, ...filters };
+      const response = await apiClient.get('/expenses/monthly', params);
+      return response;
+    } catch (error) {
+      console.error('Error en getMonthlyExpensesWithInstallments:', error);
+      throw error;
+    }
   },
 
   async getMonthlyTotalWithInstallments(userId, month, year, filters = {}) {
-    const params = { month, year, ...filters };
-    const response = await apiClient.get('/expenses/monthly-total', params);
-    return response;
+    try {
+      const params = { month, year, ...filters };
+      const response = await apiClient.get('/expenses/monthly-total', params);
+      return response;
+    } catch (error) {
+      console.error('Error en getMonthlyTotalWithInstallments:', error);
+      throw error;
+    }
   },
 
   async getInstallments(expenseId) {
-    const response = await apiClient.get(`/expenses/${expenseId}/installments`);
-    return response;
+    try {
+      const response = await apiClient.get(`/expenses/${expenseId}/installments`);
+      return response;
+    } catch (error) {
+      console.error('Error en getInstallments:', error);
+      throw error;
+    }
   },
 
   async getExpenseInstallmentsSummary(expenseId) {
-    const response = await apiClient.get(`/expenses/${expenseId}/installments-summary`);
-    return response;
+    try {
+      const response = await apiClient.get(`/expenses/${expenseId}/installments-summary`);
+      return response;
+    } catch (error) {
+      console.error('Error en getExpenseInstallmentsSummary:', error);
+      throw error;
+    }
   },
 
   async updateInstallmentStatus(installmentId, paymentStatusId) {
-    const response = await apiClient.put(`/expenses/installments/${installmentId}/status`, {
-      payment_status_id: paymentStatusId
-    });
-    return response;
+    try {
+      const response = await apiClient.put(`/expenses/installments/${installmentId}/status`, {
+        payment_status_id: paymentStatusId
+      });
+      return response;
+    } catch (error) {
+      console.error('Error en updateInstallmentStatus:', error);
+      throw error;
+    }
   },
 
   async getUpcomingInstallments(userId, limit = 100) {
-    const response = await apiClient.get('/expenses/upcoming-installments', { limit });
-    return response;
+    try {
+      const response = await apiClient.get('/expenses/upcoming-installments', { limit });
+      return response;
+    } catch (error) {
+      console.error('Error en getUpcomingInstallments:', error);
+      throw error;
+    }
   },
 
   async getCreditCardsSummary(isAnnual = false) {
-    const response = await apiClient.get('/expenses/credit-cards-summary', { period: isAnnual ? 'annual' : 'monthly' });
-    return response;
+    try {
+      const response = await apiClient.get('/expenses/credit-cards-summary', { period: isAnnual ? 'annual' : 'monthly' });
+      return response;
+    } catch (error) {
+      console.error('Error en getCreditCardsSummary:', error);
+      throw error;
+    }
   },
 
   async getExpensesSummaryByType(isAnnual = false) {
-    const response = await apiClient.get('/expenses/summary-by-type', { period: isAnnual ? 'annual' : 'monthly' });
-    return response;
+    try {
+      const response = await apiClient.get('/expenses/summary-by-type', { period: isAnnual ? 'annual' : 'monthly' });
+      return response;
+    } catch (error) {
+      console.error('Error en getExpensesSummaryByType:', error);
+      throw error;
+    }
   },
 
   async createInstallments(installmentsData) {
-    const response = await apiClient.post('/expenses/installments', installmentsData);
-    return response;
+    try {
+      const response = await apiClient.post('/expenses/installments', installmentsData);
+      return response;
+    } catch (error) {
+      console.error('Error en createInstallments:', error);
+      throw error;
+    }
   },
 
   async getPaymentStatusByCode(code) {
-    const response = await apiClient.get('/expenses/payment-status', { code });
-    return response;
+    try {
+      const response = await apiClient.get('/expenses/payment-status', { code });
+      return response;
+    } catch (error) {
+      console.error('Error en getPaymentStatusByCode:', error);
+      throw error;
+    }
   },
 
   async getAllPaymentStatuses() {
-    const response = await apiClient.get('/expenses/payment-statuses');
-    return response;
+    try {
+      const response = await apiClient.get('/expenses/payment-statuses');
+      return response;
+    } catch (error) {
+      console.error('Error en getAllPaymentStatuses:', error);
+      throw error;
+    }
   },
 
   async markAsPaid(id, payment_status_id) {
-    const response = await apiClient.put(`/expenses/${id}/mark-as-paid`, {
-      payment_status_id
-    });
-    return response;
+    try {
+      const response = await apiClient.put(`/expenses/${id}/mark-as-paid`, {
+        payment_status_id
+      });
+      return response;
+    } catch (error) {
+      console.error('Error en markAsPaid:', error);
+      throw error;
+    }
   },
 
   async markInstallmentAsPaid(id, payment_status_id) {
-    const normalizedId = String(id).startsWith('installment-')
-      ? String(id).replace('installment-', '')
-      : id;
-    const response = await apiClient.put(`/expenses/installment-${normalizedId}/mark-as-paid`, {
-      payment_status_id
-    });
-    return response;
+    try {
+      const normalizedId = String(id).startsWith('installment-')
+        ? String(id).replace('installment-', '')
+        : id;
+      const response = await apiClient.put(`/expenses/installment-${normalizedId}/mark-as-paid`, {
+        payment_status_id
+      });
+      return response;
+    } catch (error) {
+      console.error('Error en markInstallmentAsPaid:', error);
+      throw error;
+    }
   },
 
-  // ===== FUNCIONES PARA GASTOS PROGRAMADOS =====
-
   async getScheduledExpenses() {
-    const response = await apiClient.get('/expenses/scheduled');
-    return response;
+    try {
+      const response = await apiClient.get('/expenses/scheduled');
+      return response;
+    } catch (error) {
+      console.error('Error en getScheduledExpenses:', error);
+      throw error;
+    }
   },
 
   async createScheduledExpense(expenseData) {
-    const response = await apiClient.post('/expenses/scheduled', expenseData);
-    return response;
+    try {
+      const response = await apiClient.post('/expenses/scheduled', expenseData);
+      return response;
+    } catch (error) {
+      console.error('Error en createScheduledExpense:', error);
+      throw error;
+    }
   },
 
   async updateScheduledExpense(scheduledExpenseId, expenseData) {
-    const response = await apiClient.put(`/expenses/scheduled/${scheduledExpenseId}`, expenseData);
-    return response;
+    try {
+      const response = await apiClient.put(`/expenses/scheduled/${scheduledExpenseId}`, expenseData);
+      return response;
+    } catch (error) {
+      console.error('Error en updateScheduledExpense:', error);
+      throw error;
+    }
   },
 
   async cancelScheduledExpense(scheduledExpenseId) {
-    const response = await apiClient.delete(`/expenses/scheduled/${scheduledExpenseId}`);
-    return response;
+    try {
+      const response = await apiClient.delete(`/expenses/scheduled/${scheduledExpenseId}`);
+      return response;
+    } catch (error) {
+      console.error('Error en cancelScheduledExpense:', error);
+      throw error;
+    }
   },
 
+  async getMonthlyInstallments(userId, month, year) {
+    try {
+      const response = await apiClient.get('/expenses/monthly-installments', { month, year });
+      return response;
+    } catch (error) {
+      console.error('Error en getMonthlyInstallments:', error);
+      throw error;
+    }
+  }
 };
 
 export const categories = {
   async getCategories() {
-    const response = await apiClient.get('/categories');
-    return response;
+    try {
+      const response = await apiClient.get('/categories');
+      return response;
+    } catch (error) {
+      console.error('Error en getCategories:', error);
+      throw error;
+    }
   },
 
   async createCategory(categoryData) {
-    const response = await apiClient.post('/categories', categoryData);
-    return response;
+    try {
+      const response = await apiClient.post('/categories', categoryData);
+      return response;
+    } catch (error) {
+      console.error('Error en createCategory:', error);
+      throw error;
+    }
   },
 
   async updateCategory(id, updates) {
-    const response = await apiClient.put(`/categories/${id}`, updates);
-    return response;
+    try {
+      const response = await apiClient.put(`/categories/${id}`, updates);
+      return response;
+    } catch (error) {
+      console.error('Error en updateCategory:', error);
+      throw error;
+    }
   },
 
   async deleteCategory(id) {
-    const response = await apiClient.delete(`/categories/${id}`);
-    return response;
+    try {
+      const response = await apiClient.delete(`/categories/${id}`);
+      return response;
+    } catch (error) {
+      console.error('Error en deleteCategory:', error);
+      throw error;
+    }
   },
 
   async getCategoriesWithStats(month, year) {
-    const response = await apiClient.get('/categories/with-stats', { month, year });
-    return response;
+    try {
+      const response = await apiClient.get('/categories/with-stats', { month, year });
+      return response;
+    } catch (error) {
+      console.error('Error en getCategoriesWithStats:', error);
+      throw error;
+    }
   },
 
   async getCategoryStats(id) {
-    const response = await apiClient.get(`/categories/${id}/stats`);
-    return response;
+    try {
+      const response = await apiClient.get(`/categories/${id}/stats`);
+      return response;
+    } catch (error) {
+      console.error('Error en getCategoryStats:', error);
+      throw error;
+    }
   },
 
   async getCategoryExpenses(id, filters = {}) {
-    const response = await apiClient.get(`/categories/${id}/expenses`, filters);
-    return response;
+    try {
+      const response = await apiClient.get(`/categories/${id}/expenses`, filters);
+      return response;
+    } catch (error) {
+      console.error('Error en getCategoryExpenses:', error);
+      throw error;
+    }
   }
 };
 
 export const subcategories = {
   async getSubcategories() {
-    const response = await apiClient.get('/subcategories');
-    return response;
+    try {
+      const response = await apiClient.get('/subcategories');
+      return response;
+    } catch (error) {
+      console.error('Error en getSubcategories:', error);
+      throw error;
+    }
   },
 
   async getSubcategoriesByCategory(categoryId) {
-    const response = await apiClient.get(`/subcategories/category/${categoryId}`);
-    return response;
+    try {
+      const response = await apiClient.get(`/subcategories/category/${categoryId}`);
+      return response;
+    } catch (error) {
+      console.error('Error en getSubcategoriesByCategory:', error);
+      throw error;
+    }
   },
 
   async getCategoriesWithSubcategories() {
-    const response = await apiClient.get('/subcategories/with-categories');
-    return response;
+    try {
+      const response = await apiClient.get('/subcategories/with-categories');
+      return response;
+    } catch (error) {
+      console.error('Error en getCategoriesWithSubcategories:', error);
+      throw error;
+    }
   },
 
   async createSubcategory(subcategoryData) {
-    const response = await apiClient.post('/subcategories', subcategoryData);
-    return response;
+    try {
+      const response = await apiClient.post('/subcategories', subcategoryData);
+      return response;
+    } catch (error) {
+      console.error('Error en createSubcategory:', error);
+      throw error;
+    }
   },
 
   async updateSubcategory(id, updates) {
-    const response = await apiClient.put(`/subcategories/${id}`, updates);
-    return response;
+    try {
+      const response = await apiClient.put(`/subcategories/${id}`, updates);
+      return response;
+    } catch (error) {
+      console.error('Error en updateSubcategory:', error);
+      throw error;
+    }
   },
 
   async deleteSubcategory(id) {
-    const response = await apiClient.delete(`/subcategories/${id}`);
-    return response;
+    try {
+      const response = await apiClient.delete(`/subcategories/${id}`);
+      return response;
+    } catch (error) {
+      console.error('Error en deleteSubcategory:', error);
+      throw error;
+    }
   },
 
   async getSubcategoryById(id) {
-    const response = await apiClient.get(`/subcategories/${id}`);
-    return response;
+    try {
+      const response = await apiClient.get(`/subcategories/${id}`);
+      return response;
+    } catch (error) {
+      console.error('Error en getSubcategoryById:', error);
+      throw error;
+    }
   }
 };
 
 export const incomes = {
   async getIncomes(filters = {}) {
-    return await apiClient.get('/incomes', filters);
+    try {
+      return await apiClient.get('/incomes', filters);
+    } catch (error) {
+      console.error('Error en getIncomes:', error);
+      throw error;
+    }
   },
+
   async createIncome(data) {
-    return await apiClient.post('/incomes', data);
+    try {
+      return await apiClient.post('/incomes', data);
+    } catch (error) {
+      console.error('Error en createIncome:', error);
+      throw error;
+    }
   },
+
   async updateIncome(id, data) {
-    return await apiClient.put(`/incomes/${id}`, data);
+    try {
+      return await apiClient.put(`/incomes/${id}`, data);
+    } catch (error) {
+      console.error('Error en updateIncome:', error);
+      throw error;
+    }
   },
+
   async deleteIncome(id) {
-    return await apiClient.delete(`/incomes/${id}`);
+    try {
+      return await apiClient.delete(`/incomes/${id}`);
+    } catch (error) {
+      console.error('Error en deleteIncome:', error);
+      throw error;
+    }
   },
+
   async getSummary(params = {}) {
-    return await apiClient.get('/incomes/summary', params);
+    try {
+      return await apiClient.get('/incomes/summary', params);
+    } catch (error) {
+      console.error('Error en getSummary:', error);
+      throw error;
+    }
   }
 };
 
 export const savings = {
   async list() {
-    return await apiClient.get('/savings');
+    try {
+      return await apiClient.get('/savings');
+    } catch (error) {
+      console.error('Error en savings.list:', error);
+      throw error;
+    }
   },
+
   async create(data) {
-    return await apiClient.post('/savings', data);
+    try {
+      return await apiClient.post('/savings', data);
+    } catch (error) {
+      console.error('Error en savings.create:', error);
+      throw error;
+    }
   },
+
   async update(id, data) {
-    return await apiClient.put(`/savings/${id}`, data);
+    try {
+      return await apiClient.put(`/savings/${id}`, data);
+    } catch (error) {
+      console.error('Error en savings.update:', error);
+      throw error;
+    }
   },
+
   async remove(id) {
-    return await apiClient.delete(`/savings/${id}`);
+    try {
+      return await apiClient.delete(`/savings/${id}`);
+    } catch (error) {
+      console.error('Error en savings.remove:', error);
+      throw error;
+    }
   }
 };
 
-export { apiClient }; 
+export { apiClient };

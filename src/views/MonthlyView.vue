@@ -3,8 +3,8 @@
     <!-- Header -->
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-2xl font-bold text-slate-900">Gastos Mensuales</h1>
-        <p class="text-slate-600">Gestiona tus gastos y cuotas por mes</p>
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-gray-100">Gastos Mensuales</h1>
+        <p class="text-slate-600 dark:text-gray-400">Gestiona tus gastos y cuotas por mes</p>
       </div>
       <div class="flex space-x-2">
         <button @click="previousMonth" class="btn-secondary">
@@ -21,10 +21,10 @@
     <div v-else class="card">
       <div class="flex items-center justify-between">
         <div>
-          <h3 class="text-lg font-semibold text-slate-900">
+          <h3 class="text-lg font-semibold text-slate-900 dark:text-gray-100">
             {{ formatMonthYear(selectedDate) }}
           </h3>
-          <p class="text-sm text-slate-600">
+          <p class="text-sm text-slate-600 dark:text-gray-400">
             Total a pagar: {{ formatCurrency(monthlyTotal) }}
           </p>
         </div>
@@ -35,7 +35,7 @@
               type="checkbox"
               id="showDirectExpenses"
             />
-            <label for="showDirectExpenses" class="text-sm text-slate-700 font-medium cursor-pointer select-none">
+            <label for="showDirectExpenses" class="text-sm text-slate-700 dark:text-gray-300 font-medium cursor-pointer select-none">
               Ver gastos directos
             </label>
           </div>
@@ -44,11 +44,11 @@
     </div>
 
     <!-- Error -->
-    <div v-if="expensesStore.error" class="bg-danger-50 border border-danger-200 rounded-md p-4">
+    <div v-if="expensesStore.error" class="bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-md p-4">
       <div class="flex">
         <AlertCircle class="h-5 w-5 text-danger-400" />
         <div class="ml-3">
-          <p class="text-sm text-danger-700">{{ expensesStore.error }}</p>
+          <p class="text-sm text-danger-700 dark:text-danger-300">{{ expensesStore.error }}</p>
         </div>
       </div>
     </div>
@@ -72,8 +72,8 @@
                 <p class="card-subtitle">{{ card.type }} - {{ card.bank }}</p>
               </div>
               <div class="text-right">
-                <p class="text-sm text-slate-600">Total del mes</p>
-                <p class="text-xl font-bold text-slate-900">
+                <p class="text-sm text-slate-600 dark:text-gray-400">Total del mes</p>
+                <p class="text-xl font-bold text-slate-900 dark:text-gray-100">
                   {{ formatCurrency(getCardDirectMonthlyTotal(card.id)) }}
                 </p>
               </div>
@@ -83,7 +83,7 @@
             <div
               v-for="expense in getCardDirectExpenses(card.id)"
               :key="expense.id"
-              class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors duration-200"
+              class="border border-slate-200 dark:border-gray-600 rounded-lg p-4 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors duration-200"
             >
               <div class="flex items-center justify-between">
                 <div class="flex-1">
@@ -95,12 +95,12 @@
                       {{ expense.categories?.name || 'Sin categoría' }}
                     </span>
                   </div>
-                  <p class="text-sm font-medium text-slate-900">{{ expense.description }}</p>
-                  <p class="text-xs text-slate-600">{{ formatDate(expense.purchase_date) }}</p>
+                  <p class="text-sm font-medium text-slate-900 dark:text-gray-100">{{ expense.description }}</p>
+                  <p class="text-xs text-slate-600 dark:text-gray-400">{{ formatDate(expense.purchase_date) }}</p>
                 </div>
                 <div class="flex items-center space-x-4">
                   <div class="text-right">
-                    <p class="text-sm font-medium text-slate-900">
+                    <p class="text-sm font-medium text-slate-900 dark:text-gray-100">
                       {{ formatCurrency(expense.amount) }}
                     </p>
                   </div>
@@ -108,10 +108,10 @@
                     :class="[
                       'px-3 py-1 rounded-full text-xs font-medium transition-colors duration-200',
                       expense.payment_status_code === 'pagada'
-                        ? 'bg-success-100 text-success-800'
+                        ? 'bg-success-100 dark:bg-success-900/30 text-success-800 dark:text-success-300'
                         : expense.payment_status_code === 'en_deuda'
-                        ? 'bg-danger-100 text-danger-800'
-                        : 'bg-warning-100 text-warning-800'
+                        ? 'bg-danger-100 dark:bg-danger-900/30 text-danger-800 dark:text-danger-300'
+                        : 'bg-warning-100 dark:bg-warning-900/30 text-warning-800 dark:text-warning-300'
                     ]"
                   >
                     {{ expense.payment_status_label || 'Sin estado' }}
@@ -121,7 +121,7 @@
             </div>
             <div
               v-if="getCardDirectExpenses(card.id).length === 0"
-              class="text-center py-8 text-slate-500"
+              class="text-center py-8 text-slate-500 dark:text-gray-400"
             >
               <CreditCard class="mx-auto h-8 w-8 mb-2" />
               <p class="text-sm">No hay gastos directos para este mes</p>
@@ -132,9 +132,9 @@
           v-if="cardsWithDirectExpenses.length === 0"
           class="text-center py-12"
         >
-          <Calendar class="mx-auto h-12 w-12 text-slate-400" />
-          <h3 class="mt-4 text-lg font-medium text-slate-900">No hay gastos directos</h3>
-          <p class="mt-2 text-slate-600">No hay gastos directos registrados para este mes</p>
+          <Calendar class="mx-auto h-12 w-12 text-slate-400 dark:text-gray-500" />
+          <h3 class="mt-4 text-lg font-medium text-slate-900 dark:text-gray-100">No hay gastos directos</h3>
+          <p class="mt-2 text-slate-600 dark:text-gray-400">No hay gastos directos registrados para este mes</p>
           <router-link to="/expenses" class="mt-4 btn-primary inline-flex">
             <Plus class="h-4 w-4 mr-2" />
             Agregar Gasto
@@ -155,8 +155,8 @@
                 <p class="card-subtitle">{{ card.type }} - {{ card.bank }}</p>
               </div>
               <div class="text-right">
-                <p class="text-sm text-slate-600">Total cuotas del mes</p>
-                <p class="text-xl font-bold text-slate-900">
+                <p class="text-sm text-slate-600 dark:text-gray-400">Total cuotas del mes</p>
+                <p class="text-xl font-bold text-slate-900 dark:text-gray-100">
                   {{ formatCurrency(getCardInstallmentsMonthlyTotal(card.id)) }}
                 </p>
               </div>
@@ -166,7 +166,7 @@
             <div
               v-for="installment in getCardInstallments(card.id)"
               :key="installment.id"
-              class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors duration-200"
+              class="border border-slate-200 dark:border-gray-600 rounded-lg p-4 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors duration-200"
             >
               <div class="flex items-center justify-between">
                 <div class="flex-1">
@@ -179,8 +179,8 @@
                     </span>
                     <span class="text-xs text-primary-600">Cuota {{ installment.installment_number }} de {{ installment.installments_count }}</span>
                   </div>
-                  <p class="text-sm font-medium text-slate-900">{{ installment.description }}</p>
-                  <p class="text-xs text-slate-600">Vence: {{ formatDate(installment.due_date) }}</p>
+                  <p class="text-sm font-medium text-slate-900 dark:text-gray-100">{{ installment.description }}</p>
+                  <p class="text-xs text-slate-600 dark:text-gray-400">Vence: {{ formatDate(installment.due_date) }}</p>
                 </div>
                 <div class="flex items-center space-x-4">
                   <div class="text-right">
@@ -192,10 +192,10 @@
                     :class="[
                       'px-3 py-1 rounded-full text-xs font-medium transition-colors duration-200',
                       installment.payment_status_code === 'pagada'
-                        ? 'bg-success-100 text-success-800'
+                        ? 'bg-success-100 dark:bg-success-900/30 text-success-800 dark:text-success-300'
                         : installment.payment_status_code === 'en_deuda'
-                        ? 'bg-danger-100 text-danger-800'
-                        : 'bg-warning-100 text-warning-800'
+                        ? 'bg-danger-100 dark:bg-danger-900/30 text-danger-800 dark:text-danger-300'
+                        : 'bg-warning-100 dark:bg-warning-900/30 text-warning-800 dark:text-warning-300'
                     ]"
                   >
                     {{ installment.payment_status_label || 'Sin estado' }}
@@ -205,7 +205,7 @@
             </div>
             <div
               v-if="getCardInstallments(card.id).length === 0"
-              class="text-center py-8 text-slate-500"
+              class="text-center py-8 text-slate-500 dark:text-gray-400"
             >
               <CreditCard class="mx-auto h-8 w-8 mb-2" />
               <p class="text-sm">No hay cuotas para este mes</p>
@@ -216,9 +216,9 @@
           v-if="cardsWithInstallments.length === 0"
           class="text-center py-12"
         >
-          <Calendar class="mx-auto h-12 w-12 text-slate-400" />
-          <h3 class="mt-4 text-lg font-medium text-slate-900">No hay cuotas</h3>
-          <p class="mt-2 text-slate-600">No hay cuotas registradas para este mes</p>
+          <Calendar class="mx-auto h-12 w-12 text-slate-400 dark:text-gray-500" />
+          <h3 class="mt-4 text-lg font-medium text-slate-900 dark:text-gray-100">No hay cuotas</h3>
+          <p class="mt-2 text-slate-600 dark:text-gray-400">No hay cuotas registradas para este mes</p>
           <router-link to="/expenses" class="mt-4 btn-primary inline-flex">
             <Plus class="h-4 w-4 mr-2" />
             Agregar Gasto
@@ -254,7 +254,7 @@ const categoriesStore = useCategoriesStore()
 const selectedDate = ref(new Date())
 const showPaid = ref(true)
 const showDirectExpenses = ref(true)
-const isLoading = ref(true) // Estado de loading local para evitar doble carga
+const isLoading = ref(true)
 
 // Computed properties
 const currentMonth = computed(() => selectedDate.value.getMonth() + 1)
@@ -392,7 +392,7 @@ const nextMonth = () => {
 
 const togglePaidStatus = async (expense) => {
   const currentStatus = expense.payment_status_code;
-  const newStatusId = currentStatus === 'pagada' ? 1 : 2; // 1 = pendiente, 2 = pagada
+  const newStatusId = currentStatus === 'pagada' ? 1 : 2;
   await expensesStore.markAsPaid(expense.id, newStatusId)
 }
 
@@ -417,7 +417,6 @@ const loadData = async () => {
       categoriesStore.loadCategories()
     ])
   } catch {
-    // Error ya manejado por los stores
   } finally {
     clearTimeout(safetyTimer)
     if (_mounted) isLoading.value = false
@@ -436,7 +435,6 @@ watch([currentMonth, currentYear], async () => {
     if (!_mounted) return
     await expensesStore.loadExpenses()
   } catch {
-    // Error ya manejado por el store
   } finally {
     if (_mounted) isLoading.value = false
   }

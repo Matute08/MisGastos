@@ -1,20 +1,24 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Evita franja blanca al bloquear scroll (modales): mismo tono que body/#app */
     @apply bg-slate-50;
   }
 
+  html.dark {
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply bg-slate-50 text-slate-900 transition-colors duration-200;
+  }
+
+  .dark body {
+    @apply bg-gray-900 text-gray-100;
   }
 }
 
@@ -33,6 +37,7 @@
            transition-all duration-200 ease-out
            focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2
            active:scale-[0.98] shadow-sm;
+    @apply dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 dark:border-gray-600 dark:hover:border-gray-500;
   }
 
   .btn-danger {
@@ -47,6 +52,7 @@
     @apply text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium py-2 px-4 rounded-xl
            transition-all duration-200 ease-out
            focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2;
+    @apply dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-700;
   }
 
   .btn-success {
@@ -62,6 +68,7 @@
            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
            transition-all duration-200 ease-out
            hover:border-slate-300;
+    @apply dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-500 dark:hover:border-gray-500;
   }
 
   /* Safari iOS: los controles nativos date/month/time tienen min-width intrínseco alto y rompen el layout */
@@ -74,18 +81,33 @@
 
   .card {
     @apply bg-white rounded-2xl shadow-soft border border-slate-100 p-6;
+    @apply dark:bg-gray-800 dark:border-gray-700 dark:shadow-none;
+  }
+
+  .card-interactive {
+    @apply bg-white rounded-2xl border border-slate-100 p-6 transition-all duration-200 ease-out;
+    @apply dark:bg-gray-800 dark:border-gray-700;
+  }
+  .card-interactive:hover {
+    @apply shadow-soft-lg -translate-y-0.5;
+  }
+  .card-interactive:active {
+    transform: scale(0.99);
   }
 
   .card-header {
     @apply border-b border-slate-100 pb-4 mb-4;
+    @apply dark:border-gray-700;
   }
 
   .card-title {
     @apply text-lg font-bold text-slate-900;
+    @apply dark:text-gray-100;
   }
 
   .card-subtitle {
     @apply text-sm text-slate-500 mt-0.5;
+    @apply dark:text-gray-400;
   }
 
   .badge {
@@ -93,19 +115,23 @@
   }
 
   .badge-success {
-    @apply badge bg-success-50 text-success-700 ring-1 ring-inset ring-success-200;
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-success-50 text-success-700 ring-1 ring-inset ring-success-200;
+    @apply dark:bg-success-900/30 dark:text-success-300 dark:ring-success-700;
   }
 
   .badge-warning {
-    @apply badge bg-warning-50 text-warning-700 ring-1 ring-inset ring-warning-200;
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-warning-50 text-warning-700 ring-1 ring-inset ring-warning-200;
+    @apply dark:bg-warning-900/30 dark:text-warning-300 dark:ring-warning-700;
   }
 
   .badge-danger {
-    @apply badge bg-danger-50 text-danger-700 ring-1 ring-inset ring-danger-200;
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-danger-50 text-danger-700 ring-1 ring-inset ring-danger-200;
+    @apply dark:bg-danger-900/30 dark:text-danger-300 dark:ring-danger-700;
   }
 
   .skeleton {
     @apply bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_100%] animate-shimmer rounded-xl;
+    @apply dark:from-gray-700 dark:via-gray-600 dark:to-gray-700;
   }
 }
 
@@ -164,4 +190,86 @@
 input[type="checkbox"] {
   @apply h-4 w-4 rounded border-slate-300 text-primary-600 
          focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 cursor-pointer;
+}
+
+/* Page transitions */
+.page-enter-active,
+.page-leave-active {
+  transition: all 0.25s ease;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* List transitions */
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.3s ease;
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+.list-move {
+  transition: transform 0.3s ease;
+}
+
+/* Fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Card hover effect */
+.card-hover {
+  @apply transition-all duration-200 ease-out;
+}
+.card-hover:hover {
+  @apply shadow-soft-lg -translate-y-0.5;
+}
+.card-hover:active {
+  transform: scale(0.99);
+}
+
+/* Glow pulse for hero card */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 20px -5px rgba(99, 102, 241, 0.3); }
+  50% { box-shadow: 0 0 30px -3px rgba(99, 102, 241, 0.5); }
+}
+.animate-glow-pulse {
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+/* Spinner animation for loading buttons */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.btn-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

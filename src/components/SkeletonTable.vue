@@ -6,7 +6,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-soft overflow-hidden">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-100 dark:border-gray-700 p-6 shadow-soft dark:shadow-none overflow-hidden animate-fade-in">
     <div class="grid gap-4" :style="{ gridTemplateColumns: `repeat(${columns}, 1fr)` }">
       <div v-for="col in columns" :key="'h-' + col" class="skeleton h-4 w-full" />
     </div>

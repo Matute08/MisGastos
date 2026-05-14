@@ -3,8 +3,8 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-slate-900">Gestión de Cuentas Disponibles</h1>
-        <p class="text-sm sm:text-base text-slate-600">Administra las cuentas que los usuarios pueden vincular</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-gray-100">Gestión de Cuentas Disponibles</h1>
+        <p class="text-sm sm:text-base text-slate-600 dark:text-gray-400">Administra las cuentas que los usuarios pueden vincular</p>
       </div>
       <button 
         v-if="isAdmin"
@@ -17,11 +17,11 @@
     </div>
 
     <!-- Error -->
-    <div v-if="availableCardsStore.error" class="bg-danger-50 border border-danger-200 rounded-md p-3 sm:p-4">
+    <div v-if="availableCardsStore.error" class="bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-md p-3 sm:p-4">
       <div class="flex">
         <AlertCircle class="h-4 w-4 sm:h-5 sm:w-5 text-danger-400" />
         <div class="ml-2 sm:ml-3">
-          <p class="text-xs sm:text-sm text-danger-700">{{ availableCardsStore.error }}</p>
+          <p class="text-xs sm:text-sm text-danger-700 dark:text-danger-300">{{ availableCardsStore.error }}</p>
         </div>
       </div>
     </div>
@@ -36,22 +36,22 @@
       <div
         v-for="card in availableCardsStore.availableCards"
         :key="card.id"
-        class="card hover:shadow-md transition-shadow duration-200 p-4 sm:p-6"
+        class="card hover:shadow-md dark:hover:shadow-none transition-shadow duration-200 p-4 sm:p-6"
       >
         <!-- Header de la cuenta -->
         <div class="flex justify-between items-start mb-4">
           <div class="flex items-center space-x-3">
-            <div class="p-2 bg-primary-100 rounded-lg">
-              <CreditCard class="h-5 w-5 text-primary-600" />
+            <div class="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+              <CreditCard class="h-5 w-5 text-primary-600 dark:text-primary-400" />
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-slate-900">{{ card.name }}</h3>
+              <h3 class="text-lg font-semibold text-slate-900 dark:text-gray-100">{{ card.name }}</h3>
                              <span class="px-2 py-1 text-xs rounded-full" 
                      :class="{
-                       'bg-success-100 text-success-800': card.type === 'Crédito',
-                       'bg-primary-100 text-primary-800': card.type === 'Débito',
-                       'bg-purple-100 text-purple-800': card.type === 'Transferencia',
-                       'bg-slate-100 text-slate-800': card.type === 'Ninguna'
+                       'bg-success-100 dark:bg-success-900/30 text-success-800 dark:text-success-300': card.type === 'Crédito',
+                       'bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300': card.type === 'Débito',
+                       'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300': card.type === 'Transferencia',
+                       'bg-slate-100 dark:bg-gray-700 text-slate-800 dark:text-gray-300': card.type === 'Ninguna'
                      }">
                  {{ card.type }}
                </span>
@@ -62,7 +62,7 @@
           <div class="relative flex-shrink-0">
             <button
               @click="toggleCardMenu(card.id)"
-              class="p-1.5 text-slate-400 hover:text-slate-600 transition-colors duration-200 rounded"
+              class="p-1.5 text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 transition-colors duration-200 rounded"
             >
               <MoreVertical class="h-4 w-4" />
             </button>
@@ -70,18 +70,18 @@
             <!-- Menú desplegable -->
             <div
               v-if="activeCardMenu === card.id"
-              class="absolute right-0 mt-2 w-32 bg-white rounded-md shadow-lg py-1 z-10 border border-slate-200"
+              class="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-10 border border-slate-200 dark:border-gray-700"
             >
               <button
                 @click="editCard(card)"
-                class="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors duration-200"
+                class="block w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors duration-200"
               >
                 <Edit class="h-4 w-4 inline mr-2" />
                 Editar
               </button>
               <button
                 @click="deleteCard(card.id)"
-                class="block w-full text-left px-4 py-2 text-sm text-danger-700 hover:bg-danger-50 transition-colors duration-200"
+                class="block w-full text-left px-4 py-2 text-sm text-danger-700 dark:text-danger-300 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors duration-200"
               >
                 <Trash2 class="h-4 w-4 inline mr-2" />
                 Eliminar
@@ -93,23 +93,23 @@
         <!-- Información de la cuenta -->
         <div class="space-y-3">
           <div class="flex justify-between items-center">
-            <span class="text-slate-500 text-sm">Banco:</span>
-            <span class="font-medium text-slate-700">{{ card.bank }}</span>
+            <span class="text-slate-500 dark:text-gray-400 text-sm">Banco:</span>
+            <span class="font-medium text-slate-700 dark:text-gray-300">{{ card.bank }}</span>
           </div>
           
           <div v-if="card.payment_day" class="flex justify-between items-center">
-            <span class="text-slate-500 text-sm">Día de pago:</span>
-            <span class="font-medium text-slate-700">Día {{ card.payment_day }}</span>
+            <span class="text-slate-500 dark:text-gray-400 text-sm">Día de pago:</span>
+            <span class="font-medium text-slate-700 dark:text-gray-300">Día {{ card.payment_day }}</span>
           </div>
           
           <div v-if="card.credit_limit" class="flex justify-between items-center">
-            <span class="text-slate-500 text-sm">Límite de crédito:</span>
-            <span class="font-medium text-slate-700">${{ formatNumber(card.credit_limit) }}</span>
+            <span class="text-slate-500 dark:text-gray-400 text-sm">Límite de crédito:</span>
+            <span class="font-medium text-slate-700 dark:text-gray-300">${{ formatNumber(card.credit_limit) }}</span>
           </div>
           
           <div class="flex justify-between items-center">
-            <span class="text-slate-500 text-sm">Creada:</span>
-            <span class="font-medium text-slate-700 text-xs">{{ formatDate(card.created_at) }}</span>
+            <span class="text-slate-500 dark:text-gray-400 text-sm">Creada:</span>
+            <span class="font-medium text-slate-700 dark:text-gray-300 text-xs">{{ formatDate(card.created_at) }}</span>
           </div>
         </div>
       </div>
@@ -120,9 +120,9 @@
       v-if="availableCardsStore.availableCards.length === 0"
       class="text-center py-8 sm:py-12"
     >
-      <CreditCard class="mx-auto h-12 w-12 text-slate-400" />
-      <h3 class="mt-4 text-lg font-medium text-slate-900">No hay cuentas disponibles</h3>
-      <p class="mt-2 text-slate-600">Comienza creando la primera cuenta disponible</p>
+      <CreditCard class="mx-auto h-12 w-12 text-slate-400 dark:text-gray-500" />
+      <h3 class="mt-4 text-lg font-medium text-slate-900 dark:text-gray-100">No hay cuentas disponibles</h3>
+      <p class="mt-2 text-slate-600 dark:text-gray-400">Comienza creando la primera cuenta disponible</p>
       <button
         v-if="isAdmin"
         @click="showModal = true"

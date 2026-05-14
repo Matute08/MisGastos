@@ -9,7 +9,7 @@
     aria-labelledby="expense-modal-title"
   >
     <div 
-      class="modal-content bg-white rounded-2xl shadow-soft-lg max-w-2xl w-full min-w-0 max-h-[90vh] overflow-y-auto overflow-x-hidden border border-slate-100" 
+      class="modal-content bg-white dark:bg-gray-800 rounded-2xl shadow-soft-lg max-w-2xl w-full min-w-0 max-h-[90vh] overflow-y-auto overflow-x-hidden border border-slate-100 dark:border-gray-700" 
       @wheel.stop 
       @touchmove.stop 
       role="document"
@@ -17,16 +17,16 @@
       tabindex="-1"
     >
       <!-- Header -->
-      <div class="flex justify-between items-center p-6 border-b border-slate-100">
+      <div class="flex justify-between items-center p-6 border-b border-slate-100 dark:border-gray-700">
         <div>
-          <h3 id="expense-modal-title" class="text-lg font-bold text-slate-900">
+          <h3 id="expense-modal-title" class="text-lg font-bold text-slate-900 dark:text-gray-100">
             {{ expense ? 'Editar Gasto' : 'Nuevo Gasto' }}
           </h3>
-          <p class="text-sm text-slate-500 mt-0.5">{{ expense ? 'Modifica los datos del gasto' : 'Registra un nuevo gasto' }}</p>
+          <p class="text-sm text-slate-500 dark:text-gray-400 mt-0.5">{{ expense ? 'Modifica los datos del gasto' : 'Registra un nuevo gasto' }}</p>
         </div>
         <button
           @click="$emit('close')"
-          class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl p-2 transition-all duration-200"
+          class="text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-xl p-2 transition-all duration-200"
           aria-label="Cerrar modal"
           type="button"
         >
@@ -38,11 +38,11 @@
       <form @submit.prevent="handleSubmit" class="p-6 space-y-5 min-w-0" novalidate>
         <!-- Descripcion -->
         <div>
-          <label for="description" class="block text-sm font-semibold text-slate-700 mb-1.5">
+          <label for="description" class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
             Descripción
           </label>
           <div class="relative">
-            <FileText class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <FileText class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-gray-500" />
             <input
               id="description"
               v-model="form.description"
@@ -56,11 +56,11 @@
 
         <!-- Monto -->
         <div>
-          <label for="amount" class="block text-sm font-semibold text-slate-700 mb-1.5">
+          <label for="amount" class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
             Monto
           </label>
           <div class="relative">
-            <DollarSign class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <DollarSign class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-gray-500" />
             <input
               id="amount"
               v-model="form.amount"
@@ -80,7 +80,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- Tarjeta -->
           <div>
-            <label for="card_id" class="block text-sm font-semibold text-slate-700 mb-1.5">
+            <label for="card_id" class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
               Cuenta
             </label>
             <select id="card_id" v-model="form.card_id" required class="input-field">
@@ -97,7 +97,7 @@
 
           <!-- Categoria -->
           <div>
-            <label for="category_id" class="block text-sm font-semibold text-slate-700 mb-1.5">
+            <label for="category_id" class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
               Categoría
             </label>
             <select
@@ -121,8 +121,8 @@
 
         <!-- Subcategoria -->
         <div v-if="form.category_id">
-          <label for="subcategory_id" class="block text-sm font-semibold text-slate-700 mb-1.5">
-            Subcategoría <span class="text-slate-400 font-normal">(opcional)</span>
+          <label for="subcategory_id" class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
+            Subcategoría <span class="text-slate-400 dark:text-gray-500 font-normal">(opcional)</span>
           </label>
           <select id="subcategory_id" v-model="form.subcategory_id" class="input-field">
             <option value="">Sin subcategoría</option>
@@ -138,7 +138,7 @@
 
         <!-- Estado de pago para gastos programados -->
         <div v-if="expense && expense.is_scheduled">
-          <label for="payment_status_id" class="block text-sm font-semibold text-slate-700 mb-1.5">
+          <label for="payment_status_id" class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
             Estado de pago
           </label>
           <select id="payment_status_id" v-model="form.payment_status_id" class="input-field">
@@ -146,18 +146,18 @@
               {{ status.label }}
             </option>
           </select>
-          <p class="mt-1.5 text-xs text-slate-400">
+          <p class="mt-1.5 text-xs text-slate-400 dark:text-gray-500">
             Solo se actualizará el estado de este gasto del mes seleccionado
           </p>
         </div>
 
         <!-- Fecha de compra -->
         <div v-if="!expense || !expense.is_scheduled">
-          <label for="purchase_date" class="block text-sm font-semibold text-slate-700 mb-1.5">
+          <label for="purchase_date" class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
             Fecha de compra
           </label>
           <div class="relative min-w-0 w-full max-w-full">
-            <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none z-[1]" />
+            <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-gray-500 pointer-events-none z-[1]" />
             <input
               id="purchase_date"
               v-model="form.purchase_date"
@@ -170,7 +170,7 @@
 
         <!-- Tipo de pago -->
         <div v-if="(!expense || !expense.is_scheduled) && selectedCard && selectedCard.type === 'Crédito'">
-          <label class="block text-sm font-semibold text-slate-700 mb-2">
+          <label class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2">
             Tipo de pago
           </label>
           <div class="grid grid-cols-2 gap-3">
@@ -179,7 +179,7 @@
                 'flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all duration-200',
                 form.payment_type === 'single'
                   ? 'border-primary-500 bg-primary-50 text-primary-700'
-                  : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                  : 'border-slate-200 hover:border-slate-300 text-slate-600 dark:text-gray-400'
               ]"
             >
               <input v-model="form.payment_type" type="radio" value="single" class="hidden" />
@@ -191,7 +191,7 @@
                 'flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all duration-200',
                 form.payment_type === 'installments'
                   ? 'border-primary-500 bg-primary-50 text-primary-700'
-                  : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                  : 'border-slate-200 hover:border-slate-300 text-slate-600 dark:text-gray-400'
               ]"
             >
               <input v-model="form.payment_type" type="radio" value="installments" class="hidden" />
@@ -203,7 +203,7 @@
 
         <!-- Numero de cuotas -->
         <div v-if="(!expense || !expense.is_scheduled) && form.payment_type === 'installments'">
-          <label for="installments_count" class="block text-sm font-semibold text-slate-700 mb-1.5">
+          <label for="installments_count" class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
             Número de cuotas
           </label>
           <input
@@ -223,7 +223,7 @@
 
         <!-- Fecha cuota unica -->
         <div v-if="(!expense || !expense.is_scheduled) && selectedCard && selectedCard.type === 'Crédito' && form.payment_type === 'single'">
-          <label for="single_installment_date" class="block text-sm font-semibold text-slate-700 mb-1.5">
+          <label for="single_installment_date" class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
             Fecha de la cuota <span class="text-danger-500">*</span>
           </label>
           <input id="single_installment_date" v-model="singleInstallmentDate" type="date" required class="input-field" />
@@ -231,7 +231,7 @@
 
         <!-- Fecha primera cuota -->
         <div v-if="(!expense || !expense.is_scheduled) && form.payment_type === 'installments'">
-          <label for="first_installment_date" class="block text-sm font-semibold text-slate-700 mb-1.5">
+          <label for="first_installment_date" class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
             Fecha de la primera cuota <span class="text-danger-500">*</span>
           </label>
           <input id="first_installment_date" v-model="firstInstallmentDateManual" type="date" required class="input-field" />
@@ -269,7 +269,7 @@
         </div>
 
         <!-- Botones -->
-        <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
+        <div class="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-gray-700">
           <button type="button" @click="$emit('close')" class="btn-secondary">
             Cancelar
           </button>

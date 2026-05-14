@@ -3,15 +3,21 @@
         <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900">Gastos</h1>
-                <p class="text-slate-500">Gestiona todos tus gastos y compras</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-gray-100">Gastos</h1>
+                <p class="text-slate-500 dark:text-gray-400">Gestiona todos tus gastos y compras</p>
             </div>
+            <ExportButton
+                :data="exportableExpenses"
+                filename="gastos.csv"
+                :columns="expenseCsvColumns"
+                label="Exportar CSV"
+            />
         </div>
 
         <!-- Resumen del mes actual -->
         <div class="space-y-4">
             <div class="text-center mb-2">
-                <h2 class="text-xl font-semibold text-slate-800">
+                <h2 class="text-xl font-semibold text-slate-800 dark:text-gray-200">
                     {{ monthYearTitle }}
                 </h2>
             </div>
@@ -29,19 +35,19 @@
                 <div class="flex-1">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="relative pl-4 border-l-4 border-primary-500 text-center">
-                            <p class="text-sm text-slate-500 font-medium">Total Débito</p>
+                            <p class="text-sm text-slate-500 dark:text-gray-400 font-medium">Total Débito</p>
                             <p class="text-2xl font-bold text-primary-600">
                                 {{ formatCurrency(totalDebitTransferExpenses) }}
                             </p>
                         </div>
                         <div class="relative pl-4 border-l-4 border-violet-500 text-center">
-                            <p class="text-sm text-slate-500 font-medium">Total Crédito</p>
+                            <p class="text-sm text-slate-500 dark:text-gray-400 font-medium">Total Crédito</p>
                             <p class="text-2xl font-bold text-violet-600">
                                 {{ formatCurrency(totalCreditExpenses) }}
                             </p>
                         </div>
                         <div class="relative pl-4 border-l-4 border-success-500 text-center">
-                            <p class="text-sm text-slate-500 font-medium">Gastos Totales</p>
+                            <p class="text-sm text-slate-500 dark:text-gray-400 font-medium">Gastos Totales</p>
                             <p class="text-2xl font-bold text-success-600">
                                 {{ formatCurrency(totalExpenses) }}
                             </p>
@@ -74,15 +80,15 @@
                 </div>
                 <div class="space-y-2.5">
                     <div class="flex items-center justify-between py-1.5 border-l-4 border-primary-500 pl-3 rounded-r-lg bg-primary-50/30">
-                        <span class="text-xs text-slate-600 font-medium">Débito</span>
+                        <span class="text-xs text-slate-600 dark:text-gray-400 font-medium">Débito</span>
                         <span class="text-sm font-bold text-primary-600 tabular-nums">{{ formatCurrency(totalDebitTransferExpenses) }}</span>
                     </div>
                     <div class="flex items-center justify-between py-1.5 border-l-4 border-violet-500 pl-3 rounded-r-lg bg-violet-50/30">
-                        <span class="text-xs text-slate-600 font-medium">Crédito</span>
+                        <span class="text-xs text-slate-600 dark:text-gray-400 font-medium">Crédito</span>
                         <span class="text-sm font-bold text-violet-600 tabular-nums">{{ formatCurrency(totalCreditExpenses) }}</span>
                     </div>
                     <div class="flex items-center justify-between py-2 border-l-4 border-success-500 pl-3 rounded-r-lg bg-success-50/40 mt-1">
-                        <span class="text-xs text-slate-700 font-semibold">Total</span>
+                        <span class="text-xs text-slate-700 dark:text-gray-300 font-semibold">Total</span>
                         <span class="text-base font-bold text-success-600 tabular-nums">{{ formatCurrency(totalExpenses) }}</span>
                     </div>
                 </div>
@@ -94,7 +100,7 @@
         <div class="hidden lg:block card">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1.5">Tarjeta</label>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5">Tarjeta</label>
                     <select
                         v-model="filters.card_id"
                         @change="updateFilters"
@@ -112,7 +118,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1.5">Categoría</label>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5">Categoría</label>
                     <select
                         v-model="filters.category_id"
                         @change="updateFilters"
@@ -130,7 +136,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1.5">Mes</label>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5">Mes</label>
                     <select
                         v-model="filters.month"
                         @change="updateFilters"
@@ -147,7 +153,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1.5">Año</label>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5">Año</label>
                     <select
                         v-model="filters.year"
                         @change="updateFilters"
@@ -164,7 +170,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1.5">Estado</label>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-gray-400 mb-1.5">Estado</label>
                     <select
                         v-model="filters.payment_status_id"
                         @change="updateFilters"
@@ -186,7 +192,7 @@
             <div class="mt-4 flex flex-wrap items-center gap-2">
                 <span
                     v-if="filters.card_id"
-                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-xs font-semibold ring-1 ring-inset ring-primary-200"
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-xs font-semibold ring-1 ring-inset ring-primary-200 dark:ring-primary-700"
                 >
                     Tarjeta filtrada
                     <button @click="filters.card_id = ''; updateFilters()" class="ml-0.5 hover:text-primary-900">
@@ -195,7 +201,7 @@
                 </span>
                 <span
                     v-if="filters.category_id"
-                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-violet-50 text-violet-700 text-xs font-semibold ring-1 ring-inset ring-violet-200"
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 text-xs font-semibold ring-1 ring-inset ring-violet-200 dark:ring-violet-700"
                 >
                     Categoría filtrada
                     <button @click="filters.category_id = ''; updateFilters()" class="ml-0.5 hover:text-violet-900">
@@ -204,7 +210,7 @@
                 </span>
                 <span
                     v-if="filters.payment_status_id"
-                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold ring-1 ring-inset ring-amber-200"
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-semibold ring-1 ring-inset ring-amber-200 dark:ring-amber-700"
                 >
                     Estado filtrado
                     <button @click="filters.payment_status_id = null; updateFilters()" class="ml-0.5 hover:text-amber-900">
@@ -227,10 +233,10 @@
         <div class="block lg:hidden">
             <div class="card !p-4">
                 <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-sm font-semibold text-slate-700">Filtros</h3>
+                    <h3 class="text-sm font-semibold text-slate-700 dark:text-gray-300">Filtros</h3>
                     <button
                         @click="clearFilters"
-                        class="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1 font-medium"
+                        class="text-xs text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300 dark:text-gray-300 flex items-center gap-1 font-medium"
                     >
                         <RotateCcw class="h-3 w-3" />
                         Limpiar
@@ -239,7 +245,7 @@
                 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Tarjeta</label>
+                        <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">Tarjeta</label>
                         <select
                             v-model="filters.card_id"
                             @change="updateFilters"
@@ -257,7 +263,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Categoría</label>
+                        <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">Categoría</label>
                         <select
                             v-model="filters.category_id"
                             @change="updateFilters"
@@ -275,7 +281,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Mes</label>
+                        <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">Mes</label>
                         <select
                             v-model="filters.month"
                             @change="updateFilters"
@@ -292,7 +298,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Año</label>
+                        <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">Año</label>
                         <select
                             v-model="filters.year"
                             @change="updateFilters"
@@ -309,7 +315,7 @@
                     </div>
 
                     <div class="col-span-2">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Estado</label>
+                        <label class="block text-xs font-medium text-slate-500 dark:text-gray-400 mb-1">Estado</label>
                         <select
                             v-model="filters.payment_status_id"
                             @change="updateFilters"
@@ -327,6 +333,10 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="sm:px-0">
+          <SearchBar v-model="searchQuery" placeholder="Buscar por descripción..." />
         </div>
 
         <!-- Error -->
@@ -348,7 +358,7 @@
           <div class="hidden md:block card !p-0 overflow-hidden">
             <div class="overflow-x-auto">
               <table class="min-w-full divide-y divide-slate-100">
-                <thead class="bg-slate-50/80">
+                <thead class="bg-slate-50 dark:bg-gray-700/80 dark:bg-gray-700/80">
                   <tr>
                     <th v-for="i in 9" :key="i" class="px-5 py-4 text-left">
                       <div class="skeleton h-4 rounded-lg" :style="{ width: [16, 64, 96, 80, 80, 64, 64, 64, 64][i-1] + 'px' }"></div>
@@ -393,7 +403,7 @@
                             'flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200',
                             isBulkMode 
                                 ? 'bg-success-600 hover:bg-success-700 text-white shadow-sm' 
-                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                                : 'bg-slate-100 dark:bg-gray-700 hover:bg-slate-200 text-slate-700 dark:text-gray-300'
                         ]"
                     >
                         <CheckCircle2 class="h-4 w-4" />
@@ -412,7 +422,7 @@
                                     @change="toggleSelectAllExpenses"
                                     :disabled="isBulkActionLoading"
                                 />
-                                <span class="text-sm font-medium text-slate-700">
+                                <span class="text-sm font-medium text-slate-700 dark:text-gray-300">
                                     Seleccionar todos ({{ selectedExpensesCount }} seleccionados)
                                 </span>
                             </label>
@@ -454,7 +464,7 @@
                             </button>
                         </div>
                     </div>
-                    <p v-if="isBulkActionLoading" class="text-xs text-slate-600">
+                    <p v-if="isBulkActionLoading" class="text-xs text-slate-600 dark:text-gray-400">
                         Procesando cambios en los gastos seleccionados. Esto puede tardar unos segundos.
                     </p>
                 </div>
@@ -464,11 +474,11 @@
             <div class="hidden md:block card !p-0 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table :key="tableKey" class="min-w-full divide-y divide-slate-100">
-                        <thead class="bg-slate-50/80">
+                        <thead class="bg-slate-50 dark:bg-gray-700/80 dark:bg-gray-700/80">
                             <tr>
                                 <th
                                     v-if="isBulkMode"
-                                    class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"
+                                    class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider"
                                 >
                                     <input
                                         type="checkbox"
@@ -476,28 +486,28 @@
                                         @change="toggleSelectAllExpenses"
                                     />
                                 </th>
-                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                                     Tipo
                                 </th>
-                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                                     Descripción
                                 </th>
-                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                                     Tarjeta
                                 </th>
-                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                                     Categoría
                                 </th>
-                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                                     Monto
                                 </th>
-                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                                     Fecha
                                 </th>
-                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                                     Estado
                                 </th>
-                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                                     Acciones
                                 </th>
                             </tr>
@@ -507,7 +517,7 @@
                                 <tr
                                     v-for="item in paginatedExpensesDesktop"
                                     :key="getExpenseRowKey(item)"
-                                    class="hover:bg-slate-50/60 transition-colors duration-150"
+                                    class="hover:bg-slate-50 dark:bg-gray-700 dark:hover:bg-gray-700/60 dark:bg-gray-700/60 transition-colors duration-150"
                                 >
                                     <td v-if="isBulkMode" class="px-5 py-4 whitespace-nowrap">
                                         <input
@@ -524,7 +534,7 @@
                                         <div class="flex items-center gap-2">
                                             <div
                                                 class="w-8 h-8 rounded-lg flex items-center justify-center"
-                                                :class="item.is_installment ? 'bg-primary-50' : 'bg-slate-100'"
+                                                :class="item.is_installment ? 'bg-primary-50' : 'bg-slate-100 dark:bg-gray-700'"
                                             >
                                                 <CreditCard
                                                     v-if="item.is_installment"
@@ -533,37 +543,37 @@
                                                 <component
                                                     v-else
                                                     :is="getCategoryIcon(item.categories?.name)"
-                                                    class="h-4 w-4 text-slate-500"
+                                                    class="h-4 w-4 text-slate-500 dark:text-gray-400"
                                                 />
                                             </div>
                                             <span
                                                 class="text-xs font-semibold"
-                                                :class="item.is_installment ? 'text-primary-600' : item.is_scheduled ? 'text-violet-600' : 'text-slate-500'"
+                                                :class="item.is_installment ? 'text-primary-600' : item.is_scheduled ? 'text-violet-600' : 'text-slate-500 dark:text-gray-400'"
                                             >
                                                 {{ item.is_installment ? "Cuota" : item.is_scheduled ? "Programado" : "Gasto" }}
                                             </span>
                                         </div>
                                     </td>
-                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-900">
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-gray-100">
                                         <div>
                                             <div class="font-semibold">
                                                 {{ item.description }}
                                             </div>
                                             <div
                                                 v-if="item.is_installment"
-                                                class="text-xs text-slate-400 mt-0.5"
+                                                class="text-xs text-slate-400 dark:text-gray-500 mt-0.5"
                                             >
                                                 Cuota {{ item.installment_number }} de {{ item.installments_count }}
                                             </div>
                                             <div
                                                 v-else-if="item.is_scheduled && getScheduledInstallmentLabel(item)"
-                                                class="text-xs text-slate-400 mt-0.5"
+                                                class="text-xs text-slate-400 dark:text-gray-500 mt-0.5"
                                             >
                                                 {{ getScheduledInstallmentLabel(item) }}
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-600">
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-gray-400">
                                         {{ item.expenses?.available_cards?.name || item.available_cards?.name || "Sin cuenta" }}
                                     </td>
                                     <td class="px-5 py-4 whitespace-nowrap">
@@ -583,11 +593,11 @@
                                     </td>
                                     <td
                                         class="px-5 py-4 whitespace-nowrap text-sm font-bold"
-                                        :class="item.is_installment ? 'text-primary-600' : 'text-slate-900'"
+                                        :class="item.is_installment ? 'text-primary-600' : 'text-slate-900 dark:text-gray-100'"
                                     >
                                         {{ formatCurrency(item.is_installment ? item.installment_amount : item.amount) }}
                                     </td>
-                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-500">
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-gray-400">
                                         {{ formatDate(item.is_installment ? item.due_date : item.purchase_date) }}
                                     </td>
                                     <td class="px-5 py-4 whitespace-nowrap">
@@ -629,29 +639,29 @@
                                 <tr
                                     v-for="expense in paginatedDirectExpensesDesktop"
                                     :key="expense.id"
-                                    class="hover:bg-slate-50/60 transition-colors duration-150"
+                                    class="hover:bg-slate-50 dark:bg-gray-700 dark:hover:bg-gray-700/60 dark:bg-gray-700/60 transition-colors duration-150"
                                 >
                                     <td class="px-5 py-4 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
-                                            <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                                            <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-gray-700 flex items-center justify-center">
                                                 <component
                                                     :is="getCategoryIcon(expense.categories?.name)"
-                                                    class="h-4 w-4 text-slate-500"
+                                                    class="h-4 w-4 text-slate-500 dark:text-gray-400"
                                                 />
                                             </div>
-                                            <span class="text-xs font-semibold text-slate-500">Gasto</span>
+                                            <span class="text-xs font-semibold text-slate-500 dark:text-gray-400">Gasto</span>
                                         </div>
                                     </td>
-                                    <td class="px-5 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm font-semibold text-slate-900 dark:text-gray-100">
                                         <div>{{ expense.description }}</div>
                                         <div
                                             v-if="expense.is_scheduled && getScheduledInstallmentLabel(expense)"
-                                            class="text-xs text-slate-400 font-normal mt-0.5"
+                                            class="text-xs text-slate-400 dark:text-gray-500 font-normal mt-0.5"
                                         >
                                             {{ getScheduledInstallmentLabel(expense) }}
                                         </div>
                                     </td>
-                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-600">
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-gray-400">
                                         {{ expense.expenses?.available_cards?.name || expense.available_cards?.name || "Sin cuenta" }}
                                     </td>
                                     <td class="px-5 py-4 whitespace-nowrap">
@@ -669,10 +679,10 @@
                                             {{ expense.categories?.name || "Sin categoría" }}
                                         </span>
                                     </td>
-                                    <td class="px-5 py-4 whitespace-nowrap text-sm font-bold text-slate-900">
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-gray-100">
                                         {{ formatCurrency(expense.amount) }}
                                     </td>
-                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-500">
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-gray-400">
                                         {{ formatDate(expense.purchase_date) }}
                                     </td>
                                     <td class="px-5 py-4 whitespace-nowrap">
@@ -714,7 +724,7 @@
                 </div>
 
                 <!-- Paginación desktop -->
-                <div v-if="totalPagesDesktop > 1" class="flex justify-center items-center gap-2 px-6 py-4 border-t border-slate-100">
+                <div v-if="totalPagesDesktop > 1" class="flex justify-center items-center gap-2 px-6 py-4 border-t border-slate-100 dark:border-gray-700">
                     <button
                         @click="previousPageDesktop"
                         :disabled="currentPageDesktop === 1"
@@ -732,7 +742,7 @@
                                 'px-3 py-1.5 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-200',
                                 page === currentPageDesktop
                                     ? 'bg-primary-600 text-white shadow-sm'
-                                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                                    : 'text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 dark:bg-gray-700 hover:text-slate-700 dark:hover:text-gray-300 dark:text-gray-300'
                             ]"
                         >
                             {{ page }}
@@ -750,12 +760,12 @@
             </div>
 
             <!-- Vista Móvil: Lista de tarjetas de gastos -->
-            <div class="block md:hidden space-y-3">
+            <TransitionGroup name="list" tag="div" class="block md:hidden space-y-3">
                 <template v-if="paginatedExpenses.length > 0">
                     <div
                         v-for="item in paginatedExpenses"
                         :key="getExpenseRowKey(item)"
-                        class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden"
+                        class="bg-white dark:bg-gray-800 rounded-2xl shadow-soft border border-slate-100 dark:border-gray-700 overflow-hidden card-hover"
                     >
                         <!-- Category color accent -->
                         <div
@@ -792,12 +802,12 @@
                                     
                                     <!-- Información principal -->
                                     <div class="flex-1 min-w-0">
-                                        <h3 class="font-semibold text-slate-900 text-sm truncate">
+                                        <h3 class="font-semibold text-slate-900 dark:text-gray-100 text-sm truncate">
                                             {{ item.description }}
                                         </h3>
                                         <p
                                             v-if="item.is_scheduled && getScheduledInstallmentLabel(item)"
-                                            class="text-xs text-slate-400 mt-0.5"
+                                            class="text-xs text-slate-400 dark:text-gray-500 mt-0.5"
                                         >
                                             {{ getScheduledInstallmentLabel(item) }}
                                         </p>
@@ -813,7 +823,7 @@
                                             </span>
                                             <span
                                                 class="text-xs font-medium"
-                                                :class="item.is_installment ? 'text-primary-500' : item.is_scheduled ? 'text-violet-500' : 'text-slate-400'"
+                                                :class="item.is_installment ? 'text-primary-500' : item.is_scheduled ? 'text-violet-500' : 'text-slate-400 dark:text-gray-500'"
                                             >
                                                 {{ item.is_installment ? "Cuota" : item.is_scheduled ? "Programado" : "Gasto" }}
                                             </span>
@@ -826,7 +836,7 @@
                                     <div class="relative action-menu-container mb-1">
                                         <button
                                             @click="toggleActionMenu(item.id)"
-                                            class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors duration-200"
+                                            class="p-1.5 text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 dark:bg-gray-700 rounded-lg transition-colors duration-200"
                                             title="Más opciones"
                                         >
                                             <MoreVertical class="h-4 w-4" />
@@ -834,11 +844,11 @@
                                         
                                         <div
                                             v-if="activeActionMenu === item.id"
-                                            class="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-10 min-w-[140px]"
+                                            class="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-slate-100 dark:border-gray-700 py-1 z-10 min-w-[140px]"
                                         >
                                             <button
                                                 @click="editExpense(item)"
-                                                class="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium"
+                                                class="w-full px-4 py-2.5 text-left text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:bg-gray-700 dark:hover:bg-gray-700 flex items-center gap-2 font-medium"
                                             >
                                                 <Edit class="h-4 w-4 text-primary-500" />
                                                 Editar
@@ -862,7 +872,7 @@
                                     
                                     <div
                                         class="text-base font-bold"
-                                        :class="item.is_installment ? 'text-primary-600' : 'text-slate-900'"
+                                        :class="item.is_installment ? 'text-primary-600' : 'text-slate-900 dark:text-gray-100'"
                                     >
                                         {{ formatCurrency(item.is_installment ? item.installment_amount : item.amount) }}
                                     </div>
@@ -870,12 +880,12 @@
                             </div>
 
                             <!-- Detalles adicionales -->
-                            <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-gray-700">
                                 <div
                                     v-if="item.is_installment"
                                     class="flex items-center justify-between text-xs"
                                 >
-                                    <span class="text-slate-500">Cuota {{ item.installment_number }} de {{ item.installments_count }}</span>
+                                    <span class="text-slate-500 dark:text-gray-400">Cuota {{ item.installment_number }} de {{ item.installments_count }}</span>
                                     <span class="text-primary-600 font-semibold">Vence: {{ formatDate(item.due_date) }}</span>
                                 </div>
 
@@ -883,17 +893,17 @@
                                     v-else-if="item.is_scheduled && getScheduledInstallmentLabel(item)"
                                     class="flex items-center justify-between text-xs"
                                 >
-                                    <span class="text-slate-500">{{ getScheduledInstallmentLabel(item) }}</span>
+                                    <span class="text-slate-500 dark:text-gray-400">{{ getScheduledInstallmentLabel(item) }}</span>
                                     <span class="text-violet-600 font-semibold">Mes: {{ formatDate(item.purchase_date) }}</span>
                                 </div>
 
                                 <div class="flex items-center justify-between text-xs">
-                                    <span class="text-slate-500">Tarjeta</span>
-                                    <span class="text-slate-700 font-semibold">{{ item.expenses?.available_cards?.name || item.available_cards?.name || "Sin cuenta" }}</span>
+                                    <span class="text-slate-500 dark:text-gray-400">Tarjeta</span>
+                                    <span class="text-slate-700 dark:text-gray-300 font-semibold">{{ item.expenses?.available_cards?.name || item.available_cards?.name || "Sin cuenta" }}</span>
                                 </div>
 
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs text-slate-500">Estado</span>
+                                    <span class="text-xs text-slate-500 dark:text-gray-400">Estado</span>
                                     <button
                                         @click="openPaymentStatusModal(item)"
                                         :class="[
@@ -914,7 +924,7 @@
                     <div
                         v-for="expense in paginatedDirectExpenses"
                         :key="expense.id"
-                        class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden"
+                        class="bg-white dark:bg-gray-800 rounded-2xl shadow-soft border border-slate-100 dark:border-gray-700 overflow-hidden card-hover"
                     >
                         <!-- Category color accent -->
                         <div
@@ -947,12 +957,12 @@
                                     </div>
                                     
                                     <div class="flex-1 min-w-0">
-                                        <h3 class="font-semibold text-slate-900 text-sm truncate">
+                                        <h3 class="font-semibold text-slate-900 dark:text-gray-100 text-sm truncate">
                                             {{ expense.description }}
                                         </h3>
                                         <p
                                             v-if="expense.is_scheduled && getScheduledInstallmentLabel(expense)"
-                                            class="text-xs text-slate-400 mt-0.5"
+                                            class="text-xs text-slate-400 dark:text-gray-500 mt-0.5"
                                         >
                                             {{ getScheduledInstallmentLabel(expense) }}
                                         </p>
@@ -968,7 +978,7 @@
                                             </span>
                                             <span
                                                 class="text-xs font-medium"
-                                                :class="expense.is_scheduled ? 'text-violet-500' : 'text-slate-400'"
+                                                :class="expense.is_scheduled ? 'text-violet-500' : 'text-slate-400 dark:text-gray-500'"
                                             >
                                                 {{ expense.is_scheduled ? "Programado" : "Gasto" }}
                                             </span>
@@ -980,7 +990,7 @@
                                     <div class="relative action-menu-container mb-1">
                                         <button
                                             @click="toggleActionMenu(expense.id)"
-                                            class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors duration-200"
+                                            class="p-1.5 text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 dark:bg-gray-700 rounded-lg transition-colors duration-200"
                                             title="Más opciones"
                                         >
                                             <MoreVertical class="h-4 w-4" />
@@ -988,11 +998,11 @@
                                         
                                         <div
                                             v-if="activeActionMenu === expense.id"
-                                            class="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-10 min-w-[140px]"
+                                            class="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-slate-100 dark:border-gray-700 py-1 z-10 min-w-[140px]"
                                         >
                                             <button
                                                 @click="editExpense(expense)"
-                                                class="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium"
+                                                class="w-full px-4 py-2.5 text-left text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:bg-gray-700 dark:hover:bg-gray-700 flex items-center gap-2 font-medium"
                                             >
                                                 <Edit class="h-4 w-4 text-primary-500" />
                                                 Editar
@@ -1014,23 +1024,23 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="text-base font-bold text-slate-900">
+                                    <div class="text-base font-bold text-slate-900 dark:text-gray-100">
                                         {{ formatCurrency(expense.amount) }}
                                     </div>
-                                    <div class="text-xs text-slate-400 mt-0.5">
+                                    <div class="text-xs text-slate-400 dark:text-gray-500 mt-0.5">
                                         {{ formatDate(expense.purchase_date) }}
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-gray-700">
                                 <div class="flex items-center justify-between text-xs">
-                                    <span class="text-slate-500">Tarjeta</span>
-                                    <span class="text-slate-700 font-semibold">{{ expense.expenses?.available_cards?.name || expense.available_cards?.name || "Sin cuenta" }}</span>
+                                    <span class="text-slate-500 dark:text-gray-400">Tarjeta</span>
+                                    <span class="text-slate-700 dark:text-gray-300 font-semibold">{{ expense.expenses?.available_cards?.name || expense.available_cards?.name || "Sin cuenta" }}</span>
                                 </div>
 
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs text-slate-500">Estado</span>
+                                    <span class="text-xs text-slate-500 dark:text-gray-400">Estado</span>
                                     <button
                                         @click="openPaymentStatusModal(expense)"
                                         :class="[
@@ -1051,9 +1061,9 @@
                     <button
                         @click="previousPage"
                         :disabled="currentPage === 1"
-                        class="p-2 rounded-xl border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+                        class="p-2 rounded-xl border border-slate-200 dark:border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:bg-gray-700 dark:hover:bg-gray-700 transition-colors"
                     >
-                        <ChevronLeft class="h-4 w-4 text-slate-600" />
+                        <ChevronLeft class="h-4 w-4 text-slate-600 dark:text-gray-400" />
                     </button>
                     
                     <div class="flex items-center gap-1">
@@ -1065,7 +1075,7 @@
                                 'px-3 py-1.5 rounded-xl text-sm font-semibold cursor-pointer transition-all duration-200',
                                 page === currentPage
                                     ? 'bg-primary-600 text-white shadow-sm'
-                                    : 'text-slate-500 hover:bg-slate-100'
+                                    : 'text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 dark:bg-gray-700'
                             ]"
                         >
                             {{ page }}
@@ -1075,28 +1085,25 @@
                     <button
                         @click="nextPage"
                         :disabled="currentPage === totalPages"
-                        class="p-2 rounded-xl border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+                        class="p-2 rounded-xl border border-slate-200 dark:border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:bg-gray-700 dark:hover:bg-gray-700 transition-colors"
                     >
-                        <ChevronRight class="h-4 w-4 text-slate-600" />
+                        <ChevronRight class="h-4 w-4 text-slate-600 dark:text-gray-400" />
                     </button>
                 </div>
-            </div>
+            </TransitionGroup>
 
-            <!-- Estado vacío -->
-            <div
+            <EmptyState
                 v-if="filteredExpensesToShow.length === 0 && !expensesStore.loading"
-                class="card text-center py-16"
-            >
-                <div class="w-16 h-16 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-                    <Receipt class="h-8 w-8 text-slate-400" />
-                </div>
-                <h3 class="text-lg font-semibold text-slate-900">
-                    No hay gastos
-                </h3>
-                <p class="mt-1 text-slate-500 text-sm max-w-sm mx-auto">
-                    Comienza agregando tu primer gasto para llevar el control de tus finanzas
-                </p>
-            </div>
+                icon="Receipt"
+                title="No hay gastos"
+                description="Comienza agregando tu primer gasto para llevar el control de tus finanzas"
+            />
+            <EmptyState
+                v-else-if="searchedExpenses.length === 0 && searchQuery && !expensesStore.loading"
+                icon="SearchX"
+                title="Sin resultados"
+                description="No se encontraron gastos que coincidan con tu búsqueda"
+            />
         </div>
 
     </div>
@@ -1119,8 +1126,9 @@
     <!-- Botones flotantes para gastos -->
     <div 
         :class="[
-            'fixed bottom-24 lg:bottom-6 right-6 z-50 flex flex-col gap-3',
-            (showModal || showScheduledModal) ? 'hidden' : ''
+            'fixed z-50 flex flex-col gap-3 transition-all duration-300 ease-out',
+            (showModal || showScheduledModal) ? 'hidden' : '',
+            showFab ? 'bottom-24 lg:bottom-6 right-6 opacity-100 translate-y-0' : 'bottom-20 lg:bottom-4 right-6 opacity-0 translate-y-4 pointer-events-none'
         ]"
     >
         <div v-if="showExpenseOptions" class="flex flex-col gap-2">
@@ -1152,6 +1160,15 @@
             <span class="hidden lg:inline">Nuevo Gasto</span>
         </button>
     </div>
+    <ConfirmDialog
+        v-model="showDeleteConfirm"
+        title="¿Estás seguro?"
+        message="Esta acción no se puede deshacer"
+        confirmText="Sí, eliminar"
+        cancelText="Cancelar"
+        variant="danger"
+        @confirm="handleDeleteConfirm"
+    />
 </template>
 
 <script setup>
@@ -1166,6 +1183,10 @@ import SkeletonSummary from "@/components/SkeletonSummary.vue";
 import SkeletonList from "@/components/SkeletonList.vue";
 import SkeletonExpenseCard from "@/components/SkeletonExpenseCard.vue";
 import SkeletonExpenseSummary from "@/components/SkeletonExpenseSummary.vue";
+import SearchBar from "@/components/SearchBar.vue";
+import EmptyState from "@/components/EmptyState.vue";
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
+import ExportButton from "@/components/ExportButton.vue";
 import {
     Plus,
     Receipt,
@@ -1181,6 +1202,7 @@ import {
     Loader2,
     Calendar,
     X,
+    SearchX,
     UtensilsCrossed,
     Car,
     Gamepad2,
@@ -1244,6 +1266,9 @@ const showScheduledModal = ref(false);
 const showNoCardsAlert = ref(false);
 const editingExpense = ref(null);
 const showExpenseOptions = ref(false);
+const searchQuery = ref('');
+const showDeleteConfirm = ref(false);
+const expenseToDelete = ref(null);
 const isLoading = ref(true);
 const now = new Date();
 const filters = ref({
@@ -1527,6 +1552,7 @@ onMounted(async () => {
     }
 
     document.addEventListener('click', handleClickOutside);
+    window.addEventListener('scroll', handleFabScroll, { passive: true });
 });
 
 watch(
@@ -1538,9 +1564,15 @@ watch(
     { immediate: false }
 );
 
+watch(searchQuery, () => {
+    currentPage.value = 1;
+    currentPageDesktop.value = 1;
+});
+
 onUnmounted(() => {
     _mounted = false
     document.removeEventListener('click', handleClickOutside);
+    window.removeEventListener('scroll', handleFabScroll);
 });
 
 const handleClickOutside = (event) => {
@@ -1769,51 +1801,46 @@ const deleteExpense = async (expenseId, expenseItem = null) => {
             }
         }
     } else {
-        const result = await Swal.fire({
-            title: "¿Estás seguro?",
-            text: "Esta acción no se puede deshacer",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#dc2626",
-            cancelButtonColor: "#6b7280",
-            confirmButtonText: "Sí, eliminar",
-            cancelButtonText: "Cancelar",
-        });
-
-        if (result.isConfirmed) {
-            try {
-                const deleteResult = await expensesStore.deleteExpense(expenseId);
-
-                if (deleteResult.success) {
-                    if (filters.value && filters.value.year) {
-                        await loadMonthlyData();
-                    } else {
-                        await expensesStore.loadExpenses();
-                    }
-
-                    await Swal.fire({
-                        icon: "success",
-                        title: "¡Gasto eliminado!",
-                        text: "El gasto se eliminó correctamente",
-                        timer: 2000,
-                        showConfirmButton: false,
-                    });
-                } else {
-                    await Swal.fire({
-                        icon: "error",
-                        title: "Error",
-                        text: deleteResult.error || "No se pudo eliminar el gasto.",
-                    });
-                }
-            } catch (error) {
-                await Swal.fire({
-                    icon: "error",
-                    title: "Error inesperado",
-                    text: error.message || "Ocurrió un error inesperado.",
-                });
-            }
-        }
+        expenseToDelete.value = { id: expenseId, item: expenseItem };
+        showDeleteConfirm.value = true;
     }
+};
+
+const handleDeleteConfirm = async () => {
+    if (!expenseToDelete.value) return;
+    const { id } = expenseToDelete.value;
+    try {
+        const deleteResult = await expensesStore.deleteExpense(id);
+
+        if (deleteResult.success) {
+            if (filters.value && filters.value.year) {
+                await loadMonthlyData();
+            } else {
+                await expensesStore.loadExpenses();
+            }
+
+            await Swal.fire({
+                icon: "success",
+                title: "¡Gasto eliminado!",
+                text: "El gasto se eliminó correctamente",
+                timer: 2000,
+                showConfirmButton: false,
+            });
+        } else {
+            await Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: deleteResult.error || "No se pudo eliminar el gasto.",
+            });
+        }
+    } catch (error) {
+        await Swal.fire({
+            icon: "error",
+            title: "Error inesperado",
+            text: error.message || "Ocurrió un error inesperado.",
+        });
+    }
+    expenseToDelete.value = null;
 };
 
 const resolvePaymentStatusId = (item) => {
@@ -2204,6 +2231,29 @@ const filteredExpensesToShow = computed(() => {
     });
 });
 
+const normalizeText = (text) => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+const searchedExpenses = computed(() => {
+  if (!searchQuery.value) return filteredExpensesToShow.value
+  const q = normalizeText(searchQuery.value)
+  return filteredExpensesToShow.value.filter(item =>
+    normalizeText(item.description || '').includes(q)
+  )
+})
+
+const searchedDirectExpenses = computed(() => {
+  if (!searchQuery.value) return directExpenses.value
+  const q = normalizeText(searchQuery.value)
+  return directExpenses.value.filter(item =>
+    normalizeText(item.description || '').includes(q)
+  )
+})
+
 function previousMonth() {
     if (!filters.value) return;
     let month = parseInt(filters.value.month);
@@ -2279,6 +2329,28 @@ function getStatusColor(item) {
     return "bg-warning-100 text-warning-800";
 }
 
+const expenseCsvColumns = [
+    { key: 'description', label: 'Descripción' },
+    { key: 'amount', label: 'Monto' },
+    { key: 'date', label: 'Fecha' },
+    { key: 'category', label: 'Categoría' },
+    { key: 'card', label: 'Tarjeta' },
+    { key: 'type', label: 'Tipo' },
+    { key: 'status', label: 'Estado' }
+]
+
+const exportableExpenses = computed(() => {
+    return searchedExpenses.value.map(e => ({
+        description: e.description || '',
+        amount: e.is_installment ? (e.installment_amount ?? e.amount) : e.amount,
+        date: e.is_installment ? (e.due_date || '') : (e.purchase_date || ''),
+        category: (e.categories?.name || e.expenses?.categories?.name) || '',
+        card: (e.available_cards?.name || e.expenses?.available_cards?.name) || '',
+        type: e.is_installment ? 'Cuota' : e.is_scheduled ? 'Programado' : 'Directo',
+        status: getStatusLabel(e) || ''
+    }))
+})
+
 function getStatusBadgeClass(item) {
     const code =
         item.payment_status_code ||
@@ -2297,17 +2369,17 @@ const currentPage = ref(1);
 const paginatedExpenses = computed(() => {
     const start = (currentPage.value - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    return filteredExpensesToShow.value.slice(start, end);
+    return searchedExpenses.value.slice(start, end);
 });
 
 const paginatedDirectExpenses = computed(() => {
     const start = (currentPage.value - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    return directExpenses.value.slice(start, end);
+    return searchedDirectExpenses.value.slice(start, end);
 });
 
 const totalPages = computed(() => {
-    return Math.ceil(filteredExpensesToShow.value.length / itemsPerPage);
+    return Math.ceil(searchedExpenses.value.length / itemsPerPage);
 });
 
 const visiblePages = computed(() => {
@@ -2356,23 +2428,31 @@ const toggleActionMenu = (id) => {
     activeActionMenu.value = activeActionMenu.value === id ? null : id;
 };
 
+const showFab = ref(true)
+let lastFabScrollY = 0
+const handleFabScroll = () => {
+  const currentScrollY = window.scrollY
+  showFab.value = currentScrollY < lastFabScrollY || currentScrollY < 50
+  lastFabScrollY = currentScrollY
+}
+
 const itemsPerPageDesktop = 10;
 const currentPageDesktop = ref(1);
 
 const paginatedExpensesDesktop = computed(() => {
     const start = (currentPageDesktop.value - 1) * itemsPerPageDesktop;
     const end = start + itemsPerPageDesktop;
-    return filteredExpensesToShow.value.slice(start, end);
+    return searchedExpenses.value.slice(start, end);
 });
 
 const paginatedDirectExpensesDesktop = computed(() => {
     const start = (currentPageDesktop.value - 1) * itemsPerPageDesktop;
     const end = start + itemsPerPageDesktop;
-    return directExpenses.value.slice(start, end);
+    return searchedDirectExpenses.value.slice(start, end);
 });
 
 const totalPagesDesktop = computed(() => {
-    return Math.ceil(filteredExpensesToShow.value.length / itemsPerPageDesktop);
+    return Math.ceil(searchedExpenses.value.length / itemsPerPageDesktop);
 });
 
 const visiblePagesDesktop = computed(() => {

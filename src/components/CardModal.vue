@@ -10,7 +10,7 @@
     aria-labelledby="modal-title"
   >
     <div 
-      class="bg-white rounded-2xl shadow-soft max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-100" 
+      class="bg-white dark:bg-gray-800 rounded-2xl shadow-soft max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-100 dark:border-gray-700" 
       @wheel.stop 
       @touchmove.stop 
       @scroll.stop
@@ -19,13 +19,13 @@
       tabindex="-1"
     >
       <!-- Header -->
-      <div class="flex justify-between items-center p-6 border-b border-slate-200">
-        <h3 id="modal-title" class="text-lg font-semibold text-slate-900">
+      <div class="flex justify-between items-center p-6 border-b border-slate-200 dark:border-gray-700">
+        <h3 id="modal-title" class="text-lg font-semibold text-slate-900 dark:text-gray-100">
           {{ card ? 'Editar Tarjeta' : 'Nueva Tarjeta' }}
         </h3>
         <button
           @click="$emit('close')"
-          class="text-slate-400 hover:text-slate-600 transition-colors duration-200"
+          class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 transition-colors duration-200"
           aria-label="Cerrar modal"
           type="button"
         >
@@ -37,7 +37,7 @@
       <form @submit.prevent="onSubmit" class="p-6 space-y-4" novalidate>
         <!-- Nombre -->
         <div>
-          <label for="name" class="block text-sm font-medium text-slate-700">
+          <label for="name" class="block text-sm font-medium text-slate-700 dark:text-gray-300">
             Nombre de la tarjeta
           </label>
           <input
@@ -58,7 +58,7 @@
 
         <!-- Tipo -->
         <div>
-          <label for="type" class="block text-sm font-medium text-slate-700">
+          <label for="type" class="block text-sm font-medium text-slate-700 dark:text-gray-300">
             Tipo
           </label>
           <select
@@ -81,7 +81,7 @@
 
         <!-- Banco -->
         <div>
-          <label for="bank" class="block text-sm font-medium text-slate-700">
+          <label for="bank" class="block text-sm font-medium text-slate-700 dark:text-gray-300">
             Banco
           </label>
           <input

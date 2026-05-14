@@ -3,8 +3,8 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Mis Cuentas</h1>
-        <p class="text-sm sm:text-base text-slate-500 mt-1">Gestiona las cuentas vinculadas a tu perfil</p>
+        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-gray-100">Mis Cuentas</h1>
+        <p class="text-sm sm:text-base text-slate-500 dark:text-gray-400 mt-1">Gestiona las cuentas vinculadas a tu perfil</p>
       </div>
     </div>
 
@@ -24,7 +24,7 @@
       <div
         v-for="userCard in (userCardsStore.sortedCardsByBank || [])"
         :key="userCard.id"
-        class="group bg-white rounded-2xl shadow-soft border border-slate-100 hover:shadow-soft-lg hover:border-slate-200 transition-all duration-300 overflow-hidden"
+        class="group bg-white dark:bg-gray-800 rounded-2xl shadow-soft border border-slate-100 dark:border-gray-700 hover:shadow-soft-lg hover:border-slate-200 dark:hover:border-gray-600 dark:border-gray-700 transition-all duration-300 overflow-hidden"
       >
         <!-- Accent bar por tipo -->
         <div
@@ -44,7 +44,7 @@
                   <CreditCard class="h-5 w-5" :class="getCardIconClass(userCard.available_card?.type)" />
                 </div>
                 <div class="min-w-0">
-                  <h3 class="text-sm sm:text-base font-bold text-slate-900 truncate">
+                  <h3 class="text-sm sm:text-base font-bold text-slate-900 dark:text-gray-100 truncate">
                     {{ userCard.available_card.name }}
                   </h3>
                   <span
@@ -59,20 +59,20 @@
               <!-- Info de la cuenta -->
               <div class="space-y-1.5 text-sm">
                 <div class="flex justify-between items-center">
-                  <span class="text-slate-400 text-xs">Banco</span>
-                  <span class="font-medium text-slate-700 text-xs truncate ml-2">
+                  <span class="text-slate-400 dark:text-gray-500 text-xs">Banco</span>
+                  <span class="font-medium text-slate-700 dark:text-gray-300 text-xs truncate ml-2">
                     {{ userCard.available_card.bank || '-' }}
                   </span>
                 </div>
                 <div v-if="userCard.available_card.payment_day" class="flex justify-between items-center">
-                  <span class="text-slate-400 text-xs">Pago</span>
-                  <span class="font-medium text-slate-700 text-xs">
+                  <span class="text-slate-400 dark:text-gray-500 text-xs">Pago</span>
+                  <span class="font-medium text-slate-700 dark:text-gray-300 text-xs">
                     Día {{ userCard.available_card.payment_day }}
                   </span>
                 </div>
                 <div v-if="userCard.available_card.credit_limit" class="flex justify-between items-center">
-                  <span class="text-slate-400 text-xs">Límite</span>
-                  <span class="font-medium text-slate-700 text-xs">
+                  <span class="text-slate-400 dark:text-gray-500 text-xs">Límite</span>
+                  <span class="font-medium text-slate-700 dark:text-gray-300 text-xs">
                     ${{ formatNumber(userCard.available_card.credit_limit) }}
                   </span>
                 </div>
@@ -82,7 +82,7 @@
             <!-- Botón para desvincular -->
             <button
               @click="unlinkCard(userCard.id)"
-              class="flex-shrink-0 ml-2 p-2 text-slate-400 hover:text-danger-600 hover:bg-danger-50 rounded-xl transition-all duration-200"
+              class="flex-shrink-0 ml-2 p-2 text-slate-400 dark:text-gray-500 hover:text-danger-600 hover:bg-danger-50 rounded-xl transition-all duration-200"
               title="Desvincular cuenta"
             >
               <Unlink class="h-4 w-4" />
@@ -91,25 +91,17 @@
         </div>
       </div>
 
-      <!-- Estado vacío -->
       <div
         v-if="!userCardsStore.cards || userCardsStore.cards.length === 0"
-        class="col-span-full flex flex-col items-center justify-center py-16 sm:py-20"
+        class="col-span-full"
       >
-        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-100 flex items-center justify-center mb-5">
-          <CreditCard class="h-8 w-8 sm:h-10 sm:w-10 text-slate-400" />
-        </div>
-        <h3 class="text-lg sm:text-xl font-bold text-slate-900">No tienes cuentas vinculadas</h3>
-        <p class="mt-2 text-sm sm:text-base text-slate-500 text-center max-w-sm">
-          Vincula cuentas disponibles para comenzar a usarlas
-        </p>
-        <button
-          @click="showAvailableCardsModal = true"
-          class="btn-primary flex items-center gap-2 mt-5 text-sm sm:text-base"
-        >
-          <Plus class="h-4 w-4 sm:h-5 sm:w-5" />
-          <span>Vincular Cuenta</span>
-        </button>
+        <EmptyState
+          icon="CreditCard"
+          title="No tienes cuentas vinculadas"
+          description="Vincula cuentas disponibles para comenzar a usarlas"
+          actionLabel="Vincular Cuenta"
+          @action="showAvailableCardsModal = true"
+        />
       </div>
     </div>
 
@@ -119,16 +111,16 @@
       class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4"
       @click.self="closeModal"
     >
-      <div class="bg-white rounded-2xl shadow-soft-lg max-w-2xl w-full max-h-[80vh] overflow-hidden animate-fade-in">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-soft-lg max-w-2xl w-full max-h-[80vh] overflow-hidden animate-fade-in">
         <!-- Header -->
-        <div class="relative flex justify-between items-start p-5 sm:p-6 border-b border-slate-100">
+        <div class="relative flex justify-between items-start p-5 sm:p-6 border-b border-slate-100 dark:border-gray-700">
           <div class="flex-1 pr-10">
-            <h3 class="text-lg font-bold text-slate-900">Vincular Cuentas Disponibles</h3>
-            <p class="text-sm text-slate-500 mt-1">Selecciona las cuentas que quieres vincular a tu perfil</p>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-gray-100">Vincular Cuentas Disponibles</h3>
+            <p class="text-sm text-slate-500 dark:text-gray-400 mt-1">Selecciona las cuentas que quieres vincular a tu perfil</p>
           </div>
           <button
             @click="closeModal"
-            class="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all duration-200"
+            class="absolute top-5 right-5 p-2 text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 dark:bg-gray-700 rounded-xl transition-all duration-200"
             title="Cerrar modal"
           >
             <X class="h-5 w-5" />
@@ -148,13 +140,13 @@
                 class="input-field pl-10"
               />
               <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                <Search class="h-4 w-4 text-slate-400" />
+                <Search class="h-4 w-4 text-slate-400 dark:text-gray-500" />
               </div>
             </div>
 
             <!-- Filtro por banco -->
             <div>
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+              <label class="block text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
                 Filtrar por banco
               </label>
               <select
@@ -174,7 +166,7 @@
 
             <!-- Info de filtros -->
             <div class="flex items-center justify-between">
-              <p class="text-xs text-slate-500">
+              <p class="text-xs text-slate-500 dark:text-gray-400">
                 {{ filteredCards.length }} de {{ availableCardsStore.sortedAvailableCardsByBank.length }} cuentas
               </p>
               <div class="flex items-center gap-2">
@@ -214,7 +206,7 @@
             <div
               v-for="availableCard in paginatedCardsDesktop"
               :key="availableCard.id"
-              class="bg-white border border-slate-100 rounded-2xl p-4 hover:border-primary-200 hover:shadow-soft transition-all duration-300"
+              class="bg-white dark:bg-gray-800 border border-slate-100 dark:border-gray-700 rounded-2xl p-4 hover:border-primary-200 dark:hover:border-primary-800 hover:shadow-soft transition-all duration-300"
             >
               <div class="flex justify-between items-center mb-3">
                 <div class="flex items-center gap-3">
@@ -225,8 +217,8 @@
                     <CreditCard class="h-5 w-5" :class="getCardIconClass(availableCard.type)" />
                   </div>
                   <div>
-                    <h4 class="font-bold text-slate-900 text-sm">{{ availableCard.name }}</h4>
-                    <p class="text-xs text-slate-500">{{ availableCard.bank }}</p>
+                    <h4 class="font-bold text-slate-900 dark:text-gray-100 text-sm">{{ availableCard.name }}</h4>
+                    <p class="text-xs text-slate-500 dark:text-gray-400">{{ availableCard.bank }}</p>
                   </div>
                 </div>
                 <span
@@ -259,7 +251,7 @@
             </div>
 
             <!-- Paginación desktop -->
-            <div v-if="totalPagesDesktop > 1" class="flex justify-center items-center gap-2 mt-6 pt-4 border-t border-slate-100">
+            <div v-if="totalPagesDesktop > 1" class="flex justify-center items-center gap-2 mt-6 pt-4 border-t border-slate-100 dark:border-gray-700">
               <button
                 @click="goToPreviousPageDesktop"
                 :disabled="currentPageDesktop === 1"
@@ -279,8 +271,8 @@
                     page === currentPageDesktop
                       ? 'bg-primary-600 text-white shadow-sm'
                       : typeof page === 'number'
-                        ? 'text-slate-600 hover:bg-slate-100 cursor-pointer'
-                        : 'text-slate-400 cursor-default'
+                        ? 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 dark:bg-gray-700 cursor-pointer'
+                        : 'text-slate-400 dark:text-gray-500 cursor-default'
                   ]"
                 >
                   {{ page }}
@@ -304,7 +296,7 @@
               <div
                 v-for="availableCard in paginatedCards"
                 :key="availableCard.id"
-                class="bg-white border border-slate-100 rounded-2xl p-3.5 hover:border-primary-200 hover:shadow-soft transition-all duration-300"
+                class="bg-white dark:bg-gray-800 border border-slate-100 dark:border-gray-700 rounded-2xl p-3.5 hover:border-primary-200 dark:hover:border-primary-800 hover:shadow-soft transition-all duration-300"
               >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2.5 flex-1 min-w-0">
@@ -315,8 +307,8 @@
                       <CreditCard class="h-4 w-4" :class="getCardIconClass(availableCard.type)" />
                     </div>
                     <div class="min-w-0 flex-1">
-                      <h4 class="font-bold text-slate-900 text-sm truncate">{{ availableCard.name }}</h4>
-                      <p class="text-xs text-slate-500 truncate">{{ availableCard.bank || 'Sin banco' }}</p>
+                      <h4 class="font-bold text-slate-900 dark:text-gray-100 text-sm truncate">{{ availableCard.name }}</h4>
+                      <p class="text-xs text-slate-500 dark:text-gray-400 truncate">{{ availableCard.bank || 'Sin banco' }}</p>
                       <span
                         class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md mt-1"
                         :class="getCardTypeBadgeClass(availableCard.type)"
@@ -352,24 +344,24 @@
             </div>
 
             <!-- Paginación móvil -->
-            <div v-if="totalPages > 1" class="flex items-center justify-between mt-5 pt-4 border-t border-slate-100">
+            <div v-if="totalPages > 1" class="flex items-center justify-between mt-5 pt-4 border-t border-slate-100 dark:border-gray-700">
               <button
                 @click="goToPreviousPage"
                 :disabled="currentPage === 1"
-                class="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900 disabled:text-slate-300 disabled:cursor-not-allowed transition-colors duration-200 font-medium"
+                class="flex items-center gap-1 text-sm text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-100 dark:text-gray-100 disabled:text-slate-300 disabled:cursor-not-allowed transition-colors duration-200 font-medium"
               >
                 <ChevronLeft class="h-4 w-4" />
                 <span>Anterior</span>
               </button>
 
-              <span class="text-sm text-slate-500 font-semibold">
+              <span class="text-sm text-slate-500 dark:text-gray-400 font-semibold">
                 {{ currentPage }} de {{ totalPages }}
               </span>
 
               <button
                 @click="goToNextPage"
                 :disabled="currentPage === totalPages"
-                class="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900 disabled:text-slate-300 disabled:cursor-not-allowed transition-colors duration-200 font-medium"
+                class="flex items-center gap-1 text-sm text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-100 dark:text-gray-100 disabled:text-slate-300 disabled:cursor-not-allowed transition-colors duration-200 font-medium"
               >
                 <span>Siguiente</span>
                 <ChevronRight class="h-4 w-4" />
@@ -382,16 +374,16 @@
             v-if="!availableCardsStore.loading && !availableCardsStore.error && filteredCards.length === 0"
             class="text-center py-10"
           >
-            <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-              <CreditCard class="h-7 w-7 text-slate-400" />
+            <div class="w-14 h-14 rounded-full bg-slate-100 dark:bg-gray-700 flex items-center justify-center mx-auto mb-4">
+              <CreditCard class="h-7 w-7 text-slate-400 dark:text-gray-500" />
             </div>
-            <h3 class="text-base font-bold text-slate-900">
+            <h3 class="text-base font-bold text-slate-900 dark:text-gray-100">
               {{ availableCardsStore.sortedAvailableCardsByBank.length === 0
                 ? 'No hay cuentas disponibles'
                 : 'No se encontraron cuentas'
               }}
             </h3>
-            <p class="mt-1.5 text-sm text-slate-500">
+            <p class="mt-1.5 text-sm text-slate-500 dark:text-gray-400">
               {{ availableCardsStore.sortedAvailableCardsByBank.length === 0
                 ? 'Contacta al administrador para que agregue cuentas disponibles'
                 : 'Intenta con otros términos de búsqueda'
@@ -423,6 +415,7 @@ import { useUserCardsStore } from '@/stores/userCards'
 import { useAvailableCardsStore } from '@/stores/availableCards'
 import Swal from 'sweetalert2'
 import SkeletonGrid from '@/components/SkeletonGrid.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import {
   CreditCard,
   Plus,
@@ -472,7 +465,7 @@ const getCardIconClass = (type) => {
     case 'Crédito': return 'text-primary-600'
     case 'Débito': return 'text-success-600'
     case 'Transferencia': return 'text-violet-600'
-    default: return 'text-slate-500'
+    default: return 'text-slate-500 dark:text-gray-400'
   }
 }
 
@@ -481,8 +474,8 @@ const getCardTypeBadgeClass = (type) => {
     case 'Crédito': return 'bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-200'
     case 'Débito': return 'bg-success-50 text-success-700 ring-1 ring-inset ring-success-200'
     case 'Transferencia': return 'bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200'
-    case 'Ninguna': return 'bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200'
-    default: return 'bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200'
+    case 'Ninguna': return 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-400 ring-1 ring-inset ring-slate-200'
+    default: return 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-400 ring-1 ring-inset ring-slate-200'
   }
 }
 
