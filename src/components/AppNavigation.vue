@@ -158,6 +158,17 @@
         <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
 
         <button
+          @click="toggleTheme"
+          class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
+        >
+          <Sun v-if="isDark" class="h-4 w-4" />
+          <Moon v-else class="h-4 w-4" />
+          {{ isDark ? 'Modo claro' : 'Modo oscuro' }}
+        </button>
+
+        <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+
+        <button
           @click="signOut"
           class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/30 transition-colors duration-150"
         >
@@ -243,6 +254,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useTheme } from '@/composables/useTheme'
 import DarkModeToggle from '@/components/DarkModeToggle.vue'
 import {
   BarChart3,
@@ -253,12 +265,15 @@ import {
   Tag,
   UserCircle,
   ChevronDown,
-  LogOut
+  LogOut,
+  Sun,
+  Moon
 } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const { isDark, toggleTheme } = useTheme()
 
 const showUserMenu = ref(false)
 const userMenuRef = ref(null)

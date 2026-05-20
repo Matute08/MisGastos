@@ -45,7 +45,7 @@
             <div class="grid grid-cols-3 gap-4 text-center">
               <div>
                 <p class="text-sm text-slate-500 dark:text-gray-400">Total al balance</p>
-                <p class="text-2xl font-bold text-success-600">{{ formatCurrency(incomesStore.totalIncome) }}</p>
+                <p class="text-2xl font-bold text-success-600 dark:text-success-400">{{ formatCurrency(incomesStore.totalIncome) }}</p>
                 <p
                   v-if="incomesStore.totalCardCreditIncome > 0"
                   class="text-xs text-slate-500 dark:text-gray-400 mt-2 max-w-[14rem] mx-auto leading-snug"
@@ -56,7 +56,7 @@
               </div>
               <div>
                 <p class="text-sm text-slate-500 dark:text-gray-400">Cantidad</p>
-                <p class="text-2xl font-bold text-primary-600">{{ incomesStore.incomes.length }}</p>
+                <p class="text-2xl font-bold text-primary-600 dark:text-primary-400">{{ incomesStore.incomes.length }}</p>
               </div>
               <div>
                 <p class="text-sm text-slate-500 dark:text-gray-400">Promedio (efectivo)</p>
@@ -82,7 +82,7 @@
           <div class="space-y-2.5">
             <div class="flex items-center justify-between py-1.5 border-l-4 border-success-500 pl-3 rounded-r-lg bg-success-50/40 dark:bg-success-900/20">
               <span class="text-xs text-slate-700 dark:text-gray-300 font-semibold">Total al balance</span>
-              <span class="text-base font-bold text-success-600 tabular-nums">{{ formatCurrency(incomesStore.totalIncome) }}</span>
+              <span class="text-base font-bold text-success-600 dark:text-success-400 tabular-nums">{{ formatCurrency(incomesStore.totalIncome) }}</span>
             </div>
             <div
               v-if="incomesStore.totalCardCreditIncome > 0"
@@ -93,7 +93,7 @@
             </div>
             <div class="flex items-center justify-between py-1.5 border-l-4 border-primary-500 pl-3 rounded-r-lg bg-primary-50/30 dark:bg-primary-900/20">
               <span class="text-xs text-slate-600 dark:text-gray-400 font-medium">Cantidad</span>
-              <span class="text-sm font-bold text-primary-600 tabular-nums">{{ incomesStore.incomes.length }}</span>
+              <span class="text-sm font-bold text-primary-600 dark:text-primary-400 tabular-nums">{{ incomesStore.incomes.length }}</span>
             </div>
             <div class="flex items-center justify-between py-1.5 border-l-4 border-slate-400 pl-3 rounded-r-lg bg-slate-50/50 dark:bg-gray-700/50">
               <span class="text-xs text-slate-600 dark:text-gray-400 font-medium">Promedio</span>
@@ -197,7 +197,7 @@
                     Tarjeta · {{ cardLabel(income) }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-sm font-bold" :class="income.affects_cash_balance !== false ? 'text-success-600' : 'text-violet-700'">
+                <td class="px-6 py-4 text-sm font-bold" :class="income.affects_cash_balance !== false ? 'text-success-600 dark:text-success-400' : 'text-violet-700 dark:text-violet-400'">
                   {{ formatCurrency(income.amount) }}
                 </td>
                 <td class="px-6 py-4 text-sm text-slate-500 dark:text-gray-400">
@@ -259,7 +259,7 @@
             </div>
             <p
               class="text-sm font-bold ml-3 shrink-0"
-              :class="income.affects_cash_balance !== false ? 'text-success-600' : 'text-violet-700'"
+              :class="income.affects_cash_balance !== false ? 'text-success-600 dark:text-success-400' : 'text-violet-700 dark:text-violet-400'"
             >
               {{ formatCurrency(income.amount) }}
             </p>

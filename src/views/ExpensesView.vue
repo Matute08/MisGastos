@@ -36,19 +36,19 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="relative pl-4 border-l-4 border-primary-500 text-center">
                             <p class="text-sm text-slate-500 dark:text-gray-400 font-medium">Total Débito</p>
-                            <p class="text-2xl font-bold text-primary-600">
+                            <p class="text-2xl font-bold text-primary-600 dark:text-primary-400">
                                 {{ formatCurrency(totalDebitTransferExpenses) }}
                             </p>
                         </div>
                         <div class="relative pl-4 border-l-4 border-violet-500 text-center">
                             <p class="text-sm text-slate-500 dark:text-gray-400 font-medium">Total Crédito</p>
-                            <p class="text-2xl font-bold text-violet-600">
+                            <p class="text-2xl font-bold text-violet-600 dark:text-violet-400">
                                 {{ formatCurrency(totalCreditExpenses) }}
                             </p>
                         </div>
                         <div class="relative pl-4 border-l-4 border-success-500 text-center">
                             <p class="text-sm text-slate-500 dark:text-gray-400 font-medium">Gastos Totales</p>
-                            <p class="text-2xl font-bold text-success-600">
+                            <p class="text-2xl font-bold text-success-600 dark:text-success-400">
                                 {{ formatCurrency(totalExpenses) }}
                             </p>
                         </div>
@@ -79,17 +79,17 @@
                     </button>
                 </div>
                 <div class="space-y-2.5">
-                    <div class="flex items-center justify-between py-1.5 border-l-4 border-primary-500 pl-3 rounded-r-lg bg-primary-50/30">
+                    <div class="flex items-center justify-between py-1.5 border-l-4 border-primary-500 pl-3 rounded-r-lg bg-primary-50/30 dark:bg-primary-900/20">
                         <span class="text-xs text-slate-600 dark:text-gray-400 font-medium">Débito</span>
-                        <span class="text-sm font-bold text-primary-600 tabular-nums">{{ formatCurrency(totalDebitTransferExpenses) }}</span>
+                        <span class="text-sm font-bold text-primary-600 dark:text-primary-400 tabular-nums">{{ formatCurrency(totalDebitTransferExpenses) }}</span>
                     </div>
-                    <div class="flex items-center justify-between py-1.5 border-l-4 border-violet-500 pl-3 rounded-r-lg bg-violet-50/30">
+                    <div class="flex items-center justify-between py-1.5 border-l-4 border-violet-500 pl-3 rounded-r-lg bg-violet-50/30 dark:bg-violet-900/20">
                         <span class="text-xs text-slate-600 dark:text-gray-400 font-medium">Crédito</span>
-                        <span class="text-sm font-bold text-violet-600 tabular-nums">{{ formatCurrency(totalCreditExpenses) }}</span>
+                        <span class="text-sm font-bold text-violet-600 dark:text-violet-400 tabular-nums">{{ formatCurrency(totalCreditExpenses) }}</span>
                     </div>
-                    <div class="flex items-center justify-between py-2 border-l-4 border-success-500 pl-3 rounded-r-lg bg-success-50/40 mt-1">
+                    <div class="flex items-center justify-between py-2 border-l-4 border-success-500 pl-3 rounded-r-lg bg-success-50/40 dark:bg-success-900/20 mt-1">
                         <span class="text-xs text-slate-700 dark:text-gray-300 font-semibold">Total</span>
-                        <span class="text-base font-bold text-success-600 tabular-nums">{{ formatCurrency(totalExpenses) }}</span>
+                        <span class="text-base font-bold text-success-600 dark:text-success-400 tabular-nums">{{ formatCurrency(totalExpenses) }}</span>
                     </div>
                 </div>
             </div>
@@ -548,7 +548,7 @@
                                             </div>
                                             <span
                                                 class="text-xs font-semibold"
-                                                :class="item.is_installment ? 'text-primary-600' : item.is_scheduled ? 'text-violet-600' : 'text-slate-500 dark:text-gray-400'"
+                                                :class="item.is_installment ? 'text-primary-600 dark:text-primary-400' : item.is_scheduled ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500 dark:text-gray-400'"
                                             >
                                                 {{ item.is_installment ? "Cuota" : item.is_scheduled ? "Programado" : "Gasto" }}
                                             </span>
@@ -593,7 +593,7 @@
                                     </td>
                                     <td
                                         class="px-5 py-4 whitespace-nowrap text-sm font-bold"
-                                        :class="item.is_installment ? 'text-primary-600' : 'text-slate-900 dark:text-gray-100'"
+                                        :class="item.is_installment ? 'text-primary-600 dark:text-primary-400' : 'text-slate-900 dark:text-gray-100'"
                                     >
                                         {{ formatCurrency(item.is_installment ? item.installment_amount : item.amount) }}
                                     </td>
@@ -823,7 +823,7 @@
                                             </span>
                                             <span
                                                 class="text-xs font-medium"
-                                                :class="item.is_installment ? 'text-primary-500' : item.is_scheduled ? 'text-violet-500' : 'text-slate-400 dark:text-gray-500'"
+                                                :class="item.is_installment ? 'text-primary-500 dark:text-primary-400' : item.is_scheduled ? 'text-violet-500 dark:text-violet-400' : 'text-slate-400 dark:text-gray-500'"
                                             >
                                                 {{ item.is_installment ? "Cuota" : item.is_scheduled ? "Programado" : "Gasto" }}
                                             </span>
@@ -872,7 +872,7 @@
                                     
                                     <div
                                         class="text-base font-bold"
-                                        :class="item.is_installment ? 'text-primary-600' : 'text-slate-900 dark:text-gray-100'"
+                                        :class="item.is_installment ? 'text-primary-600 dark:text-primary-400' : 'text-slate-900 dark:text-gray-100'"
                                     >
                                         {{ formatCurrency(item.is_installment ? item.installment_amount : item.amount) }}
                                     </div>
@@ -886,7 +886,7 @@
                                     class="flex items-center justify-between text-xs"
                                 >
                                     <span class="text-slate-500 dark:text-gray-400">Cuota {{ item.installment_number }} de {{ item.installments_count }}</span>
-                                    <span class="text-primary-600 font-semibold">Vence: {{ formatDate(item.due_date) }}</span>
+                                    <span class="text-primary-600 dark:text-primary-400 font-semibold">Vence: {{ formatDate(item.due_date) }}</span>
                                 </div>
 
                                 <div
@@ -894,7 +894,7 @@
                                     class="flex items-center justify-between text-xs"
                                 >
                                     <span class="text-slate-500 dark:text-gray-400">{{ getScheduledInstallmentLabel(item) }}</span>
-                                    <span class="text-violet-600 font-semibold">Mes: {{ formatDate(item.purchase_date) }}</span>
+                                    <span class="text-violet-600 dark:text-violet-400 font-semibold">Mes: {{ formatDate(item.purchase_date) }}</span>
                                 </div>
 
                                 <div class="flex items-center justify-between text-xs">

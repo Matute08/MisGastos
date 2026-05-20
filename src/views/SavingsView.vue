@@ -180,7 +180,7 @@
               <span v-if="item.type === 'dolares'"> · {{ item.dollars }} USD @ {{ item.exchange_rate }}</span>
               <span v-if="item.note"> · {{ item.note }}</span>
             </p>
-            <p class="text-xs mt-0.5" :class="item.status === 'ahorrado' ? 'text-emerald-600' : 'text-amber-600'">
+            <p class="text-xs mt-0.5" :class="item.status === 'ahorrado' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'">
               {{ item.status === 'ahorrado' ? 'Estado: Ahorrado' : 'Estado: Usado' }}
             </p>
           </div>

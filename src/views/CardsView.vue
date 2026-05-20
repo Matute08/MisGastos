@@ -462,18 +462,18 @@ const getCardIconBgClass = (type) => {
 
 const getCardIconClass = (type) => {
   switch (type) {
-    case 'Crédito': return 'text-primary-600'
-    case 'Débito': return 'text-success-600'
-    case 'Transferencia': return 'text-violet-600'
+    case 'Crédito': return 'text-primary-600 dark:text-primary-400'
+    case 'Débito': return 'text-success-600 dark:text-success-400'
+    case 'Transferencia': return 'text-violet-600 dark:text-violet-400'
     default: return 'text-slate-500 dark:text-gray-400'
   }
 }
 
 const getCardTypeBadgeClass = (type) => {
   switch (type) {
-    case 'Crédito': return 'bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-200'
-    case 'Débito': return 'bg-success-50 text-success-700 ring-1 ring-inset ring-success-200'
-    case 'Transferencia': return 'bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200'
+    case 'Crédito': return 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 ring-1 ring-inset ring-primary-200 dark:ring-primary-700'
+    case 'Débito': return 'bg-success-50 dark:bg-success-900/30 text-success-700 dark:text-success-300 ring-1 ring-inset ring-success-200 dark:ring-success-700'
+    case 'Transferencia': return 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 ring-1 ring-inset ring-violet-200 dark:ring-violet-700'
     case 'Ninguna': return 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-400 ring-1 ring-inset ring-slate-200'
     default: return 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-400 ring-1 ring-inset ring-slate-200'
   }

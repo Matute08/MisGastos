@@ -146,7 +146,7 @@
           <template v-if="isLoading">
             <div class="skeleton h-7 w-20 mt-1"></div>
           </template>
-          <p v-else class="text-xl font-bold" :class="savingsPercentage >= 0 ? 'text-success-600' : 'text-danger-600'">
+          <p v-else class="text-xl font-bold" :class="savingsPercentage >= 0 ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'">
             {{ savingsPercentage.toFixed(1) }}%
           </p>
         </div>

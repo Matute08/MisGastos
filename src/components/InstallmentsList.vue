@@ -5,7 +5,7 @@
       <h3 class="text-lg font-semibold text-slate-900 dark:text-gray-100">Cuotas</h3>
       <div class="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400">
         <span>{{ summary.paid_installments || 0 }}/{{ summary.total_installments || 0 }} pagadas</span>
-        <span class="text-success-600 font-medium">
+        <span class="text-success-600 dark:text-success-400 font-medium">
           {{ formatCurrency(summary.paid_amount || 0) }}
         </span>
       </div>
@@ -20,15 +20,15 @@
         </div>
         <div>
           <p class="text-slate-600 dark:text-gray-400">Pagadas</p>
-          <p class="font-semibold text-success-600">{{ summary.paid_installments || 0 }}</p>
+          <p class="font-semibold text-success-600 dark:text-success-400">{{ summary.paid_installments || 0 }}</p>
         </div>
         <div>
           <p class="text-slate-600 dark:text-gray-400">Pendientes</p>
-          <p class="font-semibold text-warning-600">{{ summary.pending_installments || 0 }}</p>
+          <p class="font-semibold text-warning-600 dark:text-warning-400">{{ summary.pending_installments || 0 }}</p>
         </div>
         <div>
           <p class="text-slate-600 dark:text-gray-400">Pendiente</p>
-          <p class="font-semibold text-danger-600">{{ formatCurrency(summary.pending_amount || 0) }}</p>
+          <p class="font-semibold text-danger-600 dark:text-danger-400">{{ formatCurrency(summary.pending_amount || 0) }}</p>
         </div>
       </div>
       
@@ -90,7 +90,7 @@
           </div>
           <div class="text-xs">
             <span 
-              :class="installment.payment_status_code === 'pagada' ? 'text-success-600' : (installment.payment_status_code === 'en_deuda' ? 'text-danger-600' : 'text-warning-600')"
+              :class="installment.payment_status_code === 'pagada' ? 'text-success-600 dark:text-success-400' : (installment.payment_status_code === 'en_deuda' ? 'text-danger-600 dark:text-danger-400' : 'text-warning-600 dark:text-warning-400')"
               class="font-medium"
             >
               {{ installment.payment_status_label || 'Sin estado' }}
