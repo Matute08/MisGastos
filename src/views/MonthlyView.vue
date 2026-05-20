@@ -177,14 +177,14 @@
                     >
                       {{ installment.category_name || 'Sin categoría' }}
                     </span>
-                    <span class="text-xs text-primary-600">Cuota {{ installment.installment_number }} de {{ installment.installments_count }}</span>
+                    <span class="text-xs text-primary-600 dark:text-primary-400">Cuota {{ installment.installment_number }} de {{ installment.installments_count }}</span>
                   </div>
                   <p class="text-sm font-medium text-slate-900 dark:text-gray-100">{{ installment.description }}</p>
                   <p class="text-xs text-slate-600 dark:text-gray-400">Vence: {{ formatDate(installment.due_date) }}</p>
                 </div>
                 <div class="flex items-center space-x-4">
                   <div class="text-right">
-                    <p class="text-sm font-medium text-primary-600">
+                    <p class="text-sm font-medium text-primary-600 dark:text-primary-400">
                       {{ formatCurrency(installment.installment_amount) }}
                     </p>
                   </div>

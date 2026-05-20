@@ -216,7 +216,7 @@
             class="input-field"
             placeholder="Ej: 3"
           />
-          <p class="mt-1.5 text-sm text-primary-600 font-medium">
+          <p class="mt-1.5 text-sm text-primary-600 dark:text-primary-400 font-medium">
             Monto por cuota: {{ formatCurrency(installmentAmount) }}
           </p>
         </div>
@@ -238,24 +238,24 @@
         </div>
 
         <!-- Info de cuotas -->
-        <div v-if="(!expense || !expense.is_scheduled) && form.payment_type === 'installments' && selectedCard" class="bg-primary-50 border border-primary-100 rounded-2xl p-4">
-          <h4 class="text-sm font-semibold text-primary-900 mb-3">Resumen de cuotas</h4>
+        <div v-if="(!expense || !expense.is_scheduled) && form.payment_type === 'installments' && selectedCard" class="bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 rounded-2xl p-4">
+          <h4 class="text-sm font-semibold text-primary-900 dark:text-primary-300 mb-3">Resumen de cuotas</h4>
           <div class="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p class="text-primary-600">Cuenta</p>
-              <p class="font-semibold text-primary-900">{{ selectedCard.name }}</p>
+              <p class="text-primary-600 dark:text-primary-400">Cuenta</p>
+              <p class="font-semibold text-primary-900 dark:text-primary-300">{{ selectedCard.name }}</p>
             </div>
             <div>
-              <p class="text-primary-600">Primera cuota</p>
-              <p class="font-semibold text-primary-900">{{ firstInstallmentDatePreview }}</p>
+              <p class="text-primary-600 dark:text-primary-400">Primera cuota</p>
+              <p class="font-semibold text-primary-900 dark:text-primary-300">{{ firstInstallmentDatePreview }}</p>
             </div>
             <div>
-              <p class="text-primary-600">Última cuota</p>
-              <p class="font-semibold text-primary-900">{{ lastInstallmentDatePreview }}</p>
+              <p class="text-primary-600 dark:text-primary-400">Última cuota</p>
+              <p class="font-semibold text-primary-900 dark:text-primary-300">{{ lastInstallmentDatePreview }}</p>
             </div>
             <div>
-              <p class="text-primary-600">Monto por cuota</p>
-              <p class="font-semibold text-primary-900">{{ formatCurrency(installmentAmount) }}</p>
+              <p class="text-primary-600 dark:text-primary-400">Monto por cuota</p>
+              <p class="font-semibold text-primary-900 dark:text-primary-300">{{ formatCurrency(installmentAmount) }}</p>
             </div>
           </div>
         </div>
