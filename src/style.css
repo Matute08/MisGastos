@@ -71,12 +71,14 @@
     @apply dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-500 dark:hover:border-gray-500;
   }
 
-  /* Safari iOS: los controles nativos date/month/time tienen min-width intrínseco alto y rompen el layout */
+  /* Safari iOS: los controles nativos date/month/time tienen min-width intrínseco alto y rompen el layout.
+     appearance-none elimina el chrome nativo pero conserva el date picker al tapear en iOS. */
   .input-field[type='date'],
   .input-field[type='datetime-local'],
   .input-field[type='time'],
   .input-field[type='month'] {
-    @apply min-w-0 max-w-full;
+    @apply min-w-0 max-w-full w-full appearance-none;
+    -webkit-appearance: none;
   }
 
   .card {
@@ -127,6 +129,18 @@
   .badge-danger {
     @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-danger-50 text-danger-700 ring-1 ring-inset ring-danger-200;
     @apply dark:bg-danger-900/30 dark:text-danger-300 dark:ring-danger-700;
+  }
+
+  .action-btn {
+    @apply inline-flex items-center gap-1 h-7 px-2.5 text-xs font-medium rounded-lg border transition-colors whitespace-nowrap;
+  }
+
+  .lbl {
+    @apply block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-1.5;
+  }
+
+  .abs-prefix {
+    @apply absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 font-medium text-sm select-none;
   }
 
   .skeleton {

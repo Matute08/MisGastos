@@ -1,357 +1,195 @@
 <template>
-  <div class="space-y-6">
+  <div class="max-w-2xl mx-auto space-y-5">
+
+    <!-- Encabezado -->
     <div>
       <h1 class="text-2xl font-bold text-slate-900 dark:text-gray-100">Ahorros</h1>
-      <p class="text-slate-500 dark:text-gray-400">Registra ahorro en pesos o compra de dolares con cotizacion.</p>
+      <p class="text-sm text-slate-500 dark:text-gray-400 mt-0.5">Registrá y gestioná tus ahorros en pesos y dólares.</p>
     </div>
 
-    <div class="card space-y-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="card-title">Nuevo ahorro</h3>
-          <p class="card-subtitle">Estos movimientos no son gasto, se registran aparte.</p>
-          <p v-if="saveError" class="mt-2 text-sm text-danger-600">{{ saveError }}</p>
-          <p v-if="savingsStore.lastLoadError" class="mt-1 text-xs text-amber-700 dark:text-amber-400">
-            No se pudo sincronizar con el servidor; mostrando datos locales si los hay. {{ savingsStore.lastLoadError }}
-          </p>
-        </div>
-        <div class="text-right">
-          <p class="text-xs text-slate-500 dark:text-gray-400">Ahorro del mes</p>
-          <p class="text-base font-bold text-emerald-600">{{ formatCurrency(savingsInCurrentMonth) }}</p>
-        </div>
+    <!-- Tarjetas de resumen -->
+    <div class="grid grid-cols-2 gap-3">
+      <div class="card !p-4 space-y-1">
+        <p class="text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wide">Pesos ahorrados</p>
+        <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums leading-tight truncate">
+          {{ formatCurrency(savingsStore.totalSavedArs) }}
+        </p>
       </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
-        <div class="md:col-span-3">
-          <select v-model="form.type" class="input-field w-full">
-            <option value="pesos">Ahorro en pesos</option>
-            <option value="dolares">Compra de dolares</option>
-          </select>
-        </div>
-
-        <div class="md:col-span-3">
-          <input v-model="form.date" type="date" class="input-field w-full" />
-        </div>
-
-        <div class="md:col-span-4">
-          <div v-if="form.type === 'pesos'">
-            <input
-              v-model="form.amountArs"
-              type="number"
-              min="0"
-              step="0.01"
-              class="input-field w-full"
-              placeholder="Monto en ARS"
-            />
-          </div>
-          <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input
-              v-model="form.dollars"
-              type="number"
-              min="0"
-              step="0.01"
-              class="input-field w-full"
-              placeholder="USD comprados"
-            />
-            <input
-              v-model="form.exchangeRate"
-              type="number"
-              min="0"
-              step="0.01"
-              class="input-field w-full"
-              placeholder="Cotizacion"
-            />
-          </div>
-          <p v-if="form.type === 'dolares'" class="mt-1 text-xs text-slate-500 dark:text-gray-400">
-            Total en pesos: <span class="font-semibold text-slate-700 dark:text-gray-300">{{ formatCurrency(dollarPreviewArs) }}</span>
-          </p>
-        </div>
-
-        <div class="md:col-span-2">
-          <button @click="save" class="btn-primary w-full">{{ isEditing ? 'Actualizar' : 'Guardar' }}</button>
-        </div>
-
-        <div class="md:col-span-10">
-          <input
-            v-model="form.note"
-            type="text"
-            class="input-field w-full"
-            placeholder="Nota opcional"
-          />
-        </div>
+      <div class="card !p-4 space-y-1">
+        <p class="text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wide">USD ahorrados</p>
+        <p class="text-xl font-bold text-blue-600 dark:text-blue-400 tabular-nums leading-tight">
+          USD {{ savingsStore.totalSavedUsd.toFixed(2) }}
+        </p>
       </div>
     </div>
 
-    <div class="card space-y-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="card-title">Registrar uso de ahorros</h3>
-          <p class="card-subtitle">Descuenta del total ahorrado sin editar registros anteriores.</p>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
-        <div class="md:col-span-3">
-          <select v-model="usageForm.type" class="input-field w-full">
-            <option value="pesos">Usar ahorro en pesos</option>
-            <option value="dolares">Usar ahorro en dolares</option>
-          </select>
-        </div>
-        <div class="md:col-span-3">
-          <input v-model="usageForm.date" type="date" class="input-field w-full" />
-        </div>
-        <div class="md:col-span-4">
-          <div v-if="usageForm.type === 'pesos'">
-            <input
-              v-model="usageForm.amountArs"
-              type="number"
-              min="0"
-              step="0.01"
-              class="input-field w-full"
-              placeholder="Monto usado en ARS"
-            />
-            <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">
-              Disponible ARS: <span class="font-semibold">{{ formatCurrency(savingsStore.totalSavedArs) }}</span>
-            </p>
-          </div>
-          <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input
-              v-model="usageForm.dollars"
-              type="number"
-              min="0"
-              step="0.01"
-              class="input-field w-full"
-              placeholder="USD usados"
-            />
-            <input
-              v-model="usageForm.exchangeRate"
-              type="number"
-              min="0"
-              step="0.01"
-              class="input-field w-full"
-              placeholder="Cotizacion de uso"
-            />
-            <p class="sm:col-span-2 mt-1 text-xs text-slate-500 dark:text-gray-400">
-              Disponible USD: <span class="font-semibold">{{ savingsStore.totalSavedUsd.toFixed(2) }}</span>
-              · Total en pesos: <span class="font-semibold text-slate-700 dark:text-gray-300">{{ formatCurrency(usageDollarPreviewArs) }}</span>
-            </p>
-          </div>
-        </div>
-        <div class="md:col-span-2">
-          <button @click="registerUsage" class="btn-primary w-full">Registrar uso</button>
-        </div>
-        <div class="md:col-span-10">
-          <input
-            v-model="usageForm.note"
-            type="text"
-            class="input-field w-full"
-            placeholder="Nota opcional"
-          />
-        </div>
-        <div
-          v-if="usageError"
-          class="md:col-span-12 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-3 py-2 text-sm text-red-800 dark:text-red-300"
-          role="alert"
-        >
-          {{ usageError }}
-        </div>
-      </div>
+    <!-- Acciones principales -->
+    <div class="grid grid-cols-2 gap-3">
+      <button @click="openModal('saving')" class="btn-primary flex items-center justify-center gap-2 py-3">
+        <PiggyBank class="h-4 w-4 shrink-0" />
+        <span>Nuevo ahorro</span>
+      </button>
+      <button @click="openModal('usage')" class="btn-secondary flex items-center justify-center gap-2 py-3">
+        <ArrowDownCircle class="h-4 w-4 shrink-0" />
+        <span>Registrar uso</span>
+      </button>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Historial de ahorros</h3>
+    <!-- Aviso de error de sync -->
+    <p v-if="savingsStore.lastLoadError" class="text-xs text-amber-700 dark:text-amber-400 px-1">
+      Sin conexión al servidor — mostrando datos locales.
+    </p>
+
+    <!-- Historial -->
+    <div class="card !p-0 overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between">
+        <h3 class="card-title !text-base">Historial</h3>
+        <span class="text-xs text-slate-400 dark:text-gray-500">
+          {{ savingsStore.sortedRecords.length }}
+          {{ savingsStore.sortedRecords.length === 1 ? 'registro' : 'registros' }}
+        </span>
       </div>
 
-      <div class="space-y-2 max-h-[28rem] overflow-y-auto">
+      <div class="divide-y divide-slate-100 dark:divide-gray-700 max-h-[36rem] overflow-y-auto">
         <div
           v-for="item in savingsStore.sortedRecords"
           :key="item.id"
-          class="flex items-center justify-between rounded-lg border border-slate-200 dark:border-gray-600 p-3"
+          class="px-5 py-3.5"
+          :class="item.direction === 'out' ? 'bg-slate-50/60 dark:bg-gray-700/20' : ''"
         >
-          <div>
-            <p class="text-sm font-semibold text-slate-800 dark:text-gray-200">
-              {{ item.direction === 'out'
-                ? (item.type === 'dolares' ? 'Uso de USD' : 'Uso de ARS')
-                : (item.type === 'dolares' ? 'Compra USD' : 'Ahorro ARS') }}
-            </p>
-            <p class="text-xs text-slate-500 dark:text-gray-400">
-              {{ formatDate(item.date) }}
-              <span v-if="item.type === 'dolares'"> · {{ item.dollars }} USD @ {{ item.exchange_rate }}</span>
-              <span v-if="item.note"> · {{ item.note }}</span>
-            </p>
-            <p class="text-xs mt-0.5" :class="item.status === 'ahorrado' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'">
-              {{ item.status === 'ahorrado' ? 'Estado: Ahorrado' : 'Estado: Usado' }}
-            </p>
-          </div>
-          <div class="flex items-center gap-2">
-            <p class="text-sm font-bold text-slate-700 dark:text-gray-300">{{ formatCurrency(item.amount_ars) }}</p>
-            <button
-              v-if="item.direction !== 'out'"
-              @click="toggleStatus(item)"
-              class="text-xs px-2 py-1 rounded-md border"
-              :class="item.status === 'ahorrado' ? 'text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20' : 'text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20'"
+          <div class="flex items-start gap-3">
+            <!-- Icono del tipo -->
+            <div
+              class="mt-0.5 shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+              :class="item.direction === 'out'
+                ? 'bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400'
+                : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'"
             >
-              {{ item.status === 'ahorrado' ? 'Marcar usado' : 'Reactivar' }}
-            </button>
-            <button
-              v-if="item.direction !== 'out'"
-              @click="startEdit(item)"
-              class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-xs px-2 py-1 rounded-md border border-primary-200 dark:border-primary-700 bg-primary-50 dark:bg-primary-900/20"
-            >
-              Editar
-            </button>
-            <button type="button" @click="deleteSaving(item.id)" class="text-danger-500 hover:text-danger-700">
-              <Trash2 class="h-4 w-4" />
-            </button>
+              <TrendingDown v-if="item.direction === 'out'" class="h-4 w-4" />
+              <TrendingUp v-else class="h-4 w-4" />
+            </div>
+
+            <!-- Texto -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-sm font-semibold text-slate-800 dark:text-gray-100 leading-snug">
+                  {{ itemLabel(item) }}
+                </p>
+                <p
+                  class="text-sm font-bold tabular-nums shrink-0"
+                  :class="item.direction === 'out'
+                    ? 'text-red-500 dark:text-red-400'
+                    : 'text-slate-700 dark:text-gray-200'"
+                >
+                  {{ item.direction === 'out' ? '-' : '' }}{{ formatCurrency(Math.abs(item.amount_ars)) }}
+                </p>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
+                {{ formatDate(item.date) }}
+                <span v-if="item.type === 'dolares'">
+                  · {{ Math.abs(item.dollars ?? 0) }} USD @ {{ item.exchange_rate }}
+                </span>
+                <span v-if="item.note"> · {{ item.note }}</span>
+              </p>
+
+              <!-- Estado + acciones -->
+              <div class="flex items-center gap-2 mt-2 flex-wrap">
+                <!-- Badge de estado -->
+                <span
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                  :class="item.status === 'ahorrado'
+                    ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'"
+                >
+                  {{ item.status === 'ahorrado' ? 'Ahorrado' : 'Usado' }}
+                </span>
+
+                <!-- Botones de acción (solo para direction=in) -->
+                <template v-if="item.direction !== 'out'">
+                  <!-- "Marcar usado" solo si el ahorro está activo; no se permite reactivar -->
+                  <button
+                    v-if="item.status === 'ahorrado'"
+                    @click="toggleStatus(item)"
+                    type="button"
+                    class="action-btn text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                  >
+                    Marcar usado
+                  </button>
+
+                  <button
+                    @click="openModal('edit', item)"
+                    type="button"
+                    class="action-btn text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20"
+                  >
+                    <Pencil class="h-3 w-3" />
+                    Editar
+                  </button>
+                </template>
+
+                <button
+                  @click="deleteSaving(item.id)"
+                  type="button"
+                  class="action-btn ml-auto text-slate-400 dark:text-gray-500 border-slate-200 dark:border-gray-600 hover:text-red-500 hover:border-red-200 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 class="h-3 w-3" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-        <EmptyState
-          v-if="savingsStore.sortedRecords.length === 0"
-          icon="PiggyBank"
-          title="No hay ahorros registrados"
-          description="Comienza registrando tu primer ahorro con el formulario de arriba"
-        />
+
+        <div v-if="savingsStore.sortedRecords.length === 0" class="py-12">
+          <EmptyState
+            icon="PiggyBank"
+            title="No hay ahorros registrados"
+            description="Comenzá registrando tu primer ahorro"
+          />
+        </div>
       </div>
     </div>
+
+    <!-- Modal unificado -->
+    <SavingsModal
+      v-if="activeModal"
+      :mode="activeModal.mode"
+      :item="activeModal.item ?? null"
+      @close="activeModal = null"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Trash2 } from 'lucide-vue-next'
+import { Trash2, PiggyBank, ArrowDownCircle, TrendingUp, TrendingDown, Pencil } from 'lucide-vue-next'
 import { useSavingsStore } from '@/stores/savings'
 import EmptyState from '@/components/EmptyState.vue'
+import SavingsModal from '@/components/SavingsModal.vue'
 
 const savingsStore = useSavingsStore()
 
-const toLocalDateInputValue = (date = new Date()) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
+const activeModal = ref(null)
 
-const form = ref({
-  type: 'pesos',
-  date: toLocalDateInputValue(),
-  amountArs: '',
-  dollars: '',
-  exchangeRate: '',
-  note: ''
-})
-const usageForm = ref({
-  type: 'pesos',
-  date: toLocalDateInputValue(),
-  amountArs: '',
-  dollars: '',
-  exchangeRate: '',
-  note: ''
-})
-const editingId = ref(null)
-const isEditing = computed(() => !!editingId.value)
-const usageError = ref('')
-const saveError = ref('')
-
-watch(usageForm, () => {
-  usageError.value = ''
-}, { deep: true })
-
-watch(form, () => {
-  saveError.value = ''
-}, { deep: true })
-
-const formatCurrency = (amount) =>
-  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount || 0)
+const formatCurrency = (v) =>
+  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(v || 0)
 
 const formatDate = (date) => format(parseISO(date), 'dd/MM/yyyy', { locale: es })
 
-const savingsInCurrentMonth = computed(() => {
-  const now = new Date()
-  const m = now.getMonth() + 1
-  const y = now.getFullYear()
-  return savingsStore.records
-    .filter((r) => {
-      const d = new Date(r.date)
-      return d.getMonth() + 1 === m && d.getFullYear() === y && (r.status || 'ahorrado') === 'ahorrado'
-    })
-    .reduce((sum, r) => sum + Number(r.amount_ars || 0), 0)
-})
-
-const dollarPreviewArs = computed(() =>
-  Number(form.value.dollars || 0) * Number(form.value.exchangeRate || 0)
-)
-
-const usageDollarPreviewArs = computed(() =>
-  Number(usageForm.value.dollars || 0) * Number(usageForm.value.exchangeRate || 0)
-)
-
-const save = async () => {
-  saveError.value = ''
-  try {
-    if (isEditing.value) {
-      const payload = {
-        type: form.value.type,
-        date: form.value.date,
-        note: form.value.note
-      }
-      if (form.value.type === 'dolares') {
-        payload.dollars = form.value.dollars
-        payload.exchange_rate = form.value.exchangeRate
-      } else {
-        payload.amount_ars = form.value.amountArs
-      }
-      await savingsStore.updateSaving(editingId.value, payload)
-    } else {
-      if (form.value.type === 'dolares') {
-        await savingsStore.addDollarSaving({
-          date: form.value.date,
-          dollars: form.value.dollars,
-          exchangeRate: form.value.exchangeRate,
-          note: form.value.note
-        })
-      } else {
-        await savingsStore.addPesoSaving({
-          date: form.value.date,
-          amountArs: form.value.amountArs,
-          note: form.value.note
-        })
-      }
-    }
-
-    editingId.value = null
-    form.value.amountArs = ''
-    form.value.dollars = ''
-    form.value.exchangeRate = ''
-    form.value.note = ''
-  } catch (e) {
-    saveError.value = e?.message || 'No se pudo guardar el ahorro.'
-  }
+const itemLabel = (item) => {
+  if (item.direction === 'out') return item.type === 'dolares' ? 'Uso de USD' : 'Uso de ARS'
+  return item.type === 'dolares' ? 'Compra USD' : 'Ahorro ARS'
 }
 
-const startEdit = (item) => {
-  editingId.value = item.id
-  form.value.type = item.type
-  form.value.date = item.date
-  form.value.note = item.note || ''
-  if (item.type === 'dolares') {
-    form.value.dollars = item.dollars || ''
-    form.value.exchangeRate = item.exchange_rate || ''
-    form.value.amountArs = ''
-  } else {
-    form.value.amountArs = item.amount_ars || ''
-    form.value.dollars = ''
-    form.value.exchangeRate = ''
-  }
+const openModal = (mode, item = null) => {
+  activeModal.value = { mode, item }
 }
 
 const toggleStatus = async (item) => {
   try {
     await savingsStore.toggleStatus(item.id)
   } catch (e) {
-    saveError.value = e?.message || 'No se pudo cambiar el estado.'
+    console.error(e)
   }
 }
 
@@ -359,60 +197,7 @@ const deleteSaving = async (id) => {
   try {
     await savingsStore.removeSaving(id)
   } catch (e) {
-    saveError.value = e?.message || 'No se pudo eliminar.'
-  }
-}
-
-const registerUsage = async () => {
-  usageError.value = ''
-
-  if (usageForm.value.type === 'dolares') {
-    const usdToUse = Number(usageForm.value.dollars || 0)
-    const rate = Number(usageForm.value.exchangeRate || 0)
-    const availableUsd = Number(savingsStore.totalSavedUsd || 0)
-
-    if (!usdToUse || usdToUse <= 0) {
-      usageError.value = 'Indicá cuántos dólares querés usar.'
-      return
-    }
-    if (!rate || rate <= 0) {
-      usageError.value = 'Indicá la cotización del uso en pesos.'
-      return
-    }
-    if (usdToUse > availableUsd + 1e-6) {
-      usageError.value = `No tenés suficientes dólares ahorrados. Disponible: ${availableUsd.toFixed(2)} USD.`
-      return
-    }
-  } else {
-    const arsToUse = Number(usageForm.value.amountArs || 0)
-    const availableArs = Number(savingsStore.totalSavedArs || 0)
-
-    if (!arsToUse || arsToUse <= 0) {
-      usageError.value = 'Indicá cuántos pesos ahorrados querés usar.'
-      return
-    }
-    if (arsToUse > availableArs + 0.01) {
-      usageError.value = `No tenés suficiente ahorro en pesos. Disponible: ${formatCurrency(availableArs)}.`
-      return
-    }
-  }
-
-  try {
-    await savingsStore.registerUsage({
-      type: usageForm.value.type,
-      date: usageForm.value.date,
-      amountArs: usageForm.value.amountArs,
-      dollars: usageForm.value.dollars,
-      exchangeRate: usageForm.value.exchangeRate,
-      note: usageForm.value.note
-    })
-
-    usageForm.value.amountArs = ''
-    usageForm.value.dollars = ''
-    usageForm.value.exchangeRate = ''
-    usageForm.value.note = ''
-  } catch (e) {
-    usageError.value = e?.message || 'No se pudo registrar el uso.'
+    console.error(e)
   }
 }
 
@@ -420,3 +205,4 @@ onMounted(() => {
   void savingsStore.load()
 })
 </script>
+

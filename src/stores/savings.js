@@ -336,6 +336,57 @@ export const useSavingsStore = defineStore('savings', () => {
     persistToLocalStorage(records.value)
   }
 
+  /**
+   * Descuenta un monto de un ahorro específico.
+   * - Si se consume el total → marca el ahorro como 'usado'.
+   * - Si es parcial → actualiza el monto restante en el ahorro.
+   * No crea registros "out" separados; la reducción del propio ahorro refleja el gasto.
+   */
+  async function consumeFromSaving(id, amountToConsume) {
+    const idx = records.value.findIndex((r) => r.id === id)
+    if (idx === -1) throw new Error('Ahorro no encontrado.')
+
+    const saving = records.value[idx]
+
+    if (saving.type === 'dolares') {
+      const currentUsd = toNumber(saving.dollars)
+      const usdToUse = toNumber(amountToConsume)
+      if (usdToUse <= 0) throw new Error('El monto a usar debe ser mayor a 0.')
+      if (usdToUse > currentUsd + 1e-6) {
+        throw new Error(`Monto mayor al disponible en este ahorro (${currentUsd.toFixed(2)} USD).`)
+      }
+      if (usdToUse >= currentUsd - 1e-6) {
+        await toggleStatus(id)
+      } else {
+        const newUsd = currentUsd - usdToUse
+        await updateSaving(id, {
+          type: 'dolares',
+          date: saving.date,
+          note: saving.note || '',
+          dollars: newUsd,
+          exchange_rate: toNumber(saving.exchange_rate)
+        })
+      }
+    } else {
+      const currentArs = toNumber(saving.amount_ars)
+      const arsToUse = toNumber(amountToConsume)
+      if (arsToUse <= 0) throw new Error('El monto a usar debe ser mayor a 0.')
+      if (arsToUse > currentArs + 0.01) {
+        throw new Error(`Monto mayor al disponible en este ahorro (${currentArs}).`)
+      }
+      if (arsToUse >= currentArs - 0.01) {
+        await toggleStatus(id)
+      } else {
+        await updateSaving(id, {
+          type: 'pesos',
+          date: saving.date,
+          note: saving.note || '',
+          amount_ars: currentArs - arsToUse
+        })
+      }
+    }
+  }
+
   async function removeSaving(id) {
     if (hasAuthToken()) {
       const res = await savingsApi.remove(id)
@@ -402,6 +453,7 @@ export const useSavingsStore = defineStore('savings', () => {
     updateSaving,
     toggleStatus,
     removeSaving,
+    consumeFromSaving,
     getTotalSavedUntil,
     netSavedInMonth,
     netSavedInYear
