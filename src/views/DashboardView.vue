@@ -970,7 +970,10 @@ const loadPreviousMonthCarry = async () => {
       expensesApi.getMonthlyTotalWithInstallments(null, pm, py, {})
     ])
     const prevIncome = incomeRes?.data?.total || 0
-    const prevExpense = expenseRes?.data?.[0]?.total_expenses || 0
+    const prevExpense =
+      expenseRes?.data?.[0]?.total_balance_expenses ??
+      expenseRes?.data?.[0]?.total_expenses ??
+      0
     previousMonthCarry.value = prevIncome - prevExpense
   } catch {
     previousMonthCarry.value = 0
@@ -1428,7 +1431,10 @@ const loadPeriodComparison = async () => {
         expensesApi.getMonthlyTotalWithInstallments(null, null, prevYear, {})
       ])
       previousPeriodIncome.value = incomeRes?.data?.total || 0
-      previousPeriodExpenses.value = expenseRes?.data?.[0]?.total_expenses || 0
+      previousPeriodExpenses.value =
+        expenseRes?.data?.[0]?.total_balance_expenses ??
+        expenseRes?.data?.[0]?.total_expenses ??
+        0
     } catch {
       previousPeriodIncome.value = 0
       previousPeriodExpenses.value = 0
@@ -1442,7 +1448,10 @@ const loadPeriodComparison = async () => {
         expensesApi.getMonthlyTotalWithInstallments(prevMonth, prevYear, {})
       ])
       previousPeriodIncome.value = incomeRes?.data?.total || 0
-      previousPeriodExpenses.value = expenseRes?.data?.[0]?.total_expenses || 0
+      previousPeriodExpenses.value =
+        expenseRes?.data?.[0]?.total_balance_expenses ??
+        expenseRes?.data?.[0]?.total_expenses ??
+        0
     } catch {
       previousPeriodIncome.value = 0
       previousPeriodExpenses.value = 0

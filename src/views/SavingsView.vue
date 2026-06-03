@@ -99,9 +99,11 @@
                   class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                   :class="item.status === 'ahorrado'
                     ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
-                    : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'"
+                    : item.status === 'retirado'
+                      ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+                      : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'"
                 >
-                  {{ item.status === 'ahorrado' ? 'Ahorrado' : 'Usado' }}
+                  {{ item.status === 'ahorrado' ? 'Ahorrado' : item.status === 'retirado' ? 'Retirado' : 'Usado' }}
                 </span>
 
                 <!-- Botones de acción (solo para direction=in) -->
@@ -114,6 +116,16 @@
                     class="action-btn text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20"
                   >
                     Marcar usado
+                  </button>
+
+                  <button
+                    v-if="item.status === 'ahorrado'"
+                    @click="openModal('withdrawal', item)"
+                    type="button"
+                    class="action-btn text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  >
+                    <ArrowUpFromLine class="h-3 w-3" />
+                    Retirar
                   </button>
 
                   <button
@@ -162,7 +174,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Trash2, PiggyBank, ArrowDownCircle, TrendingUp, TrendingDown, Pencil } from 'lucide-vue-next'
+import { Trash2, PiggyBank, ArrowDownCircle, TrendingUp, TrendingDown, Pencil, ArrowUpFromLine } from 'lucide-vue-next'
 import { useSavingsStore } from '@/stores/savings'
 import EmptyState from '@/components/EmptyState.vue'
 import SavingsModal from '@/components/SavingsModal.vue'
@@ -177,7 +189,10 @@ const formatCurrency = (v) =>
 const formatDate = (date) => format(parseISO(date), 'dd/MM/yyyy', { locale: es })
 
 const itemLabel = (item) => {
-  if (item.direction === 'out') return item.type === 'dolares' ? 'Uso de USD' : 'Uso de ARS'
+  if (item.direction === 'out') {
+    if (item.status === 'retirado') return item.type === 'dolares' ? 'Retiro USD' : 'Retiro ARS'
+    return item.type === 'dolares' ? 'Uso de USD' : 'Uso de ARS'
+  }
   return item.type === 'dolares' ? 'Compra USD' : 'Ahorro ARS'
 }
 

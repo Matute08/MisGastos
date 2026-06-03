@@ -202,12 +202,15 @@ const toggleInstallmentPaid = async (installment) => {
       }
     });
 
-    let newStatus = 'pagada';
-    if (installment.payment_status_code === 'pagada') {
-      newStatus = 'pendiente';
+    if (!expensesStore.paymentStatuses.length) {
+      await expensesStore.loadPaymentStatuses()
     }
+
+    const nextStatusCode = installment.payment_status_code === 'pagada' ? 'pendiente' : 'pagada'
+    const nextStatus = expensesStore.paymentStatuses.find(status => status.code === nextStatusCode)
+    const nextStatusId = nextStatus?.id || (nextStatusCode === 'pagada' ? 2 : 1)
     
-    const result = await expensesStore.markInstallmentAsPaid(installment.id, newStatus);
+    const result = await expensesStore.markInstallmentAsPaid(installment.id, nextStatusId);
     
     Swal.close();
     
@@ -218,17 +221,17 @@ const toggleInstallmentPaid = async (installment) => {
         icon: 'success',
         title: `
           <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
-            <div style="width: 60px; height: 60px; background: ${newStatus === 'pagada' ? 'linear-gradient(135deg, #16a34a, #10b981)' : 'linear-gradient(135deg, #f59e0b, #f97316)'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(${newStatus === 'pagada' ? '22, 163, 74' : '245, 158, 11'}, 0.3);">
+            <div style="width: 60px; height: 60px; background: ${nextStatusCode === 'pagada' ? 'linear-gradient(135deg, #16a34a, #10b981)' : 'linear-gradient(135deg, #f59e0b, #f97316)'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(${nextStatusCode === 'pagada' ? '22, 163, 74' : '245, 158, 11'}, 0.3);">
               <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
                 <path d="M5 13l4 4L19 7"/>
               </svg>
             </div>
             <div style="text-align: center;">
               <div style="font-size: 1.2em; font-weight: 700; color: #1f2937; margin-bottom: 4px;">
-                ${newStatus === 'pagada' ? '¡Cuota pagada!' : 'Cuota pendiente'}
+                ${nextStatusCode === 'pagada' ? '¡Cuota pagada!' : 'Cuota pendiente'}
               </div>
               <div style="font-size: 0.9em; color: #6b7280; line-height: 1.4;">
-                Estado actualizado a <span style="font-weight: 700; color: ${newStatus === 'pagada' ? '#16a34a' : '#f59e0b'}">${newStatus === 'pagada' ? 'PAGADA' : 'PENDIENTE'}</span>
+                Estado actualizado a <span style="font-weight: 700; color: ${nextStatusCode === 'pagada' ? '#16a34a' : '#f59e0b'}">${nextStatusCode === 'pagada' ? 'PAGADA' : 'PENDIENTE'}</span>
               </div>
             </div>
           </div>

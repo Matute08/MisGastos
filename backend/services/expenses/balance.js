@@ -27,6 +27,7 @@ export async function getMonthlyTotalWithInstallments(userId, month, year, filte
       .from('expenses')
       .select(`
         amount,
+        payment_status_id,
         payment_status(code),
         available_cards(name, type),
         first_installment_date,
@@ -59,6 +60,7 @@ export async function getMonthlyTotalWithInstallments(userId, month, year, filte
         amount,
         due_date,
         updated_at,
+        payment_status_id,
         expenses!inner(user_id, card_id, category_id),
         payment_status(code)
       `)
@@ -79,14 +81,27 @@ export async function getMonthlyTotalWithInstallments(userId, month, year, filte
     const { data: installments, error: installmentsError } = await installmentsQuery;
     if (installmentsError) throw installmentsError;
 
-    const debitTransferExpenses = directExpenses.filter(expense => {
+    const paidDirectExpenses = directExpenses.filter(expense =>
+      expense.payment_status?.code === 'pagada' || expense.payment_status_id === 2
+    );
+
+    const paidInstallments = (installments || []).filter(installment => {
+      const isPaid = installment.payment_status?.code === 'pagada' || installment.payment_status_id === 2;
+      if (!isPaid) return false;
+
+      if (!installment.updated_at) return true;
+      const paidAt = installment.updated_at.slice(0, 10);
+      return paidAt >= startDate && paidAt < endDate;
+    });
+
+    const debitTransferExpenses = paidDirectExpenses.filter(expense => {
       const cardType = expense.available_cards?.type;
       return cardType !== 'Crédito';
     });
 
-    const creditExpenses = directExpenses.filter(expense => {
+    const creditExpenses = paidDirectExpenses.filter(expense => {
       const cardType = expense.available_cards?.type;
-      return cardType === 'Crédito' && expense.payment_status?.code === 'pagada';
+      return cardType === 'Crédito';
     });
 
     const totalDebitTransfer = debitTransferExpenses
@@ -95,7 +110,7 @@ export async function getMonthlyTotalWithInstallments(userId, month, year, filte
     const totalCreditDirect = creditExpenses
       ?.reduce((sum, expense) => sum + expense.amount, 0) || 0;
 
-    const totalCreditInstallments = installments?.reduce(
+    const totalCreditInstallments = paidInstallments?.reduce(
       (sum, installment) => sum + parseFloat(installment.amount),
       0
     ) || 0;
@@ -118,6 +133,7 @@ export async function getMonthlyTotalWithInstallments(userId, month, year, filte
           amount,
           due_date,
           updated_at,
+          payment_status_id,
           expenses!inner(user_id, card_id, category_id),
           payment_status(code)
         `)

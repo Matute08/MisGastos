@@ -30,7 +30,7 @@ function validatePayload(body, { isUpdate = false } = {}) {
   }
 
   const status = body.status != null ? body.status : 'ahorrado';
-  if (status !== 'ahorrado' && status !== 'usado') {
+  if (status !== 'ahorrado' && status !== 'usado' && status !== 'retirado') {
     throw Object.assign(new Error('status inválido'), { statusCode: 400 });
   }
 
@@ -63,6 +63,7 @@ export class SavingsService {
 
     const { type, direction, status } = validatePayload(body);
     const note = body.note != null ? String(body.note) : '';
+    const isWithdrawal = status === 'retirado';
 
     let amount_ars;
     let dollars = null;
@@ -76,8 +77,11 @@ export class SavingsService {
       if (direction === 'in' && amount_ars <= 0) {
         throw Object.assign(new Error('El ahorro en pesos debe ser mayor a 0'), { statusCode: 400 });
       }
-      if (direction === 'out' && amount_ars >= 0) {
+      if (direction === 'out' && !isWithdrawal && amount_ars >= 0) {
         throw Object.assign(new Error('El uso en pesos debe ser un monto negativo'), { statusCode: 400 });
+      }
+      if (direction === 'out' && isWithdrawal && amount_ars <= 0) {
+        throw Object.assign(new Error('El retiro en pesos debe ser mayor a 0'), { statusCode: 400 });
       }
     } else {
       dollars = Number(body.dollars);
@@ -91,8 +95,11 @@ export class SavingsService {
       if (direction === 'in' && dollars <= 0) {
         throw Object.assign(new Error('Los dólares ahorrados deben ser mayor a 0'), { statusCode: 400 });
       }
-      if (direction === 'out' && dollars >= 0) {
+      if (direction === 'out' && !isWithdrawal && dollars >= 0) {
         throw Object.assign(new Error('El uso en dólares debe ser negativo'), { statusCode: 400 });
+      }
+      if (direction === 'out' && isWithdrawal && dollars <= 0) {
+        throw Object.assign(new Error('El retiro en dólares debe ser mayor a 0'), { statusCode: 400 });
       }
       amount_ars = dollars * exchange_rate;
     }
@@ -143,7 +150,7 @@ export class SavingsService {
     }
     if (updates.note !== undefined) patch.note = String(updates.note);
     if (updates.status !== undefined) {
-      if (updates.status !== 'ahorrado' && updates.status !== 'usado') {
+      if (updates.status !== 'ahorrado' && updates.status !== 'usado' && updates.status !== 'retirado') {
         throw Object.assign(new Error('status inválido'), { statusCode: 400 });
       }
       patch.status = updates.status;
