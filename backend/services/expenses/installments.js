@@ -228,7 +228,10 @@ export async function updateInstallmentStatus(installmentId, paymentStatusId) {
 
     const { data: updatedInstallment, error: updateError } = await supabase
       .from('installments')
-      .update({ payment_status_id: paymentStatusId })
+      .update({
+        payment_status_id: paymentStatusId,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', installmentId)
       .select(`
         *,
@@ -320,7 +323,7 @@ export async function updateExpenseStatusBasedOnInstallments(expenseId) {
     }
 
   } catch (error) {
-    logger.error('Error actualizando estado del gasto:', { error: error.message, expenseId, paymentStatusId });
+    logger.error('Error actualizando estado del gasto:', { error: error.message, expenseId });
     throw error;
   }
 }
@@ -341,6 +344,8 @@ export async function markInstallmentAsPaid(installmentId, paymentStatusId) {
       .single();
 
     if (error) throw error;
+
+    await updateExpenseStatusBasedOnInstallments(data.expense_id);
 
     return {
       success: true,

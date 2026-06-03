@@ -357,6 +357,27 @@ export const useExpensesStore = defineStore('expenses', () => {
     }
   }
 
+  const getExpenseInstallmentsSummary = async (expenseId) => {
+    _loadingCount.value++
+    error.value = null
+
+    try {
+      const response = await expensesApi.getExpenseInstallmentsSummary(expenseId)
+
+      if (!response.success) {
+        error.value = response.error
+        return { success: false, error: response.error }
+      }
+
+      return { success: true, data: response.data || [] }
+    } catch (err) {
+      error.value = err.message
+      return { success: false, error: err.message }
+    } finally {
+      _loadingCount.value--
+    }
+  }
+
   // Función para marcar cuota como pagada/pendiente usando payment_status_id
   const markInstallmentAsPaid = async (id, payment_status_id) => {
     _loadingCount.value++
@@ -618,6 +639,7 @@ export const useExpensesStore = defineStore('expenses', () => {
     deleteExpense,
     markAsPaid,
     loadInstallments,
+    getExpenseInstallmentsSummary,
     markInstallmentAsPaid,
     updateFilters,
     clearFilters,

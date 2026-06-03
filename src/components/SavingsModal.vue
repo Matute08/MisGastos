@@ -181,6 +181,87 @@
             </template>
           </template>
 
+          <!-- ── MODO WITHDRAWAL ── -->
+          <template v-else-if="mode === 'withdrawal'">
+            <div class="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
+              El dinero retirado vuelve a tu balance disponible.
+            </div>
+
+            <div v-if="isPesos">
+              <div class="flex items-center justify-between mb-1">
+                <label class="lbl !mb-0">Monto a retirar</label>
+                <button
+                  type="button"
+                  @click="fillMaxWithdrawal"
+                  class="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Retirar todo ({{ formatCurrency(item.amount_ars) }})
+                </button>
+              </div>
+              <div class="relative">
+                <span class="abs-prefix">$</span>
+                <input
+                  v-model="form.amountArs"
+                  type="number"
+                  min="0.01"
+                  :max="item.amount_ars"
+                  step="0.01"
+                  inputmode="decimal"
+                  :class="['input-field !pl-7', withdrawalExceedsAvailable ? '!border-red-400 dark:!border-red-500' : '']"
+                  placeholder="0"
+                  required
+                />
+              </div>
+              <p v-if="withdrawalExceedsAvailable" class="mt-1 text-xs text-red-600 dark:text-red-400 font-medium">
+                No podés retirar más de {{ formatCurrency(item.amount_ars) }}.
+              </p>
+              <p v-else-if="isFullWithdrawal" class="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                Se retirará el total — el ahorro quedará marcado como Retirado.
+              </p>
+            </div>
+            <template v-else>
+              <div class="flex items-center justify-between mb-1">
+                <label class="lbl !mb-0">USD a retirar</label>
+                <button
+                  type="button"
+                  @click="fillMaxWithdrawal"
+                  class="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Retirar todo ({{ toNumber(item.dollars).toFixed(2) }} USD)
+                </button>
+              </div>
+              <input
+                v-model="form.dollars"
+                type="number"
+                min="0.01"
+                :max="toNumber(item.dollars)"
+                step="0.01"
+                inputmode="decimal"
+                :class="['input-field', withdrawalExceedsAvailable ? '!border-red-400 dark:!border-red-500' : '']"
+                placeholder="0"
+                required
+              />
+              <p v-if="withdrawalExceedsAvailable" class="mt-1 text-xs text-red-600 dark:text-red-400 font-medium">
+                No podés retirar más de {{ toNumber(item.dollars).toFixed(2) }} USD.
+              </p>
+              <p v-else-if="isFullWithdrawal" class="text-xs text-blue-600 dark:text-blue-400">
+                Se retirará el total — el ahorro quedará marcado como Retirado.
+              </p>
+              <p v-else-if="toNumber(form.dollars) > 0" class="text-xs text-slate-500 dark:text-gray-400">
+                Equivale a aprox. {{ formatCurrency(toNumber(form.dollars) * toNumber(item.exchange_rate)) }}
+              </p>
+            </template>
+
+            <div>
+              <label class="lbl">Fecha del retiro</label>
+              <input v-model="form.date" type="date" class="input-field" required />
+            </div>
+            <div>
+              <label class="lbl">Nota <span class="font-normal text-slate-400">(opcional)</span></label>
+              <input v-model="form.note" type="text" class="input-field" placeholder="Ej: efectivo para vacaciones, gastos del mes…" />
+            </div>
+          </template>
+
           <!-- ── MODO EDIT ── -->
           <template v-else>
             <!-- Badge tipo -->
@@ -240,7 +321,7 @@
             <button type="button" @click="$emit('close')" class="btn-secondary flex-1">Cancelar</button>
             <button
               type="submit"
-              :disabled="loading || (mode === 'usage' && !selectedSavingId)"
+              :disabled="loading || (mode === 'usage' && !selectedSavingId) || (mode === 'withdrawal' && (!form.date || withdrawalExceedsAvailable))"
               class="btn-primary flex-1 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {{ loading ? 'Guardando…' : submitLabel }}
@@ -301,7 +382,7 @@ const selectedSaving = computed(() =>
 )
 
 const isPesos = computed(() => {
-  if (props.mode === 'edit') return props.item?.type === 'pesos'
+  if (props.mode === 'edit' || props.mode === 'withdrawal') return props.item?.type === 'pesos'
   return form.value.type === 'pesos'
 })
 
@@ -309,21 +390,56 @@ const previewArs = computed(() =>
   toNumber(form.value.dollars) * toNumber(form.value.exchangeRate)
 )
 
+const withdrawalAmount = computed(() =>
+  props.mode === 'withdrawal'
+    ? (isPesos.value ? toNumber(form.value.amountArs) : toNumber(form.value.dollars))
+    : 0
+)
+
+const maxWithdrawal = computed(() => {
+  if (props.mode !== 'withdrawal' || !props.item) return 0
+  return isPesos.value ? toNumber(props.item.amount_ars) : toNumber(props.item.dollars)
+})
+
+const withdrawalExceedsAvailable = computed(() =>
+  props.mode === 'withdrawal' &&
+  withdrawalAmount.value > 0 &&
+  withdrawalAmount.value > maxWithdrawal.value + (isPesos.value ? 0.01 : 1e-6)
+)
+
+const isFullWithdrawal = computed(() =>
+  props.mode === 'withdrawal' &&
+  withdrawalAmount.value > 0 &&
+  withdrawalAmount.value >= maxWithdrawal.value - (isPesos.value ? 0.01 : 1e-6)
+)
+
+function fillMaxWithdrawal() {
+  if (!props.item) return
+  if (isPesos.value) {
+    form.value.amountArs = String(toNumber(props.item.amount_ars))
+  } else {
+    form.value.dollars = String(toNumber(props.item.dollars))
+  }
+}
+
 const modalTitle = computed(() => {
   if (props.mode === 'saving') return 'Nuevo ahorro'
   if (props.mode === 'usage') return 'Registrar uso'
+  if (props.mode === 'withdrawal') return 'Retirar ahorros'
   return 'Editar ahorro'
 })
 
 const modalSubtitle = computed(() => {
   if (props.mode === 'saving') return 'Estos movimientos no son gasto.'
   if (props.mode === 'usage') return 'Seleccioná el ahorro del que usaste dinero.'
+  if (props.mode === 'withdrawal') return 'El dinero retirado vuelve a tu balance disponible.'
   return 'Modificá los datos del registro.'
 })
 
 const submitLabel = computed(() => {
   if (props.mode === 'saving') return 'Guardar ahorro'
   if (props.mode === 'usage') return 'Registrar uso'
+  if (props.mode === 'withdrawal') return 'Confirmar retiro'
   return 'Guardar cambios'
 })
 
@@ -359,14 +475,22 @@ watch(() => form.value.type, () => {
 
 onMounted(() => {
   document.body.classList.add('overflow-hidden')
-  if (props.mode === 'edit' && props.item) {
-    form.value.date = props.item.date
-    form.value.note = props.item.note || ''
+  if ((props.mode === 'edit' || props.mode === 'withdrawal') && props.item) {
+    form.value.date = toLocalDateInputValue()
+    form.value.note = ''
     if (props.item.type === 'dolares') {
-      form.value.dollars = String(Math.abs(toNumber(props.item.dollars)))
+      form.value.dollars = props.mode === 'edit'
+        ? String(Math.abs(toNumber(props.item.dollars)))
+        : ''
       form.value.exchangeRate = String(toNumber(props.item.exchange_rate))
     } else {
-      form.value.amountArs = String(Math.abs(toNumber(props.item.amount_ars)))
+      form.value.amountArs = props.mode === 'edit'
+        ? String(Math.abs(toNumber(props.item.amount_ars)))
+        : ''
+    }
+    if (props.mode === 'edit') {
+      form.value.date = props.item.date
+      form.value.note = props.item.note || ''
     }
   }
 })
@@ -411,6 +535,29 @@ async function handleSubmit() {
 
       // Si además tiene nota de uso, la podemos guardar como nota en el registro resultante
       // (consumeFromSaving ya llama a updateSaving internamente con la nota original)
+    } else if (props.mode === 'withdrawal') {
+      const amountToWithdraw = isPesos.value ? form.value.amountArs : form.value.dollars
+      if (!amountToWithdraw || toNumber(amountToWithdraw) <= 0) {
+        error.value = 'Ingresá el monto a retirar.'
+        return
+      }
+      if (withdrawalExceedsAvailable.value) {
+        const max = isPesos.value
+          ? formatCurrency(maxWithdrawal.value)
+          : `${maxWithdrawal.value.toFixed(2)} USD`
+        error.value = `No podés retirar más de ${max}.`
+        return
+      }
+      if (!form.value.date) {
+        error.value = 'Ingresá la fecha del retiro.'
+        return
+      }
+      await savingsStore.withdrawFromSaving(
+        props.item.id,
+        amountToWithdraw,
+        form.value.date,
+        form.value.note
+      )
     } else if (props.mode === 'edit') {
       const payload = {
         type: props.item.type,

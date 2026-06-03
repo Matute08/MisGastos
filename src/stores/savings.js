@@ -342,6 +342,48 @@ export const useSavingsStore = defineStore('savings', () => {
    * - Si es parcial → actualiza el monto restante en el ahorro.
    * No crea registros "out" separados; la reducción del propio ahorro refleja el gasto.
    */
+  async function withdrawFromSaving(id, amountToWithdraw, date, note = '') {
+    const saving = records.value.find((r) => r.id === id)
+    if (!saving) throw new Error('Ahorro no encontrado.')
+
+    const amount = toNumber(amountToWithdraw)
+    if (amount <= 0) throw new Error('El monto a retirar debe ser mayor a 0.')
+
+    // 1. Reduce the original saving (same logic as consumeFromSaving)
+    await consumeFromSaving(id, amount)
+
+    // 2. Create a withdrawal record so the balance is credited in the withdrawal month
+    const withdrawalBody = {
+      type: saving.type,
+      date,
+      direction: 'out',
+      status: 'retirado',
+      note: note || 'Retiro de ahorro',
+    }
+    if (saving.type === 'dolares') {
+      withdrawalBody.dollars = amount
+      withdrawalBody.exchange_rate = toNumber(saving.exchange_rate)
+    } else {
+      withdrawalBody.amount_ars = amount
+    }
+
+    if (hasAuthToken()) {
+      const res = await savingsApi.create(withdrawalBody)
+      if (!res?.success) throw new Error(res?.error || 'No se pudo registrar el retiro')
+      records.value.push(normalizeRecord(res.data))
+      return
+    }
+
+    records.value.push(normalizeRecord({
+      id: crypto.randomUUID(),
+      ...withdrawalBody,
+      amount_ars: saving.type === 'dolares'
+        ? amount * toNumber(saving.exchange_rate)
+        : amount,
+    }))
+    persistToLocalStorage(records.value)
+  }
+
   async function consumeFromSaving(id, amountToConsume) {
     const idx = records.value.findIndex((r) => r.id === id)
     if (idx === -1) throw new Error('Ahorro no encontrado.')
@@ -414,29 +456,37 @@ export const useSavingsStore = defineStore('savings', () => {
   }
 
   /**
-   * Lo que el dashboard resta del balance: solo aportes a ahorro (direction in) en el mes.
-   * - No usamos los movimientos de uso (out): registrar un uso baja totalSavedArs pero no debe
-   *   “devolver” dinero al balance.
-   * - No filtramos por status: marcar in como usado no altera que ese aporte ya salió del flujo.
+   * Lo que el dashboard resta del balance en el mes:
+   * - Suma aportes a ahorro (direction='in') del mes.
+   * - Resta retiros (direction='out', status='retirado') del mes: ese dinero vuelve al balance.
+   * - Los usos normales (direction='out', status='ahorrado') no afectan el balance.
    */
   function netSavedInMonth(month, year) {
     const m = Number(month)
     const y = Number(year)
-    return records.value
-      .filter((r) => (r.direction || 'in') === 'in')
-      .filter((r) => {
-        const d = new Date(r.date)
-        return d.getMonth() + 1 === m && d.getFullYear() === y
-      })
+    const inPeriod = (r) => {
+      const d = new Date(r.date)
+      return d.getMonth() + 1 === m && d.getFullYear() === y
+    }
+    const saved = records.value
+      .filter((r) => (r.direction || 'in') === 'in' && inPeriod(r))
       .reduce((sum, r) => sum + toNumber(r.amount_ars), 0)
+    const withdrawn = records.value
+      .filter((r) => r.direction === 'out' && r.status === 'retirado' && inPeriod(r))
+      .reduce((sum, r) => sum + toNumber(r.amount_ars), 0)
+    return saved - withdrawn
   }
 
   function netSavedInYear(year) {
     const y = Number(year)
-    return records.value
-      .filter((r) => (r.direction || 'in') === 'in')
-      .filter((r) => new Date(r.date).getFullYear() === y)
+    const inYear = (r) => new Date(r.date).getFullYear() === y
+    const saved = records.value
+      .filter((r) => (r.direction || 'in') === 'in' && inYear(r))
       .reduce((sum, r) => sum + toNumber(r.amount_ars), 0)
+    const withdrawn = records.value
+      .filter((r) => r.direction === 'out' && r.status === 'retirado' && inYear(r))
+      .reduce((sum, r) => sum + toNumber(r.amount_ars), 0)
+    return saved - withdrawn
   }
 
   return {
@@ -453,6 +503,7 @@ export const useSavingsStore = defineStore('savings', () => {
     updateSaving,
     toggleStatus,
     removeSaving,
+    withdrawFromSaving,
     consumeFromSaving,
     getTotalSavedUntil,
     netSavedInMonth,

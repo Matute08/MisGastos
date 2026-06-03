@@ -354,7 +354,10 @@ export async function markAsPaid(expenseId, paymentStatusId) {
 
     const { data, error } = await supabase
       .from('expenses')
-      .update({ payment_status_id: paymentStatusId })
+      .update({
+        payment_status_id: paymentStatusId,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', expenseId)
       .select()
       .single();

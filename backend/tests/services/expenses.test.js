@@ -15,6 +15,7 @@ let ExpensesService;
 let getExpenses;
 let getPaymentStatus;
 let markAsPaid;
+let getMonthlyTotalWithInstallments;
 
 beforeEach(async () => {
   resetMocks();
@@ -22,7 +23,20 @@ beforeEach(async () => {
   getExpenses = (await import('../../services/expensesService.js')).getExpenses;
   getPaymentStatus = (await import('../../services/expenses/installments.js')).getPaymentStatus;
   markAsPaid = (await import('../../services/expenses/core.js')).markAsPaid;
+  getMonthlyTotalWithInstallments = (await import('../../services/expenses/balance.js')).getMonthlyTotalWithInstallments;
 });
+
+function queryResult(data, error = null) {
+  const query = {
+    select: vi.fn(() => query),
+    eq: vi.fn(() => query),
+    gte: vi.fn(() => query),
+    lt: vi.fn(() => query),
+    then: (resolve) => resolve({ data, error }),
+  };
+
+  return query;
+}
 
 describe('directExpenseBelongsToPeriod', () => {
   it('should include expense in period when purchase_date is within range for debit cards', () => {
@@ -165,5 +179,72 @@ describe('markAsPaid', () => {
     const result = await markAsPaid('exp-1', 2);
     expect(result.success).toBe(true);
     expect(result.data.payment_status_id).toBe(2);
+  });
+});
+
+describe('getMonthlyTotalWithInstallments', () => {
+  it('should only discount paid expenses and installments from the cash balance', async () => {
+    const directQuery = queryResult([
+      {
+        amount: 100,
+        payment_status_id: 2,
+        payment_status: { code: 'pagada' },
+        available_cards: { type: 'Débito' },
+        purchase_date: '2024-06-05',
+      },
+      {
+        amount: 50,
+        payment_status_id: 1,
+        payment_status: { code: 'pendiente' },
+        available_cards: { type: 'Débito' },
+        purchase_date: '2024-06-06',
+      },
+    ]);
+    const installmentsQuery = queryResult([
+      {
+        amount: 200,
+        due_date: '2024-06-10',
+        updated_at: '2024-06-10T12:00:00.000Z',
+        payment_status_id: 2,
+        payment_status: { code: 'pagada' },
+      },
+      {
+        amount: 300,
+        due_date: '2024-06-12',
+        updated_at: '2024-06-12T12:00:00.000Z',
+        payment_status_id: 1,
+        payment_status: { code: 'pendiente' },
+      },
+      {
+        amount: 400,
+        due_date: '2024-06-15',
+        updated_at: '2024-05-20T12:00:00.000Z',
+        payment_status_id: 2,
+        payment_status: { code: 'pagada' },
+      },
+    ]);
+    const advancePaidQuery = queryResult([
+      {
+        amount: 500,
+        due_date: '2024-07-10',
+        updated_at: '2024-06-20T12:00:00.000Z',
+        payment_status_id: 2,
+        payment_status: { code: 'pagada' },
+      },
+    ]);
+
+    mockSupabase.from
+      .mockReturnValueOnce(directQuery)
+      .mockReturnValueOnce(installmentsQuery)
+      .mockReturnValueOnce(advancePaidQuery);
+
+    const result = await getMonthlyTotalWithInstallments('user-1', 6, 2024);
+
+    expect(result.success).toBe(true);
+    expect(result.data[0].total_debit_transfer).toBe(100);
+    expect(result.data[0].total_credit).toBe(200);
+    expect(result.data[0].total_expenses).toBe(300);
+    expect(result.data[0].advance_paid_installments_adjustment).toBe(500);
+    expect(result.data[0].total_balance_expenses).toBe(800);
   });
 });

@@ -522,12 +522,8 @@
                                     <td v-if="isBulkMode" class="px-5 py-4 whitespace-nowrap">
                                         <input
                                             type="checkbox"
-                                            :checked="selectedExpenses.has(
-                                                `expense-${item.id}`
-                                            )"
-                                            @change="toggleExpenseSelection(
-                                                `expense-${item.id}`
-                                            )"
+                                            :checked="selectedExpenses.has(getExpenseRowKey(item))"
+                                            @change="toggleExpenseSelection(getExpenseRowKey(item))"
                                         />
                                     </td>
                                     <td class="px-5 py-4 whitespace-nowrap">
@@ -781,8 +777,8 @@
                                     <div v-if="isBulkMode" class="flex-shrink-0">
                                         <input
                                             type="checkbox"
-                                            :checked="selectedExpenses.has(`expense-${item.id}`)"
-                                            @change="toggleExpenseSelection(`expense-${item.id}`)"
+                                            :checked="selectedExpenses.has(getExpenseRowKey(item))"
+                                            @change="toggleExpenseSelection(getExpenseRowKey(item))"
                                         />
                                     </div>
                                     
@@ -938,8 +934,8 @@
                                     <div v-if="isBulkMode" class="flex-shrink-0">
                                         <input
                                             type="checkbox"
-                                            :checked="selectedExpenses.has(`expense-${expense.id}`)"
-                                            @change="toggleExpenseSelection(`expense-${expense.id}`)"
+                                            :checked="selectedExpenses.has(getExpenseRowKey(expense))"
+                                            @change="toggleExpenseSelection(getExpenseRowKey(expense))"
                                         />
                                     </div>
                                     
@@ -1290,28 +1286,34 @@ const toggleBulkMode = () => {
     if (isBulkActionLoading.value) return;
     isBulkMode.value = !isBulkMode.value;
     if (!isBulkMode.value) {
-        selectedExpenses.value.clear();
+        selectedExpenses.value = new Set();
         selectAllExpenses.value = false;
     }
 };
 
 const toggleExpenseSelection = (expenseId) => {
-    if (selectedExpenses.value.has(expenseId)) {
-        selectedExpenses.value.delete(expenseId);
+    const nextSelected = new Set(selectedExpenses.value);
+
+    if (nextSelected.has(expenseId)) {
+        nextSelected.delete(expenseId);
     } else {
-        selectedExpenses.value.add(expenseId);
+        nextSelected.add(expenseId);
     }
+
+    selectedExpenses.value = nextSelected;
+    selectAllExpenses.value =
+        filteredExpensesToShow.value.length > 0 &&
+        filteredExpensesToShow.value.every(item => nextSelected.has(getExpenseRowKey(item)));
 };
 
 const toggleSelectAllExpenses = () => {
     if (isBulkActionLoading.value) return;
     if (selectAllExpenses.value) {
-        selectedExpenses.value.clear();
+        selectedExpenses.value = new Set();
         selectAllExpenses.value = false;
     } else {
         const allExpenseIds = filteredExpensesToShow.value
-            .map(item => `expense-${item.id}`
-        );
+            .map(item => getExpenseRowKey(item));
         selectedExpenses.value = new Set(allExpenseIds);
         selectAllExpenses.value = true;
     }
@@ -1347,7 +1349,7 @@ const bulkDeleteExpenses = async () => {
             let successCount = 0;
             let errorCount = 0;
             
-            for (const selectedId of selectedExpenses.value) {
+            for (const selectedId of Array.from(selectedExpenses.value)) {
                 const expenseId = selectedId.startsWith('expense-')
                     ? selectedId.replace('expense-', '')
                     : selectedId;
@@ -1366,7 +1368,7 @@ const bulkDeleteExpenses = async () => {
                 await expensesStore.loadExpenses();
             }
             
-            selectedExpenses.value.clear();
+            selectedExpenses.value = new Set();
             isBulkMode.value = false;
             selectAllExpenses.value = false;
             Swal.close();
@@ -1423,7 +1425,7 @@ const bulkChangeStatus = async (newStatusId) => {
             let successCount = 0;
             let errorCount = 0;
             
-            for (const expenseId of selectedExpenses.value) {
+            for (const expenseId of Array.from(selectedExpenses.value)) {
                 try {
                     let actualId = expenseId;
                     let isInstallment = false;
@@ -1460,7 +1462,7 @@ const bulkChangeStatus = async (newStatusId) => {
             }
             await expensesStore.loadUpcomingInstallments(1000);
             
-            selectedExpenses.value.clear();
+            selectedExpenses.value = new Set();
             isBulkMode.value = false;
             selectAllExpenses.value = false;
             Swal.close();
