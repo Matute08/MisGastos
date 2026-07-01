@@ -258,6 +258,7 @@ import { useTheme } from '@/composables/useTheme'
 import DarkModeToggle from '@/components/DarkModeToggle.vue'
 import {
   BarChart3,
+  Activity,
   Receipt,
   Wallet,
   PiggyBank,
@@ -301,6 +302,7 @@ const userRoleDisplay = computed(() => {
 
 const sidebarItems = computed(() => [
   { name: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: BarChart3 },
+  { name: 'activity', label: 'Actividad', path: '/activity', icon: Activity },
   { name: 'expenses', label: 'Gastos', path: '/expenses', icon: Receipt },
   { name: 'incomes', label: 'Ingresos', path: '/incomes', icon: Wallet },
   { name: 'savings', label: 'Ahorros', path: '/savings', icon: PiggyBank },

@@ -29,6 +29,14 @@
               Ahorro en USD: <span class="font-semibold">{{ formatUsd(savedUsdView) }}</span>
               · aprox {{ formatCurrency(savedArsView) }}
             </p>
+            <router-link
+              v-if="!isLoading"
+              :to="{ name: 'activity' }"
+              class="mt-4 inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/20 transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
+            >
+              <Receipt class="h-4 w-4" />
+              Consultar actividad
+            </router-link>
           </div>
           <!-- Pill Toggle Mensual/Anual -->
           <div class="flex items-center bg-white/10 backdrop-blur-sm rounded-full p-1 self-start sm:self-auto">
@@ -974,7 +982,7 @@ const loadPreviousMonthCarry = async () => {
       expenseRes?.data?.[0]?.total_balance_expenses ??
       expenseRes?.data?.[0]?.total_expenses ??
       0
-    previousMonthCarry.value = prevIncome - prevExpense
+    previousMonthCarry.value = Math.abs(prevIncome - prevExpense)
   } catch {
     previousMonthCarry.value = 0
   }
@@ -1457,7 +1465,7 @@ const loadPeriodComparison = async () => {
       previousPeriodExpenses.value = 0
     }
   }
-  previousPeriodBalance.value = previousPeriodIncome.value - previousPeriodExpenses.value
+  previousPeriodBalance.value = Math.abs(previousPeriodIncome.value - previousPeriodExpenses.value)
 }
 
 // --- Data Loading ---
@@ -1466,7 +1474,6 @@ let _mounted = true
 onMounted(async () => {
   isLoading.value = true
   expensesStore.clearFilters()
-  savingsStore.load()
 
   const safetyTimer = setTimeout(() => {
     if (_mounted) isLoading.value = false
@@ -1481,6 +1488,7 @@ onMounted(async () => {
       expensesStore.loadExpensesSummaryByType(isAnnual.value),
       incomesStore.loadIncomes({ month: currentMonth, year: currentYear }),
       incomesStore.loadIncomesForChart([currentYear, currentYear - 1]),
+      savingsStore.load(),
       cardsStore.loadCards(),
       categoriesStore.loadCategories(),
       loadPreviousMonthCarry(),
@@ -1523,6 +1531,7 @@ watch(isAnnual, async (annual) => {
       expensesStore.loadMonthlyTotals(currentMonth, currentYear),
       incomesStore.loadIncomes(incomeFilters),
       incomesStore.loadIncomesForChart([currentYear, currentYear - 1]),
+      savingsStore.load(),
       loadPreviousMonthCarry(),
       loadPeriodComparison()
     ])

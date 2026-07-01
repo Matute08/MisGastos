@@ -155,7 +155,7 @@ CREATE TABLE IF NOT EXISTS savings_records (
   dollars NUMERIC(12,2),
   exchange_rate NUMERIC(12,4),
   note TEXT NOT NULL DEFAULT '',
-  status TEXT NOT NULL DEFAULT 'ahorrado' CHECK (status IN ('ahorrado', 'usado')),
+  status TEXT NOT NULL DEFAULT 'ahorrado' CHECK (status IN ('ahorrado', 'usado', 'retirado')),
   direction TEXT NOT NULL DEFAULT 'in' CHECK (direction IN ('in', 'out')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
