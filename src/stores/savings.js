@@ -10,6 +10,20 @@ function toNumber(value) {
   return Number.isFinite(n) ? n : 0
 }
 
+function dateParts(value) {
+  const [year, month, day] = String(value || '').slice(0, 10).split('-').map(Number)
+  return {
+    year: Number.isFinite(year) ? year : 0,
+    month: Number.isFinite(month) ? month : 0,
+    day: Number.isFinite(day) ? day : 0
+  }
+}
+
+function dateKey(value) {
+  const parts = dateParts(value)
+  return parts.year * 10000 + parts.month * 100 + parts.day
+}
+
 function normalizeRecord(r) {
   if (!r) return r
   return {
@@ -79,7 +93,7 @@ export const useSavingsStore = defineStore('savings', () => {
   const lastLoadError = ref(null)
 
   const sortedRecords = computed(() =>
-    [...records.value].sort((a, b) => new Date(b.date) - new Date(a.date))
+    [...records.value].sort((a, b) => dateKey(b.date) - dateKey(a.date))
   )
 
   const totalSavedArs = computed(() =>
@@ -289,6 +303,8 @@ export const useSavingsStore = defineStore('savings', () => {
         date: payload.date,
         note: payload.note
       }
+      if (payload.status !== undefined) body.status = payload.status
+      if (payload.direction !== undefined) body.direction = payload.direction
       if (payload.type === 'dolares') {
         body.dollars = toNumber(payload.dollars)
         body.exchange_rate = toNumber(payload.exchange_rate ?? payload.exchangeRate)
@@ -345,43 +361,67 @@ export const useSavingsStore = defineStore('savings', () => {
   async function withdrawFromSaving(id, amountToWithdraw, date, note = '') {
     const saving = records.value.find((r) => r.id === id)
     if (!saving) throw new Error('Ahorro no encontrado.')
+    const originalSaving = { ...saving }
 
     const amount = toNumber(amountToWithdraw)
     if (amount <= 0) throw new Error('El monto a retirar debe ser mayor a 0.')
 
-    // 1. Reduce the original saving (same logic as consumeFromSaving)
-    await consumeFromSaving(id, amount)
+    let consumed = false
 
-    // 2. Create a withdrawal record so the balance is credited in the withdrawal month
-    const withdrawalBody = {
-      type: saving.type,
-      date,
-      direction: 'out',
-      status: 'retirado',
-      note: note || 'Retiro de ahorro',
-    }
-    if (saving.type === 'dolares') {
-      withdrawalBody.dollars = amount
-      withdrawalBody.exchange_rate = toNumber(saving.exchange_rate)
-    } else {
-      withdrawalBody.amount_ars = amount
-    }
+    try {
+      // 1. Reduce the original saving (same logic as consumeFromSaving)
+      await consumeFromSaving(id, amount)
+      consumed = true
 
-    if (hasAuthToken()) {
-      const res = await savingsApi.create(withdrawalBody)
-      if (!res?.success) throw new Error(res?.error || 'No se pudo registrar el retiro')
-      records.value.push(normalizeRecord(res.data))
-      return
-    }
+      // 2. Create a withdrawal record so the balance is credited in the withdrawal month
+      const withdrawalBody = {
+        type: originalSaving.type,
+        date,
+        direction: 'out',
+        status: 'retirado',
+        note: note || 'Retiro de ahorro',
+      }
+      if (originalSaving.type === 'dolares') {
+        withdrawalBody.dollars = amount
+        withdrawalBody.exchange_rate = toNumber(originalSaving.exchange_rate)
+      } else {
+        withdrawalBody.amount_ars = amount
+      }
 
-    records.value.push(normalizeRecord({
-      id: crypto.randomUUID(),
-      ...withdrawalBody,
-      amount_ars: saving.type === 'dolares'
-        ? amount * toNumber(saving.exchange_rate)
-        : amount,
-    }))
-    persistToLocalStorage(records.value)
+      if (hasAuthToken()) {
+        const res = await savingsApi.create(withdrawalBody)
+        if (!res?.success) throw new Error(res?.error || 'No se pudo registrar el retiro')
+        records.value.push(normalizeRecord(res.data))
+        return
+      }
+
+      records.value.push(normalizeRecord({
+        id: crypto.randomUUID(),
+        ...withdrawalBody,
+        amount_ars: originalSaving.type === 'dolares'
+          ? amount * toNumber(originalSaving.exchange_rate)
+          : amount,
+      }))
+      persistToLocalStorage(records.value)
+    } catch (error) {
+      if (consumed) {
+        try {
+          await updateSaving(id, {
+            type: originalSaving.type,
+            date: originalSaving.date,
+            note: originalSaving.note || '',
+            amount_ars: toNumber(originalSaving.amount_ars),
+            dollars: originalSaving.dollars,
+            exchange_rate: originalSaving.exchange_rate,
+            status: originalSaving.status || 'ahorrado',
+            direction: originalSaving.direction || 'in'
+          })
+        } catch {
+          await load()
+        }
+      }
+      throw error
+    }
   }
 
   async function consumeFromSaving(id, amountToConsume) {
@@ -447,9 +487,7 @@ export const useSavingsStore = defineStore('savings', () => {
     return records.value
       .filter((r) => {
         if ((r.status || 'ahorrado') !== 'ahorrado') return false
-        const d = new Date(r.date)
-        const ry = d.getFullYear()
-        const rm = d.getMonth() + 1
+        const { year: ry, month: rm } = dateParts(r.date)
         return ry < y || (ry === y && rm <= m)
       })
       .reduce((sum, r) => sum + toNumber(r.amount_ars), 0)
@@ -465,8 +503,8 @@ export const useSavingsStore = defineStore('savings', () => {
     const m = Number(month)
     const y = Number(year)
     const inPeriod = (r) => {
-      const d = new Date(r.date)
-      return d.getMonth() + 1 === m && d.getFullYear() === y
+      const parts = dateParts(r.date)
+      return parts.month === m && parts.year === y
     }
     const saved = records.value
       .filter((r) => (r.direction || 'in') === 'in' && inPeriod(r))
@@ -479,7 +517,7 @@ export const useSavingsStore = defineStore('savings', () => {
 
   function netSavedInYear(year) {
     const y = Number(year)
-    const inYear = (r) => new Date(r.date).getFullYear() === y
+    const inYear = (r) => dateParts(r.date).year === y
     const saved = records.value
       .filter((r) => (r.direction || 'in') === 'in' && inYear(r))
       .reduce((sum, r) => sum + toNumber(r.amount_ars), 0)
