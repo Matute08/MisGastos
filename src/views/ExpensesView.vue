@@ -471,7 +471,7 @@
             </div>
 
             <!-- Vista Desktop: Tabla de gastos -->
-            <div class="hidden md:block card !p-0 overflow-hidden">
+            <div v-if="hasVisibleExpenseRows" class="hidden md:block card !p-0 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table :key="tableKey" class="min-w-full divide-y divide-slate-100">
                         <thead class="bg-slate-50 dark:bg-gray-700/80 dark:bg-gray-700/80">
@@ -631,7 +631,7 @@
                                 </tr>
                             </template>
 
-                            <template v-else-if="!filters.value || !filters.value.month || !filters.value.year">
+                            <template v-else-if="!filters || !filters.month || !filters.year">
                                 <tr
                                     v-for="expense in paginatedDirectExpensesDesktop"
                                     :key="expense.id"
@@ -756,7 +756,7 @@
             </div>
 
             <!-- Vista Móvil: Lista de tarjetas de gastos -->
-            <TransitionGroup name="list" tag="div" class="block md:hidden space-y-3">
+            <TransitionGroup v-if="hasVisibleExpenseRows" name="list" tag="div" class="block md:hidden space-y-3">
                 <template v-if="paginatedExpenses.length > 0">
                     <div
                         v-for="item in paginatedExpenses"
@@ -916,7 +916,7 @@
                 </template>
 
                 <!-- Gastos normales (cuando no hay filtros de mes) -->
-                <template v-else-if="!filters.value || !filters.value.month || !filters.value.year">
+                <template v-else-if="!filters || !filters.month || !filters.year">
                     <div
                         v-for="expense in paginatedDirectExpenses"
                         :key="expense.id"
@@ -1089,13 +1089,13 @@
             </TransitionGroup>
 
             <EmptyState
-                v-if="filteredExpensesToShow.length === 0 && !expensesStore.loading"
+                v-if="visibleExpenseCount === 0 && !searchQuery && !expensesStore.loading"
                 icon="Receipt"
                 title="No hay gastos"
                 description="Comienza agregando tu primer gasto para llevar el control de tus finanzas"
             />
             <EmptyState
-                v-else-if="searchedExpenses.length === 0 && searchQuery && !expensesStore.loading"
+                v-else-if="visibleExpenseCount === 0 && searchQuery && !expensesStore.loading"
                 icon="SearchX"
                 title="Sin resultados"
                 description="No se encontraron gastos que coincidan con tu búsqueda"
@@ -1556,15 +1556,6 @@ onMounted(async () => {
     document.addEventListener('click', handleClickOutside);
     window.addEventListener('scroll', handleFabScroll, { passive: true });
 });
-
-watch(
-    () => filters.value.payment_status_id,
-    () => {
-        expensesStore.clearMonthlyData();
-        forceTableUpdate();
-    },
-    { immediate: false }
-);
 
 watch(searchQuery, () => {
     currentPage.value = 1;
@@ -2256,6 +2247,17 @@ const searchedDirectExpenses = computed(() => {
   )
 })
 
+const usesDirectExpensesFallback = computed(() =>
+  !filters.value?.month || !filters.value?.year
+)
+
+const visibleExpenseCount = computed(() =>
+  searchedExpenses.value.length +
+  (usesDirectExpensesFallback.value ? searchedDirectExpenses.value.length : 0)
+)
+
+const hasVisibleExpenseRows = computed(() => visibleExpenseCount.value > 0)
+
 function previousMonth() {
     if (!filters.value) return;
     let month = parseInt(filters.value.month);
@@ -2293,8 +2295,35 @@ const rowAmountForSummary = (item) => {
     return Number.isFinite(n) ? n : 0;
 };
 
+const useBalanceTotalsForSummary = computed(() =>
+    Boolean(filters.value?.month && filters.value?.year && !filters.value?.payment_status_id)
+);
+
+const visibleRowsTotal = computed(() =>
+    filteredExpensesToShow.value.reduce((sum, item) => sum + rowAmountForSummary(item), 0)
+);
+
+const monthlyBalanceTotal = computed(() =>
+    expensesStore.monthlyTotals?.total_balance_expenses ??
+    expensesStore.monthlyTotals?.total_expenses ??
+    visibleRowsTotal.value
+);
+
+const selectedPeriodIsFuture = computed(() => {
+    const selectedYear = Number(filters.value?.year);
+    const selectedMonth = Number(filters.value?.month);
+
+    if (!selectedYear || !selectedMonth) return false;
+    return selectedYear > now.getFullYear() ||
+        (selectedYear === now.getFullYear() && selectedMonth > now.getMonth() + 1);
+});
+
 /** Totales acordes a los filtros y listado visible (no al endpoint de balance, que solo suma crédito pagado). */
 const totalDebitTransferExpenses = computed(() => {
+    if (useBalanceTotalsForSummary.value && !selectedPeriodIsFuture.value) {
+        return expensesStore.monthlyTotals?.total_debit_transfer || 0;
+    }
+
     return filteredExpensesToShow.value.reduce((sum, item) => {
         if (item.available_cards?.type === "Crédito") return sum;
         return sum + rowAmountForSummary(item);
@@ -2302,6 +2331,10 @@ const totalDebitTransferExpenses = computed(() => {
 });
 
 const totalCreditExpenses = computed(() => {
+    if (useBalanceTotalsForSummary.value && !selectedPeriodIsFuture.value) {
+        return expensesStore.monthlyTotals?.total_credit || 0;
+    }
+
     return filteredExpensesToShow.value.reduce((sum, item) => {
         if (item.available_cards?.type !== "Crédito") return sum;
         return sum + rowAmountForSummary(item);
@@ -2309,7 +2342,9 @@ const totalCreditExpenses = computed(() => {
 });
 
 const totalExpenses = computed(() => {
-    return filteredExpensesToShow.value.reduce((sum, item) => sum + rowAmountForSummary(item), 0);
+    return useBalanceTotalsForSummary.value && !selectedPeriodIsFuture.value
+        ? monthlyBalanceTotal.value
+        : visibleRowsTotal.value;
 });
 
 function getStatusLabel(item) {

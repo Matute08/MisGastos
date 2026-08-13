@@ -1,7 +1,6 @@
 import { supabase } from '../config/database.js';
 import logger from '../utils/logger.js';
 import { directExpenseBelongsToPeriod } from './expenses/helpers.js';
-import { getMonthlyTotalWithInstallments } from './expenses/balance.js';
 
 function toNumber(value) {
   const number = Number(value);
@@ -28,6 +27,13 @@ function monthRange(month, year) {
   };
 }
 
+function normalizeCardType(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
 function previousMonth(month, year) {
   const safeMonth = Number(month);
   const safeYear = Number(year);
@@ -35,6 +41,99 @@ function previousMonth(month, year) {
     month: safeMonth === 1 ? 12 : safeMonth - 1,
     year: safeMonth === 1 ? safeYear - 1 : safeYear,
   };
+}
+
+function isPaid(row) {
+  return row?.payment_status?.code === 'pagada' || row?.payment_status_id === 2;
+}
+
+function directExpenseEffectiveDate(expense) {
+  const cardType = normalizeCardType(expense?.available_cards?.type);
+  const isCredit = cardType === 'credito';
+  return datePart(isCredit ? (expense.first_installment_date || expense.purchase_date) : expense.purchase_date);
+}
+
+function savingBalanceImpact(saving) {
+  const direction = saving.direction || 'in';
+  const status = saving.status || 'ahorrado';
+  const amount = Math.abs(toNumber(saving.amount_ars));
+
+  if (direction === 'in') return -amount;
+  if (direction === 'out' && status === 'retirado') return amount;
+  return 0;
+}
+
+async function calculateOpeningBalance(userId, startDate) {
+  const { data: incomes, error: incomesError } = await supabase
+    .from('incomes')
+    .select('amount, affects_cash_balance, income_date')
+    .eq('user_id', userId)
+    .lt('income_date', startDate);
+
+  if (incomesError) throw incomesError;
+
+  const incomeTotal = (incomes || [])
+    .filter((income) => income.affects_cash_balance !== false)
+    .reduce((sum, income) => sum + toNumber(income.amount), 0);
+
+  const { data: directExpenses, error: directError } = await supabase
+    .from('expenses')
+    .select(`
+      amount,
+      purchase_date,
+      first_installment_date,
+      payment_status_id,
+      available_cards(type),
+      payment_status(code)
+    `)
+    .eq('user_id', userId)
+    .eq('installments_count', 1);
+
+  if (directError) throw directError;
+
+  const directExpenseTotal = (directExpenses || [])
+    .filter(isPaid)
+    .filter((expense) => {
+      const effectiveDate = directExpenseEffectiveDate(expense);
+      return effectiveDate && effectiveDate < startDate;
+    })
+    .reduce((sum, expense) => sum + toNumber(expense.amount), 0);
+
+  const { data: installments, error: installmentsError } = await supabase
+    .from('installments')
+    .select(`
+      amount,
+      due_date,
+      updated_at,
+      payment_status_id,
+      expenses!inner(user_id),
+      payment_status(code)
+    `)
+    .eq('expenses.user_id', userId)
+    .eq('payment_status_id', 2);
+
+  if (installmentsError) throw installmentsError;
+
+  const installmentTotal = (installments || [])
+    .filter(isPaid)
+    .filter((installment) => {
+      const effectiveDate = datePart(installment.updated_at || installment.due_date);
+      return effectiveDate && effectiveDate < startDate;
+    })
+    .reduce((sum, installment) => sum + toNumber(installment.amount), 0);
+
+  const { data: savings, error: savingsError } = await supabase
+    .from('savings_records')
+    .select('amount_ars, direction, status, entry_date')
+    .eq('user_id', userId)
+    .lt('entry_date', startDate);
+
+  if (savingsError) throw savingsError;
+
+  const savingsImpact = (savings || [])
+    .reduce((sum, saving) => sum + savingBalanceImpact(saving), 0);
+
+  return incomeTotal - directExpenseTotal - installmentTotal + savingsImpact;
 }
 
 function normalizeMovement(movement) {
@@ -86,29 +185,7 @@ export class ActivityService {
 
       try {
       const previous = previousMonth(month, year);
-      const { data: previousIncomes, error: previousIncomesError } = await supabase
-        .from('incomes')
-        .select('amount, affects_cash_balance')
-        .eq('user_id', userId)
-        .eq('month', previous.month)
-        .eq('year', previous.year);
-
-      if (previousIncomesError) throw previousIncomesError;
-
-      const previousIncomeTotal = (previousIncomes || [])
-        .filter((income) => income.affects_cash_balance !== false)
-        .reduce((sum, income) => sum + toNumber(income.amount), 0);
-      const previousExpenseResult = await getMonthlyTotalWithInstallments(
-        userId,
-        previous.month,
-        previous.year,
-        {}
-      );
-      const previousExpenseTotal =
-        previousExpenseResult?.data?.[0]?.total_balance_expenses ??
-        previousExpenseResult?.data?.[0]?.total_expenses ??
-        0;
-      const previousBalance = Math.abs(previousIncomeTotal - toNumber(previousExpenseTotal));
+      const previousBalance = await calculateOpeningBalance(userId, startDate);
 
       if (previousBalance !== 0) {
         movements.push(normalizeMovement({
@@ -321,7 +398,7 @@ export class ActivityService {
           detail: saving.note || (saving.type === 'dolares' ? 'Ahorro en USD' : 'Ahorro en pesos'),
           account: saving.type === 'dolares' ? 'Ahorro USD' : 'Ahorro ARS',
           method: isWithdrawal ? 'Vuelve a disponible' : direction === 'in' ? 'Reserva de dinero' : 'Movimiento interno',
-          amount: affectsBalance ? (isWithdrawal ? Math.abs(amount) : -Math.abs(amount)) : 0,
+          amount: affectsBalance ? savingBalanceImpact(saving) : 0,
           reference_amount: Math.abs(amount),
           affects_balance: affectsBalance,
           status: affectsBalance ? 'aprobado' : 'informativo',

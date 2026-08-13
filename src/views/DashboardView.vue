@@ -703,7 +703,7 @@ import { useIncomesStore } from '@/stores/incomes'
 import { useCardsStore } from '@/stores/cards'
 import { useCategoriesStore } from '@/stores/categories'
 import { useSavingsStore } from '@/stores/savings'
-import { incomes as incomesApi, expenses as expensesApi } from '@/lib/api'
+import { incomes as incomesApi, expenses as expensesApi, activity as activityApi } from '@/lib/api'
 import { Doughnut, Bar } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -770,6 +770,7 @@ const showSavingsHelp = ref(false)
 const savingsHelpRef = ref(null)
 const isLoading = ref(true)
 const previousMonthCarry = ref(0)
+const monthlyActivitySummary = ref(null)
 
 const currentChartIndex = ref(0)
 const touchStartX = ref(0)
@@ -889,6 +890,10 @@ function setVencimientosPage(page) {
 
 // --- Expenses total ---
 const totalExpensesView = computed(() => {
+  if (!isAnnual.value && monthlyActivitySummary.value) {
+    return monthlyActivitySummary.value.outcome || 0
+  }
+
   const now = new Date()
   const cm = now.getMonth() + 1
   const cy = now.getFullYear()
@@ -937,11 +942,15 @@ const totalExpensesView = computed(() => {
 })
 
 // --- Income total ---
-const totalIncomeView = computed(() =>
-  incomesStore.incomes
+const totalIncomeView = computed(() => {
+  if (!isAnnual.value && monthlyActivitySummary.value) {
+    return monthlyActivitySummary.value.income || 0
+  }
+
+  return incomesStore.incomes
     .filter((inc) => inc.affects_cash_balance !== false)
     .reduce((sum, inc) => sum + parseFloat(inc.amount), 0)
-)
+})
 
 // --- Balance & Savings ---
 /** Ahorro neto del período (ARS): lo que sale del flujo disponible al mes/año. */
@@ -952,6 +961,10 @@ const savingsNetForBalance = computed(() =>
 )
 
 const balanceView = computed(() => {
+  if (!isAnnual.value && monthlyActivitySummary.value) {
+    return monthlyActivitySummary.value.net || 0
+  }
+
   const monthlyExpensesForBalance =
     !isAnnual.value && expensesStore.monthlyTotals?.total_balance_expenses != null
       ? expensesStore.monthlyTotals.total_balance_expenses
@@ -970,20 +983,13 @@ const savedUsdView = computed(() => savingsStore.totalSavedUsd || 0)
 const savedArsView = computed(() => savingsStore.totalSavedArs || 0)
 
 const loadPreviousMonthCarry = async () => {
-  const pm = currentMonth === 1 ? 12 : currentMonth - 1
-  const py = currentMonth === 1 ? currentYear - 1 : currentYear
   try {
-    const [incomeRes, expenseRes] = await Promise.all([
-      incomesApi.getSummary({ month: pm, year: py }),
-      expensesApi.getMonthlyTotalWithInstallments(null, pm, py, {})
-    ])
-    const prevIncome = incomeRes?.data?.total || 0
-    const prevExpense =
-      expenseRes?.data?.[0]?.total_balance_expenses ??
-      expenseRes?.data?.[0]?.total_expenses ??
-      0
-    previousMonthCarry.value = Math.abs(prevIncome - prevExpense)
+    const activityRes = await activityApi.getBalanceActivity({ month: currentMonth, year: currentYear })
+    const summary = activityRes?.data?.summary || null
+    monthlyActivitySummary.value = summary
+    previousMonthCarry.value = summary?.opening_balance || 0
   } catch {
+    monthlyActivitySummary.value = null
     previousMonthCarry.value = 0
   }
 }
@@ -1451,21 +1457,26 @@ const loadPeriodComparison = async () => {
     const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1
     const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear
     try {
-      const [incomeRes, expenseRes] = await Promise.all([
+      const [incomeRes, expenseRes, activityRes] = await Promise.all([
         incomesApi.getSummary({ month: prevMonth, year: prevYear }),
-        expensesApi.getMonthlyTotalWithInstallments(prevMonth, prevYear, {})
+        expensesApi.getMonthlyTotalWithInstallments(null, prevMonth, prevYear, {}),
+        activityApi.getBalanceActivity({ month: prevMonth, year: prevYear })
       ])
       previousPeriodIncome.value = incomeRes?.data?.total || 0
       previousPeriodExpenses.value =
         expenseRes?.data?.[0]?.total_balance_expenses ??
         expenseRes?.data?.[0]?.total_expenses ??
         0
+      previousPeriodBalance.value = activityRes?.data?.summary?.net || 0
     } catch {
       previousPeriodIncome.value = 0
       previousPeriodExpenses.value = 0
+      previousPeriodBalance.value = 0
     }
   }
-  previousPeriodBalance.value = Math.abs(previousPeriodIncome.value - previousPeriodExpenses.value)
+  if (isAnnual.value) {
+    previousPeriodBalance.value = previousPeriodIncome.value - previousPeriodExpenses.value
+  }
 }
 
 // --- Data Loading ---
