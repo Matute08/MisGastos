@@ -118,49 +118,7 @@ export async function getMonthlyTotalWithInstallments(userId, month, year, filte
     const totalCredit = totalCreditDirect + totalCreditInstallments;
 
     const totalExpenses = totalDebitTransfer + totalCredit;
-    let advancePaidInstallmentsAdjustment = 0;
-    const paymentFilterId =
-      filters.payment_status_id != null && filters.payment_status_id !== 'null'
-        ? parseInt(String(filters.payment_status_id), 10)
-        : null;
-    const shouldCalculateAdvanceAdjustment =
-      paymentFilterId == null || (!Number.isNaN(paymentFilterId) && paymentFilterId === 2);
-
-    if (shouldCalculateAdvanceAdjustment) {
-      let advancePaidQuery = supabase
-        .from('installments')
-        .select(`
-          amount,
-          due_date,
-          updated_at,
-          payment_status_id,
-          expenses!inner(user_id, card_id, category_id),
-          payment_status(code)
-        `)
-        .eq('expenses.user_id', userId)
-        .eq('payment_status_id', 2)
-        .gte('updated_at', `${startDate}T00:00:00.000Z`)
-        .lt('updated_at', `${endDate}T00:00:00.000Z`);
-
-      if (filters.card_id && filters.card_id !== 'null' && filters.card_id !== null) {
-        advancePaidQuery = advancePaidQuery.eq('expenses.card_id', filters.card_id);
-      }
-      if (filters.category_id && filters.category_id !== 'null' && filters.category_id !== null) {
-        advancePaidQuery = advancePaidQuery.eq('expenses.category_id', filters.category_id);
-      }
-
-      const { data: advancePaidInstallments, error: advancePaidError } = await advancePaidQuery;
-      if (advancePaidError) throw advancePaidError;
-
-      advancePaidInstallmentsAdjustment = (advancePaidInstallments || [])
-        .filter((inst) => {
-          if (inst.payment_status?.code !== 'pagada') return false;
-          const dueDay = (inst.due_date || '').slice(0, 10);
-          return !(dueDay >= startDate && dueDay < endDate);
-        })
-        .reduce((sum, inst) => sum + parseFloat(inst.amount || 0), 0);
-    }
-    const totalBalanceExpenses = totalExpenses + advancePaidInstallmentsAdjustment;
+    const totalBalanceExpenses = totalExpenses;
 
     return {
       success: true,
@@ -169,7 +127,6 @@ export async function getMonthlyTotalWithInstallments(userId, month, year, filte
         total_credit: totalCredit,
         total_expenses: totalExpenses,
         total_balance_expenses: totalBalanceExpenses,
-        advance_paid_installments_adjustment: advancePaidInstallmentsAdjustment,
         expenses_count: directExpenses?.length || 0,
         installments_count: installments?.length || 0
       }]

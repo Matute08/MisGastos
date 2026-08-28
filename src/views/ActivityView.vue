@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { activity as activityApi } from '@/lib/api'
+import { activity as activityApi, expenses as expensesApi } from '@/lib/api'
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -21,7 +21,20 @@ const query = ref('')
 const loading = ref(false)
 const error = ref('')
 const movements = ref([])
-const summary = ref({ opening_balance: 0, income: 0, outcome: 0, net: 0, movements_count: 0 })
+const emptySummary = () => ({
+  opening_balance: 0,
+  income: 0,
+  outcome: 0,
+  advance_payments: 0,
+  saving_withdrawals: 0,
+  cash_balance: 0,
+  savings_balance: 0,
+  net: 0,
+  movements_count: 0
+})
+
+const summary = ref(emptySummary())
+const monthlyExpensesTotal = ref(0)
 
 const formatter = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -52,7 +65,8 @@ const periodLabel = computed(() => {
 const sourceOptions = [
   { value: 'all', label: 'Todos' },
   { value: 'income', label: 'Ingresos' },
-  { value: 'out', label: 'Salidas' },
+  { value: 'out', label: 'Gastos' },
+  { value: 'advance', label: 'Pagos adelantados' },
   { value: 'card', label: 'Tarjetas' },
   { value: 'saving', label: 'Ahorros' },
   { value: 'neutral', label: 'Informativo' }
@@ -63,8 +77,15 @@ const filteredMovements = computed(() => {
   return movements.value.filter((movement) => {
     const sourceMatch =
       sourceFilter.value === 'all' ||
-      (sourceFilter.value === 'income' && movement.amount > 0 && movement.affects_balance) ||
-      (sourceFilter.value === 'out' && movement.amount < 0 && movement.affects_balance) ||
+      (sourceFilter.value === 'income' && movement.source === 'income') ||
+      (
+        sourceFilter.value === 'out' &&
+        movement.amount < 0 &&
+        movement.affects_balance &&
+        !String(movement.source).includes('saving') &&
+        movement.source !== 'card_payment_advance'
+      ) ||
+      (sourceFilter.value === 'advance' && movement.source === 'card_payment_advance') ||
       (sourceFilter.value === 'card' && String(movement.source).includes('card')) ||
       (sourceFilter.value === 'saving' && String(movement.source).includes('saving')) ||
       (sourceFilter.value === 'neutral' && !movement.affects_balance)
@@ -142,20 +163,25 @@ async function loadActivity() {
   error.value = ''
   try {
     const { month, year } = periodParts.value
-    const response = await activityApi.getBalanceActivity({ month, year })
+    const [response, expensesResponse] = await Promise.all([
+      activityApi.getBalanceActivity({ month, year }),
+      expensesApi.getMonthlyTotalWithInstallments(null, month, year, {})
+    ])
     if (!response?.success) throw new Error(response?.error || 'No se pudo cargar la actividad')
     movements.value = response.data?.movements || []
-    summary.value = response.data?.summary || { opening_balance: 0, income: 0, outcome: 0, net: 0, movements_count: 0 }
+    summary.value = response.data?.summary || emptySummary()
+    monthlyExpensesTotal.value = expensesResponse?.data?.[0]?.total_expenses || 0
   } catch (err) {
     error.value = err.message || 'No se pudo cargar la actividad'
     movements.value = []
+    monthlyExpensesTotal.value = 0
   } finally {
     loading.value = false
   }
 }
 
 function exportCsv() {
-  const headers = ['fecha', 'hora', 'titulo', 'detalle', 'cuenta', 'metodo', 'estado', 'impacta_balance', 'monto', 'saldo_periodo']
+  const headers = ['fecha', 'hora', 'titulo', 'detalle', 'cuenta', 'metodo', 'estado', 'impacta_saldo', 'monto', 'saldo_periodo']
   const rows = filteredMovements.value.map((movement) => [
     movement.date,
     movement.time || '',
@@ -191,7 +217,7 @@ onMounted(loadActivity)
         <p class="text-sm font-medium text-primary-600 dark:text-primary-400">Balance auditable</p>
         <h1 class="text-2xl font-bold text-slate-950 dark:text-gray-100">Actividad del dinero</h1>
         <p class="text-sm text-slate-500 dark:text-gray-400">
-          Movimientos que explican el balance de {{ periodLabel }}.
+          Movimientos que explican el dinero disponible de {{ periodLabel }}.
         </p>
       </div>
 
@@ -215,28 +241,40 @@ onMounted(loadActivity)
       </div>
     </div>
 
-    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+    <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
+      <div class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400">Saldo anterior</p>
         <p
-          class="mt-1 text-xl font-bold"
+          class="mt-1 break-words text-lg font-bold leading-tight tabular-nums"
           :class="summary.opening_balance >= 0 ? 'text-primary-600 dark:text-primary-400' : 'text-danger-600 dark:text-danger-400'"
         >
           {{ formatCurrency(summary.opening_balance) }}
         </p>
       </div>
-      <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+      <div class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400">Entradas</p>
-        <p class="mt-1 text-xl font-bold text-success-600 dark:text-success-400">{{ formatCurrency(summary.income) }}</p>
+        <p class="mt-1 break-words text-lg font-bold leading-tight tabular-nums text-success-600 dark:text-success-400">{{ formatCurrency(summary.income) }}</p>
       </div>
-      <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400">Salidas</p>
-        <p class="mt-1 text-xl font-bold text-slate-950 dark:text-gray-100">{{ formatCurrency(summary.outcome) }}</p>
+      <div class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400">Retiros ahorro</p>
+        <p class="mt-1 break-words text-lg font-bold leading-tight tabular-nums text-success-600 dark:text-success-400">{{ formatCurrency(summary.saving_withdrawals) }}</p>
       </div>
-      <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+      <div class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400">Gastos del mes</p>
+        <p class="mt-1 break-words text-lg font-bold leading-tight tabular-nums text-slate-950 dark:text-gray-100">{{ formatCurrency(monthlyExpensesTotal) }}</p>
+      </div>
+      <div class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400">Pagos adelantados</p>
+        <p class="mt-1 break-words text-lg font-bold leading-tight tabular-nums text-slate-950 dark:text-gray-100">{{ formatCurrency(summary.advance_payments) }}</p>
+      </div>
+      <div class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400">Ahorros</p>
+        <p class="mt-1 break-words text-lg font-bold leading-tight tabular-nums text-primary-600 dark:text-primary-400">{{ formatCurrency(summary.savings_balance) }}</p>
+      </div>
+      <div class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400">Saldo calculado</p>
         <p
-          class="mt-1 text-xl font-bold"
+          class="mt-1 break-words text-lg font-bold leading-tight tabular-nums"
           :class="summary.net >= 0 ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'"
         >
           {{ formatCurrency(summary.net) }}
@@ -330,7 +368,7 @@ onMounted(loadActivity)
                 <p v-if="movement.affects_balance" class="text-xs text-slate-400 dark:text-gray-500">
                   saldo {{ formatCurrency(movement.balance_after) }}
                 </p>
-                <p v-else class="text-xs text-slate-400 dark:text-gray-500">no impacta balance</p>
+                <p v-else class="text-xs text-slate-400 dark:text-gray-500">informativo</p>
               </div>
             </article>
           </div>
@@ -339,7 +377,7 @@ onMounted(loadActivity)
     </div>
 
     <p class="text-xs text-slate-500 dark:text-gray-400">
-      {{ balanceMovementsCount }} movimientos impactan el balance. Los informativos explican créditos o usos internos sin cambiar dinero disponible.
+      {{ balanceMovementsCount }} movimientos impactan el saldo. Los informativos explican creditos, ahorros o pagos adelantados sin cambiar dinero disponible.
     </p>
   </div>
 </template>

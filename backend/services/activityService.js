@@ -415,14 +415,32 @@ export class ActivityService {
 
       const ordered = [...withRunningBalance].sort(sortMovementsDescending);
       const incomeTotal = unique
-        .filter((movement) => movement.affects_balance && movement.amount > 0 && movement.source !== 'opening_balance')
+        .filter((movement) => movement.affects_balance && movement.source === 'income')
         .reduce((sum, movement) => sum + movement.amount, 0);
       const expenseTotal = unique
         .filter((movement) => movement.affects_balance && movement.amount < 0 && movement.source !== 'opening_balance')
         .reduce((sum, movement) => sum + Math.abs(movement.amount), 0);
+      const advancePaymentTotal = unique
+        .filter((movement) => movement.source === 'card_payment_advance')
+        .reduce((sum, movement) => sum + Math.abs(movement.reference_amount || 0), 0);
+      const savingWithdrawalTotal = unique
+        .filter((movement) => movement.source === 'saving_withdrawal')
+        .reduce((sum, movement) => sum + Math.abs(movement.reference_amount || 0), 0);
       const openingBalance = unique
         .filter((movement) => movement.source === 'opening_balance')
         .reduce((sum, movement) => sum + movement.amount, 0);
+      const cashBalance = openingBalance + incomeTotal + savingWithdrawalTotal - expenseTotal;
+      const { data: activeSavings, error: activeSavingsError } = await supabase
+        .from('savings_records')
+        .select('amount_ars')
+        .eq('user_id', userId)
+        .eq('status', 'ahorrado')
+        .lt('entry_date', endDate);
+
+      if (activeSavingsError) throw activeSavingsError;
+
+      const savingsBalance = (activeSavings || [])
+        .reduce((sum, saving) => sum + toNumber(saving.amount_ars), 0);
 
       return {
         success: true,
@@ -432,7 +450,11 @@ export class ActivityService {
             opening_balance: openingBalance,
             income: incomeTotal,
             outcome: expenseTotal,
-            net: openingBalance + incomeTotal - expenseTotal,
+            advance_payments: advancePaymentTotal,
+            saving_withdrawals: savingWithdrawalTotal,
+            cash_balance: cashBalance,
+            savings_balance: savingsBalance,
+            net: cashBalance + savingsBalance,
             movements_count: ordered.length,
           },
           movements: ordered,

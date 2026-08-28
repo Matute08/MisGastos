@@ -183,7 +183,7 @@ describe('markAsPaid', () => {
 });
 
 describe('getMonthlyTotalWithInstallments', () => {
-  it('should only discount paid expenses and installments from the cash balance', async () => {
+  it('should only include paid expenses and installments assigned to the selected month', async () => {
     const directQuery = queryResult([
       {
         amount: 100,
@@ -223,20 +223,10 @@ describe('getMonthlyTotalWithInstallments', () => {
         payment_status: { code: 'pagada' },
       },
     ]);
-    const advancePaidQuery = queryResult([
-      {
-        amount: 500,
-        due_date: '2024-07-10',
-        updated_at: '2024-06-20T12:00:00.000Z',
-        payment_status_id: 2,
-        payment_status: { code: 'pagada' },
-      },
-    ]);
 
     mockSupabase.from
       .mockReturnValueOnce(directQuery)
-      .mockReturnValueOnce(installmentsQuery)
-      .mockReturnValueOnce(advancePaidQuery);
+      .mockReturnValueOnce(installmentsQuery);
 
     const result = await getMonthlyTotalWithInstallments('user-1', 6, 2024);
 
@@ -244,7 +234,6 @@ describe('getMonthlyTotalWithInstallments', () => {
     expect(result.data[0].total_debit_transfer).toBe(100);
     expect(result.data[0].total_credit).toBe(200);
     expect(result.data[0].total_expenses).toBe(300);
-    expect(result.data[0].advance_paid_installments_adjustment).toBe(500);
-    expect(result.data[0].total_balance_expenses).toBe(800);
+    expect(result.data[0].total_balance_expenses).toBe(300);
   });
 });

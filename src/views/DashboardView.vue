@@ -12,7 +12,7 @@
       <div class="relative z-10">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <p class="text-primary-200 text-sm font-medium mb-1">{{ isAnnual ? 'Balance del Año' : 'Balance del Mes' }}</p>
+            <p class="text-primary-200 text-sm font-medium mb-1">Dinero disponible</p>
             <template v-if="isLoading">
               <div class="skeleton h-10 w-56 !bg-white/10 !from-white/5 !via-white/15 !to-white/5 mb-1"></div>
             </template>
@@ -68,24 +68,24 @@
             <div class="w-8 h-8 rounded-full bg-success-500/20 flex items-center justify-center">
               <ArrowUpRight class="w-4 h-4 text-success-300" />
             </div>
-            <div>
+            <div class="min-w-0">
               <p class="text-xs text-primary-200">Ingresos</p>
               <template v-if="isLoading">
                 <div class="skeleton h-5 w-24 !bg-white/10 !from-white/5 !via-white/15 !to-white/5"></div>
               </template>
-              <p v-else class="text-sm font-bold text-success-300">{{ formatCurrency(totalIncomeView) }}</p>
+              <p v-else class="break-words text-sm font-bold leading-tight tabular-nums text-success-300">{{ formatCurrency(totalIncomeView) }}</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded-full bg-danger-500/20 flex items-center justify-center">
               <ArrowDownRight class="w-4 h-4 text-danger-300" />
             </div>
-            <div>
+            <div class="min-w-0">
               <p class="text-xs text-primary-200">Gastos</p>
               <template v-if="isLoading">
                 <div class="skeleton h-5 w-24 !bg-white/10 !from-white/5 !via-white/15 !to-white/5"></div>
               </template>
-              <p v-else class="text-sm font-bold text-danger-300">{{ formatCurrency(totalExpensesView) }}</p>
+              <p v-else class="break-words text-sm font-bold leading-tight tabular-nums text-danger-300">{{ formatCurrency(totalExpensesView) }}</p>
             </div>
           </div>
         </div>
@@ -104,7 +104,7 @@
           <template v-if="isLoading">
             <div class="skeleton h-7 w-28 mt-1"></div>
           </template>
-          <p v-else class="text-xl font-bold text-slate-900 dark:text-gray-100 truncate">{{ formatCurrency(totalIncomeView) }}</p>
+          <p v-else class="break-words text-xl font-bold leading-tight tabular-nums text-slate-900 dark:text-gray-100">{{ formatCurrency(totalIncomeView) }}</p>
           <ComparisonBadge
             v-if="!isLoading"
             :current-value="totalIncomeView"
@@ -123,7 +123,7 @@
           <template v-if="isLoading">
             <div class="skeleton h-7 w-28 mt-1"></div>
           </template>
-          <p v-else class="text-xl font-bold text-slate-900 dark:text-gray-100 truncate">{{ formatCurrency(totalExpensesView) }}</p>
+          <p v-else class="break-words text-xl font-bold leading-tight tabular-nums text-slate-900 dark:text-gray-100">{{ formatCurrency(totalExpensesView) }}</p>
           <ComparisonBadge
             v-if="!isLoading"
             :current-value="totalExpensesView"
@@ -890,18 +890,18 @@ function setVencimientosPage(page) {
 
 // --- Expenses total ---
 const totalExpensesView = computed(() => {
-  if (!isAnnual.value && monthlyActivitySummary.value) {
-    return monthlyActivitySummary.value.outcome || 0
-  }
-
   const now = new Date()
   const cm = now.getMonth() + 1
   const cy = now.getFullYear()
 
-  // Para la vista mensual usamos el total mensual calculado en backend
+  // Para la vista mensual usamos el total mensual de gastos, no el flujo de actividad.
   if (!isAnnual.value) {
     if (expensesStore.monthlyTotals?.total_expenses != null) {
       return expensesStore.monthlyTotals.total_expenses
+    }
+
+    if (monthlyActivitySummary.value) {
+      return monthlyActivitySummary.value.outcome || 0
     }
   }
 
@@ -962,7 +962,7 @@ const savingsNetForBalance = computed(() =>
 
 const balanceView = computed(() => {
   if (!isAnnual.value && monthlyActivitySummary.value) {
-    return monthlyActivitySummary.value.net || 0
+    return monthlyActivitySummary.value.cash_balance ?? monthlyActivitySummary.value.net ?? 0
   }
 
   const monthlyExpensesForBalance =
@@ -1467,7 +1467,10 @@ const loadPeriodComparison = async () => {
         expenseRes?.data?.[0]?.total_balance_expenses ??
         expenseRes?.data?.[0]?.total_expenses ??
         0
-      previousPeriodBalance.value = activityRes?.data?.summary?.net || 0
+      previousPeriodBalance.value =
+        activityRes?.data?.summary?.cash_balance ??
+        activityRes?.data?.summary?.net ??
+        0
     } catch {
       previousPeriodIncome.value = 0
       previousPeriodExpenses.value = 0
