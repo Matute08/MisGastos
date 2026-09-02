@@ -2295,56 +2295,48 @@ const rowAmountForSummary = (item) => {
     return Number.isFinite(n) ? n : 0;
 };
 
-const useBalanceTotalsForSummary = computed(() =>
-    Boolean(filters.value?.month && filters.value?.year && !filters.value?.payment_status_id)
-);
+const getCardType = (item) => {
+    return (
+        item.available_cards?.type ||
+        item.expenses?.available_cards?.type ||
+        item.card_type ||
+        ""
+    );
+};
 
-const visibleRowsTotal = computed(() =>
-    filteredExpensesToShow.value.reduce((sum, item) => sum + rowAmountForSummary(item), 0)
-);
+const isCreditExpense = (item) => {
+    const type = getCardType(item);
+    if (type === "Crédito") return true;
+    if (item.is_installment && type !== "Débito" && type !== "Transferencia") {
+        return true;
+    }
+    return false;
+};
 
-const monthlyBalanceTotal = computed(() =>
-    expensesStore.monthlyTotals?.total_balance_expenses ??
-    expensesStore.monthlyTotals?.total_expenses ??
-    visibleRowsTotal.value
-);
-
-const selectedPeriodIsFuture = computed(() => {
-    const selectedYear = Number(filters.value?.year);
-    const selectedMonth = Number(filters.value?.month);
-
-    if (!selectedYear || !selectedMonth) return false;
-    return selectedYear > now.getFullYear() ||
-        (selectedYear === now.getFullYear() && selectedMonth > now.getMonth() + 1);
+const expensesForSummary = computed(() => {
+    if (usesDirectExpensesFallback.value) {
+        return directExpenses.value;
+    }
+    return filteredExpensesToShow.value;
 });
 
 /** Totales acordes a los filtros y listado visible (no al endpoint de balance, que solo suma crédito pagado). */
 const totalDebitTransferExpenses = computed(() => {
-    if (useBalanceTotalsForSummary.value && !selectedPeriodIsFuture.value) {
-        return expensesStore.monthlyTotals?.total_debit_transfer || 0;
-    }
-
-    return filteredExpensesToShow.value.reduce((sum, item) => {
-        if (item.available_cards?.type === "Crédito") return sum;
+    return expensesForSummary.value.reduce((sum, item) => {
+        if (isCreditExpense(item)) return sum;
         return sum + rowAmountForSummary(item);
     }, 0);
 });
 
 const totalCreditExpenses = computed(() => {
-    if (useBalanceTotalsForSummary.value && !selectedPeriodIsFuture.value) {
-        return expensesStore.monthlyTotals?.total_credit || 0;
-    }
-
-    return filteredExpensesToShow.value.reduce((sum, item) => {
-        if (item.available_cards?.type !== "Crédito") return sum;
+    return expensesForSummary.value.reduce((sum, item) => {
+        if (!isCreditExpense(item)) return sum;
         return sum + rowAmountForSummary(item);
     }, 0);
 });
 
 const totalExpenses = computed(() => {
-    return useBalanceTotalsForSummary.value && !selectedPeriodIsFuture.value
-        ? monthlyBalanceTotal.value
-        : visibleRowsTotal.value;
+    return totalDebitTransferExpenses.value + totalCreditExpenses.value;
 });
 
 function getStatusLabel(item) {
