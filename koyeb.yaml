@@ -28,11 +28,11 @@ service:
     - name: CORS_ORIGIN
       value: https://mis-gastos-phi.vercel.app
     - name: JWT_SECRET
-      value: "tu-jwt-secret-super-seguro-aqui"
+      value: "@jwt-secret"
     - name: SUPABASE_URL
-      value: "tu-supabase-url-aqui"
+      value: "@supabase-url"
     - name: SUPABASE_SERVICE_ROLE_KEY
-      value: "tu-service-role-key-aqui"
+      value: "@supabase-service-role-key"
   scaling:
     min: 0
     max: 1

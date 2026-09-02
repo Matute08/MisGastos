@@ -218,30 +218,6 @@ CREATE POLICY "Users can delete their own webauthn credentials"
   FOR DELETE
   USING (auth.uid() = user_id);
 
-CREATE TABLE IF NOT EXISTS push_subscriptions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  endpoint TEXT NOT NULL,
-  p256dh_key TEXT NOT NULL,
-  auth_key TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE INDEX idx_push_subscriptions_user_id ON push_subscriptions(user_id);
-
-CREATE TABLE IF NOT EXISTS notification_log (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  body TEXT,
-  data JSONB DEFAULT '{}',
-  sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  read_at TIMESTAMPTZ
-);
-
-CREATE INDEX idx_notification_log_user_id ON notification_log(user_id);
-CREATE INDEX idx_notification_log_sent_at ON notification_log(sent_at);
-
 CREATE OR REPLACE VIEW expenses_with_installments
 WITH (security_invoker = true)
 AS
