@@ -1,8 +1,9 @@
 import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
+import { AuthService } from '../services/authService.js';
 
-// Middleware para verificar token JWT
-export const authenticateToken = (req, res, next) => {
+// Middleware para verificar token JWT y blacklist
+export const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -15,6 +16,16 @@ export const authenticateToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Verificar si el token fue revocado (blacklist)
+    const isRevoked = await AuthService.isTokenRevoked(token);
+    if (isRevoked) {
+      return res.status(401).json({
+        error: 'Sesión revocada. Inicia sesión nuevamente.',
+        code: 'TOKEN_REVOKED'
+      });
+    }
+
     req.user = decoded;
     next();
   } catch (error) {

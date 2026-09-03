@@ -301,9 +301,9 @@ import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Wallet, Plus, ChevronLeft, ChevronRight, Pencil, Trash2, RefreshCw, Calendar } from 'lucide-vue-next'
 import Swal from 'sweetalert2'
-import IncomeModal from '@/components/IncomeModal.vue'
-import EmptyState from '@/components/EmptyState.vue'
-import ExportButton from '@/components/ExportButton.vue'
+import IncomeModal from '@/views/incomes/components/IncomeModal.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import ExportButton from '@/components/ui/ExportButton.vue'
 
 const incomesStore = useIncomesStore()
 const expensesStore = useExpensesStore()

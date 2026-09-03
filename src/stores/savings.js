@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { savings as savingsApi } from '@/lib/api'
+import { fetchLiveExchangeRates } from '@/services/exchangeRateService'
 
 /** Solo para respaldo/migración cuando el usuario no está logueado o la API falla. */
 const STORAGE_KEY = 'mg_savings_records_v1'
+const CACHE_TTL_MS = 3 * 60 * 1000 // 3 minutes
 
 function toNumber(value) {
   const n = Number(value)
@@ -91,6 +93,8 @@ function legacyRowToCreateBody(r) {
 export const useSavingsStore = defineStore('savings', () => {
   const records = ref([])
   const lastLoadError = ref(null)
+  const lastFetchTime = ref(0)
+  const liveExchangeRates = ref(null)
 
   const sortedRecords = computed(() =>
     [...records.value].sort((a, b) => dateKey(b.date) - dateKey(a.date))
@@ -108,9 +112,20 @@ export const useSavingsStore = defineStore('savings', () => {
       .reduce((sum, r) => sum + toNumber(r.dollars), 0)
   )
 
+  async function fetchLiveRates(force = false) {
+    try {
+      const rates = await fetchLiveExchangeRates(force)
+      liveExchangeRates.value = rates
+      return rates
+    } catch (e) {
+      return null
+    }
+  }
+
   function reset() {
     records.value = []
     lastLoadError.value = null
+    lastFetchTime.value = 0
   }
 
   async function migrateLocalToServerIfNeeded() {
@@ -139,10 +154,18 @@ export const useSavingsStore = defineStore('savings', () => {
     }
   }
 
-  async function load() {
+  async function load(force = false) {
+    const now = Date.now()
+    if (!force && records.value.length > 0 && now - lastFetchTime.value < CACHE_TTL_MS) {
+      return { success: true, source: 'cache' }
+    }
+
     lastLoadError.value = null
+    fetchLiveRates() // Background update of live rates
+
     if (!hasAuthToken()) {
       records.value = loadFromLocalStorage()
+      lastFetchTime.value = now
       return { success: true, source: 'local' }
     }
     try {
@@ -151,6 +174,7 @@ export const useSavingsStore = defineStore('savings', () => {
         throw new Error(res?.error || 'Error al cargar ahorros')
       }
       records.value = (res.data || []).map(normalizeRecord)
+      lastFetchTime.value = now
       try {
         await migrateLocalToServerIfNeeded()
       } catch (e) {
@@ -545,6 +569,8 @@ export const useSavingsStore = defineStore('savings', () => {
     consumeFromSaving,
     getTotalSavedUntil,
     netSavedInMonth,
-    netSavedInYear
+    netSavedInYear,
+    liveExchangeRates,
+    fetchLiveRates
   }
 })

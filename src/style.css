@@ -63,12 +63,11 @@
   }
 
   .input-field {
-    @apply w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl
-           text-slate-900 placeholder-slate-400
-           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
+    @apply w-full px-4 py-2.5 bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl
+           text-slate-900 placeholder-slate-400 dark:text-gray-100 dark:placeholder-gray-500
+           focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
            transition-all duration-200 ease-out
-           hover:border-slate-300;
-    @apply dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-500 dark:hover:border-gray-500;
+           hover:border-slate-300 dark:hover:border-white/20;
   }
 
   /* Safari iOS: los controles nativos date/month/time tienen min-width intrínseco alto y rompen el layout.
@@ -82,53 +81,48 @@
   }
 
   .card {
-    @apply bg-white rounded-2xl shadow-soft border border-slate-100 p-6;
-    @apply dark:bg-gray-800 dark:border-gray-700 dark:shadow-none;
+    @apply bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl rounded-2xl shadow-soft dark:shadow-2xl border border-slate-200/60 dark:border-white/10 p-6 transition-all duration-200;
   }
 
   .card-interactive {
-    @apply bg-white rounded-2xl border border-slate-100 p-6 transition-all duration-200 ease-out;
-    @apply dark:bg-gray-800 dark:border-gray-700;
+    @apply bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl rounded-2xl border border-slate-200/60 dark:border-white/10 p-6 transition-all duration-300 ease-out;
   }
   .card-interactive:hover {
-    @apply shadow-soft-lg -translate-y-0.5;
+    @apply shadow-soft-lg -translate-y-1 border-primary-500/30 dark:border-primary-400/40;
   }
   .card-interactive:active {
     transform: scale(0.99);
   }
 
   .card-header {
-    @apply border-b border-slate-100 pb-4 mb-4;
-    @apply dark:border-gray-700;
+    @apply border-b border-slate-100/80 dark:border-white/10 pb-4 mb-4;
   }
 
   .card-title {
-    @apply text-lg font-bold text-slate-900;
-    @apply dark:text-gray-100;
+    @apply text-lg font-bold text-slate-900 dark:text-gray-100 tracking-tight;
   }
 
   .card-subtitle {
-    @apply text-sm text-slate-500 mt-0.5;
-    @apply dark:text-gray-400;
+    @apply text-sm text-slate-500 dark:text-gray-400 mt-0.5;
   }
 
   .badge {
-    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold;
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold backdrop-blur-md;
   }
 
   .badge-success {
-    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-success-50 text-success-700 ring-1 ring-inset ring-success-200;
-    @apply dark:bg-success-900/30 dark:text-success-300 dark:ring-success-700;
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50/90 text-emerald-700 ring-1 ring-inset ring-emerald-200/80;
+    @apply dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-500/30;
   }
 
   .badge-warning {
-    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-warning-50 text-warning-700 ring-1 ring-inset ring-warning-200;
-    @apply dark:bg-warning-900/30 dark:text-warning-300 dark:ring-warning-700;
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50/90 text-amber-700 ring-1 ring-inset ring-amber-200/80;
+    @apply dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-500/30;
   }
 
   .badge-danger {
-    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-danger-50 text-danger-700 ring-1 ring-inset ring-danger-200;
-    @apply dark:bg-danger-900/30 dark:text-danger-300 dark:ring-danger-700;
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-50/90 text-rose-700 ring-1 ring-inset ring-rose-200/80;
+    @apply dark:bg-rose-950/50 dark:text-rose-300 dark:ring-rose-500/30;
   }
 
   .action-btn {
@@ -147,6 +141,31 @@
     @apply bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_100%] animate-shimmer rounded-xl;
     @apply dark:from-gray-700 dark:via-gray-600 dark:to-gray-700;
   }
+
+  /* Fintech Glassmorphism & Mesh effects */
+  .glass-panel {
+    @apply bg-white/80 backdrop-blur-xl border border-white/60 shadow-soft;
+    @apply dark:bg-gray-800/80 dark:border-gray-700/60 dark:shadow-none;
+  }
+
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md rounded-2xl border border-slate-100/80 shadow-soft transition-all duration-300;
+    @apply dark:bg-gray-800/60 dark:border-white/10 dark:shadow-none;
+  }
+
+  .glass-card-hover {
+    @apply bg-white/70 backdrop-blur-md rounded-2xl border border-slate-100/80 shadow-soft transition-all duration-300;
+    @apply dark:bg-gray-800/60 dark:border-white/10 dark:shadow-none;
+    @apply hover:shadow-soft-lg hover:-translate-y-1 hover:border-primary-500/30 dark:hover:border-primary-400/30;
+  }
+
+  .glow-border-indigo {
+    @apply ring-1 ring-indigo-500/20 shadow-[0_0_15px_-3px_rgba(99,102,241,0.15)];
+  }
+
+  .glow-border-emerald {
+    @apply ring-1 ring-emerald-500/20 shadow-[0_0_15px_-3px_rgba(16,185,129,0.15)];
+  }
 }
 
 /* PWA safe area */
@@ -160,6 +179,7 @@
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -174,10 +194,17 @@
   @apply bg-slate-400;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-gray-700;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-600;
+}
+
 /* Modal transitions */
 .modal-enter-active,
 .modal-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-enter-from,
@@ -187,17 +214,28 @@
 
 .modal-enter-active .modal-content,
 .modal-leave-active .modal-content {
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
 }
 
 .modal-enter-from .modal-content {
-  transform: scale(0.95) translateY(10px);
+  transform: scale(0.96) translateY(8px);
   opacity: 0;
 }
 
 .modal-leave-to .modal-content {
-  transform: scale(0.95);
+  transform: scale(0.96);
   opacity: 0;
+}
+
+/* Command palette transitions */
+.command-enter-active,
+.command-leave-active {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.command-enter-from,
+.command-leave-to {
+  opacity: 0;
+  transform: scale(0.97) translateY(-10px);
 }
 
 /* Checkbox styles */
@@ -258,10 +296,34 @@ input[type="checkbox"] {
 /* Glow pulse for hero card */
 @keyframes glowPulse {
   0%, 100% { box-shadow: 0 0 20px -5px rgba(99, 102, 241, 0.3); }
-  50% { box-shadow: 0 0 30px -3px rgba(99, 102, 241, 0.5); }
+  50% { box-shadow: 0 0 35px -2px rgba(99, 102, 241, 0.55); }
 }
 .animate-glow-pulse {
   animation: glowPulse 3s ease-in-out infinite;
+}
+
+/* Stagger item entrance */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Shimmer pulse for progress */
+@keyframes progressShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.animate-progress-shimmer {
+  animation: progressShimmer 2s infinite ease-in-out;
 }
 
 /* Spinner animation for loading buttons */
@@ -277,6 +339,7 @@ input[type="checkbox"] {
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
+
 
 /* prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {

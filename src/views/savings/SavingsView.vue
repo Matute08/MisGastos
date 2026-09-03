@@ -176,8 +176,8 @@ import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Trash2, PiggyBank, ArrowDownCircle, TrendingUp, TrendingDown, Pencil, ArrowUpFromLine } from 'lucide-vue-next'
 import { useSavingsStore } from '@/stores/savings'
-import EmptyState from '@/components/EmptyState.vue'
-import SavingsModal from '@/components/SavingsModal.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import SavingsModal from '@/views/savings/components/SavingsModal.vue'
 
 const savingsStore = useSavingsStore()
 

@@ -244,8 +244,8 @@ import {
 } from 'lucide-vue-next'
 import { format, parseISO, addMonths, subMonths, startOfMonth, endOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
-import SkeletonSummary from '@/components/SkeletonSummary.vue'
-import SkeletonList from '@/components/SkeletonList.vue'
+import SkeletonSummary from '@/components/skeletons/SkeletonSummary.vue'
+import SkeletonList from '@/components/skeletons/SkeletonList.vue'
 
 const expensesStore = useExpensesStore()
 const cardsStore = useCardsStore()

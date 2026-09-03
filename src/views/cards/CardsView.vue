@@ -414,8 +414,8 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useUserCardsStore } from '@/stores/userCards'
 import { useAvailableCardsStore } from '@/stores/availableCards'
 import Swal from 'sweetalert2'
-import SkeletonGrid from '@/components/SkeletonGrid.vue'
-import EmptyState from '@/components/EmptyState.vue'
+import SkeletonGrid from '@/components/skeletons/SkeletonGrid.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import {
   CreditCard,
   Plus,

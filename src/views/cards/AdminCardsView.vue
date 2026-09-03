@@ -147,7 +147,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useAvailableCardsStore } from '@/stores/availableCards'
 import { useAuthStore } from '@/stores/auth'
-import AvailableCardModal from '@/components/AvailableCardModal.vue'
+import AvailableCardModal from '@/views/cards/components/AvailableCardModal.vue'
 import Swal from 'sweetalert2'
 import {
   CreditCard,

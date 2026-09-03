@@ -2,35 +2,53 @@
   <!-- Desktop Sidebar (lg+) -->
   <aside
     v-if="authStore.isAuthenticated && authStore.isAuthReady"
-    class="hidden lg:flex lg:flex-col fixed inset-y-0 left-0 w-60 bg-white dark:bg-gray-800 border-r border-gray-200/80 dark:border-gray-700/80 z-40"
+    class="hidden lg:flex lg:flex-col fixed inset-y-0 left-0 w-60 bg-white/85 dark:bg-slate-900/80 backdrop-blur-2xl border-r border-slate-200/60 dark:border-white/10 z-40 transition-colors duration-300 shadow-xl dark:shadow-none"
   >
     <!-- Logo -->
-    <div class="flex items-center justify-between px-6 h-16 border-b border-gray-100 dark:border-gray-700">
+    <div class="flex items-center justify-between px-6 h-16 border-b border-slate-100 dark:border-white/10">
       <div class="flex items-center gap-3">
-        <img src="/miwalletlogo.png" alt="MisGastos" class="h-9 w-7" />
-        <span class="text-lg font-bold tracking-tight text-gray-900 dark:text-gray-100">MisGastos</span>
+        <img src="/miwalletlogo.png" alt="MisGastos" class="h-9 w-7 drop-shadow-sm" />
+        <span class="text-lg font-bold tracking-tight text-slate-900 dark:text-gray-100">MisGastos</span>
       </div>
       <DarkModeToggle />
     </div>
 
+    <!-- Quick Command Palette Button -->
+    <div class="px-3 pt-3">
+      <button
+        @click="openCommandPalette"
+        type="button"
+        class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-500 dark:text-gray-400 bg-slate-100/90 dark:bg-slate-800/60 hover:bg-slate-200/80 dark:hover:bg-slate-800 transition-all border border-slate-200/60 dark:border-white/10 shadow-xs group"
+        title="Abrir paleta de comandos (Ctrl + K)"
+      >
+        <span class="flex items-center gap-2">
+          <Search class="h-3.5 w-3.5 text-slate-400 dark:text-gray-500 group-hover:text-primary-500 transition-colors" />
+          <span>Buscar o comando...</span>
+        </span>
+        <kbd class="px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 dark:text-gray-400 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-white/10 shadow-xs">
+          ⌘K
+        </kbd>
+      </button>
+    </div>
+
     <!-- Nav Items -->
-    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+    <nav class="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
       <router-link
         v-for="item in sidebarItems"
         :key="item.name"
         :to="item.path"
         :class="[
-          'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+          'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
           isActive(item.name)
-            ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 border-l-[3px] border-primary-600 pl-[9px]'
-            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
+            ? 'bg-primary-500/10 dark:bg-primary-500/20 text-primary-600 dark:text-primary-300 font-semibold ring-1 ring-primary-500/30 shadow-xs'
+            : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100/70 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-gray-100'
         ]"
       >
         <component
           :is="item.icon"
           :class="[
             'h-5 w-5 shrink-0 transition-colors duration-200',
-            isActive(item.name) ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'
+            isActive(item.name) ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400 dark:text-gray-500 group-hover:text-slate-600 dark:group-hover:text-gray-300'
           ]"
         />
         {{ item.label }}
@@ -115,7 +133,7 @@
   <!-- Mobile Bottom Navigation (< lg) -->
   <nav
     v-if="authStore.isAuthenticated && authStore.isAuthReady"
-    class="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-gray-800 border-t border-gray-200/80 dark:border-gray-700/80 shadow-[0_-2px_10px_-3px_rgba(0,0,0,0.06)] dark:shadow-none z-50"
+    class="lg:hidden fixed bottom-0 inset-x-0 bg-white/85 dark:bg-slate-900/85 backdrop-blur-2xl border-t border-slate-200/60 dark:border-white/10 shadow-2xl z-50 transition-colors duration-300"
   >
     <Transition
       enter-active-class="transition ease-out duration-150"
@@ -255,7 +273,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTheme } from '@/composables/useTheme'
-import DarkModeToggle from '@/components/DarkModeToggle.vue'
+import DarkModeToggle from '@/components/ui/DarkModeToggle.vue'
 import {
   BarChart3,
   Activity,
@@ -268,13 +286,18 @@ import {
   ChevronDown,
   LogOut,
   Sun,
-  Moon
+  Moon,
+  Search
 } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const { isDark, toggleTheme } = useTheme()
+
+const openCommandPalette = () => {
+  window.dispatchEvent(new CustomEvent('open:command-palette'))
+}
 
 const showUserMenu = ref(false)
 const userMenuRef = ref(null)

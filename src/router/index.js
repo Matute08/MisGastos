@@ -9,73 +9,73 @@ const routes = [
   {
     path: '/login',
     name: 'login',
-    component: () => import('@/views/LoginView.vue'),
+    component: () => import('@/views/auth/LoginView.vue'),
     meta: { requiresGuest: true }
   },
   {
     path: '/register',
     name: 'register',
-    component: () => import('@/views/RegisterView.vue'),
+    component: () => import('@/views/auth/RegisterView.vue'),
     meta: { requiresGuest: true }
   },
   {
     path: '/dashboard',
     name: 'dashboard',
-    component: () => import('@/views/DashboardView.vue'),
+    component: () => import('@/views/dashboard/DashboardView.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/activity',
     name: 'activity',
-    component: () => import('@/views/ActivityView.vue'),
+    component: () => import('@/views/activity/ActivityView.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/cuentas',
     name: 'cuentas',
-    component: () => import('@/views/CardsView.vue'),
+    component: () => import('@/views/cards/CardsView.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/admin/cuentas',
     name: 'admin-cuentas',
-    component: () => import('@/views/AdminCardsView.vue'),
+    component: () => import('@/views/cards/AdminCardsView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
     path: '/expenses',
     name: 'expenses',
-    component: () => import('@/views/ExpensesView.vue'),
+    component: () => import('@/views/expenses/ExpensesView.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/incomes',
     name: 'incomes',
-    component: () => import('@/views/IncomesView.vue'),
+    component: () => import('@/views/incomes/IncomesView.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/savings',
     name: 'savings',
-    component: () => import('@/views/SavingsView.vue'),
+    component: () => import('@/views/savings/SavingsView.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/categories',
     name: 'categories',
-    component: () => import('@/views/CategoriesView.vue'),
+    component: () => import('@/views/categories/CategoriesView.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/monthly',
     name: 'monthly',
-    component: () => import('@/views/MonthlyView.vue'),
+    component: () => import('@/views/monthly/MonthlyView.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/perfil',
     name: 'perfil',
-    component: () => import('@/views/ProfileView.vue'),
+    component: () => import('@/views/auth/ProfileView.vue'),
     meta: { requiresAuth: true }
   }
 ]

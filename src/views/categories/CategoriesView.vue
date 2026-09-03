@@ -78,14 +78,48 @@
                         {{ category.name }}
                     </h3>
 
-                    <!-- Badge de subcategorías -->
-                    <span
-                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-400"
-                    >
-                        <Folder class="h-3 w-3" />
-                        {{ getSubcategoriesForCategory(category.id).length }}
-                        {{ getSubcategoriesForCategory(category.id).length === 1 ? 'sub' : 'subs' }}
-                    </span>
+                    <!-- Badge de subcategorías y Presupuesto -->
+                    <div class="flex flex-col items-center gap-1.5 w-full mt-1">
+                        <span
+                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-400"
+                        >
+                            <Folder class="h-3 w-3" />
+                            {{ getSubcategoriesForCategory(category.id).length }}
+                            {{ getSubcategoriesForCategory(category.id).length === 1 ? 'sub' : 'subs' }}
+                        </span>
+
+                        <!-- Budget Bar if defined -->
+                        <div
+                            v-if="categoriesStore.getCategoryBudget(category.id) > 0"
+                            class="w-full mt-2 pt-2 border-t border-slate-100 dark:border-white/10"
+                            @click.stop="openBudgetModal(category)"
+                        >
+                            <div class="flex items-center justify-between text-[11px] font-bold mb-1">
+                                <span class="text-slate-400">Presupuesto</span>
+                                <span class="text-slate-700 dark:text-gray-300">
+                                    {{ formatCurrency(categoriesStore.getCategoryBudget(category.id)) }}
+                                </span>
+                            </div>
+                            <div class="h-1.5 w-full bg-slate-100 dark:bg-slate-700/80 rounded-full overflow-hidden">
+                                <div
+                                    class="h-full rounded-full transition-all duration-300"
+                                    :class="getCategoryBudgetBarClass(category.id)"
+                                    :style="{ width: `${getCategoryBudgetProgress(category.id)}%` }"
+                                ></div>
+                            </div>
+                        </div>
+
+                        <!-- Add budget button if not set -->
+                        <button
+                            v-else
+                            type="button"
+                            @click.stop="openBudgetModal(category)"
+                            class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-primary-600 dark:text-primary-400 hover:underline"
+                        >
+                            <Target class="h-3 w-3" />
+                            + Presupuesto
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Botón de acciones admin -->
@@ -283,12 +317,23 @@
         />
 
         <!-- Modal para agregar/editar subcategoría -->
+        <!-- Modal para agregar/editar subcategoría -->
         <SubcategoryModal
             v-if="showSubcategoryModal"
             :subcategory="editingSubcategory"
             :selected-category="selectedCategoryForSubcategory"
             @close="closeSubcategoryModal"
             @save="saveSubcategory"
+        />
+
+        <!-- Modal para configurar presupuesto -->
+        <BudgetModal
+            v-if="showBudgetModal"
+            :category="selectedCategoryForBudget"
+            :current-budget="categoriesStore.getCategoryBudget(selectedCategoryForBudget?.id)"
+            @close="showBudgetModal = false"
+            @save="saveCategoryBudget"
+            @remove="removeCategoryBudget"
         />
     </div>
 </template>
@@ -299,10 +344,11 @@ import { useCategoriesStore } from "@/stores/categories";
 import { useSubcategoriesStore } from "@/stores/subcategories";
 import { useExpensesStore } from "@/stores/expenses";
 import { useAuthStore } from "@/stores/auth";
-import CategoryModal from "@/components/CategoryModal.vue";
-import SubcategoryModal from "@/components/SubcategoryModal.vue";
+import CategoryModal from "@/views/categories/components/CategoryModal.vue";
+import SubcategoryModal from "@/views/categories/components/SubcategoryModal.vue";
+import BudgetModal from "@/views/categories/components/BudgetModal.vue";
 import Swal from "sweetalert2";
-import SkeletonGrid from "@/components/SkeletonGrid.vue";
+import SkeletonGrid from "@/components/skeletons/SkeletonGrid.vue";
 import "sweetalert2/dist/sweetalert2.min.css";
 import {
     Tag,
@@ -316,6 +362,7 @@ import {
     ChevronUp,
     Folder,
     X,
+    Target,
     UtensilsCrossed,
     Car,
     Gamepad2,
@@ -734,6 +781,55 @@ const formatCurrency = (amount) => {
     }).format(amount);
 };
 
+// Budget Management
+const showBudgetModal = ref(false);
+const selectedCategoryForBudget = ref(null);
+
+const openBudgetModal = (category) => {
+    selectedCategoryForBudget.value = category;
+    showBudgetModal.value = true;
+};
+
+const saveCategoryBudget = ({ categoryId, amount }) => {
+    categoriesStore.setCategoryBudget(categoryId, amount);
+    showBudgetModal.value = false;
+    Swal.fire({
+        icon: 'success',
+        title: 'Presupuesto Guardado',
+        text: `Se estableció el límite mensual para ${selectedCategoryForBudget.value?.name || 'la categoría'}.`,
+        timer: 1800,
+        showConfirmButton: false
+    });
+};
+
+const removeCategoryBudget = (categoryId) => {
+    categoriesStore.setCategoryBudget(categoryId, 0);
+    showBudgetModal.value = false;
+    Swal.fire({
+        icon: 'info',
+        title: 'Presupuesto Eliminado',
+        text: 'Se quitó el límite mensual.',
+        timer: 1800,
+        showConfirmButton: false
+    });
+};
+
+const getCategoryBudgetProgress = (categoryId) => {
+    const totalSpent = getCategoryTotal(categoryId);
+    const status = categoriesStore.getCategoryBudgetStatus(categoryId, totalSpent);
+    if (!status) return 0;
+    return status.percentage;
+};
+
+const getCategoryBudgetBarClass = (categoryId) => {
+    const totalSpent = getCategoryTotal(categoryId);
+    const status = categoriesStore.getCategoryBudgetStatus(categoryId, totalSpent);
+    if (!status) return 'bg-emerald-500';
+    if (status.status === 'danger') return 'bg-rose-500';
+    if (status.status === 'warning') return 'bg-amber-500';
+    return 'bg-emerald-500';
+};
+
 onMounted(() => {
     document.addEventListener("click", (e) => {
         const isOutsideCategoryMenu = !e.target.closest("[data-category-menu]");
@@ -760,3 +856,4 @@ function isPermisoError(error) {
     );
 }
 </script>
+

@@ -3,10 +3,13 @@ import { ref, computed } from 'vue'
 import { availableCards as availableCardsApi } from '@/lib/api'
 import { useAuthStore } from './auth'
 
+const CACHE_TTL_MS = 3 * 60 * 1000 // 3 minutes
+
 export const useAvailableCardsStore = defineStore('availableCards', () => {
   const availableCards = ref([])
   const loading = ref(false)
   const error = ref(null)
+  const lastFetchTime = ref(0)
   
   const authStore = useAuthStore()
 
@@ -18,16 +21,16 @@ export const useAvailableCardsStore = defineStore('availableCards', () => {
     availableCards.value.filter(card => card.type === 'Débito')
   )
 
-  // Nuevo: Obtener tarjetas disponibles ordenadas por banco
+  // Obtener tarjetas disponibles ordenadas por banco
   const sortedAvailableCardsByBank = computed(() => {
     return [...availableCards.value].sort((a, b) => {
-      const bankA = a.bank || 'ZZZ' // 'ZZZ' para que 'Sin banco' vaya al final
+      const bankA = a.bank || 'ZZZ'
       const bankB = b.bank || 'ZZZ'
       return bankA.localeCompare(bankB)
     })
   })
 
-  // Nuevo: Obtener lista única de bancos ordenados
+  // Obtener lista única de bancos ordenados
   const uniqueBanks = computed(() => {
     const banks = [...new Set(availableCards.value.map(card => card.bank || 'Sin banco'))]
     return banks.sort((a, b) => {
@@ -37,8 +40,13 @@ export const useAvailableCardsStore = defineStore('availableCards', () => {
     })
   })
 
-  // Cargar todas las tarjetas disponibles
-  const loadAvailableCards = async () => {
+  // Cargar todas las tarjetas disponibles con caché TTL
+  const loadAvailableCards = async (force = false) => {
+    const now = Date.now()
+    if (!force && availableCards.value.length > 0 && now - lastFetchTime.value < CACHE_TTL_MS) {
+      return { success: true, data: availableCards.value, fromCache: true }
+    }
+
     loading.value = true
     error.value = null
     
@@ -51,6 +59,7 @@ export const useAvailableCardsStore = defineStore('availableCards', () => {
       }
       
       availableCards.value = response.data || []
+      lastFetchTime.value = now
       return { success: true, data: response.data }
     } catch (err) {
       console.error('🔍 Debug - Error en loadAvailableCards:', err)
@@ -84,6 +93,7 @@ export const useAvailableCardsStore = defineStore('availableCards', () => {
       }
       
       availableCards.value.unshift(response.data)
+      lastFetchTime.value = Date.now()
       return { success: true, data: response.data }
     } catch (err) {
       console.error('🔍 Debug - Error en createAvailableCard:', err)
@@ -115,7 +125,7 @@ export const useAvailableCardsStore = defineStore('availableCards', () => {
       if (index !== -1) {
         availableCards.value[index] = data
       }
-      
+      lastFetchTime.value = Date.now()
       return { success: true, data: data }
     } catch (err) {
       error.value = err.message
@@ -143,6 +153,7 @@ export const useAvailableCardsStore = defineStore('availableCards', () => {
       }
       
       availableCards.value = availableCards.value.filter(card => card.id !== id)
+      lastFetchTime.value = Date.now()
       return { success: true }
     } catch (err) {
       error.value = err.message

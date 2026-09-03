@@ -1,12 +1,27 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { AuthService } from '../services/authService.js';
 import { validateLogin, validateRegister, authenticateToken } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
 
+// Rate limiter específico para endpoints de login y registro (protección anti fuerza bruta amigable)
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000, // Ventana de 1 minuto
+  max: 10, // Máximo 10 intentos fallidos por IP
+  skipSuccessfulRequests: true, // Si el login tiene éxito, no cuenta
+  message: {
+    success: false,
+    error: 'Demasiados intentos fallidos. Por favor espera 1 minuto antes de reintentar.',
+    code: 'AUTH_RATE_LIMIT_EXCEEDED'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // POST /api/auth/register
-router.post('/register', validateRegister, async (req, res) => {
+router.post('/register', authLimiter, validateRegister, async (req, res) => {
   try {
     const { email, password, nombre_perfil } = req.body;
 
@@ -27,7 +42,7 @@ router.post('/register', validateRegister, async (req, res) => {
 });
 
 // POST /api/auth/login
-router.post('/login', validateLogin, async (req, res) => {
+router.post('/login', authLimiter, validateLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -39,6 +54,29 @@ router.post('/login', validateLogin, async (req, res) => {
     res.status(401).json({
       success: false,
       error: error.message
+    });
+  }
+});
+
+// POST /api/auth/logout - Revocar token actual
+router.post('/logout', authenticateToken, async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (token) {
+      await AuthService.revokeToken(token);
+    }
+
+    res.json({
+      success: true,
+      message: 'Sesión cerrada y token revocado correctamente'
+    });
+  } catch (error) {
+    logger.error('Error en logout:', { error: error.message, userId: req.user?.id });
+    res.status(500).json({
+      success: false,
+      error: 'Error al cerrar sesión'
     });
   }
 });
