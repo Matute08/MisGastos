@@ -240,8 +240,15 @@ export const useExpensesStore = defineStore('expenses', () => {
       const newExpense = response.data
       expenses.value.unshift(newExpense)
       
-      // Recargar gastos para obtener los datos actualizados con cuotas
-      await loadExpenses()
+      const now = new Date()
+      await Promise.allSettled([
+        loadExpenses(),
+        loadUpcomingInstallments(1000),
+        loadMonthlyTotals(now.getMonth() + 1, now.getFullYear())
+      ])
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('expenses-updated'))
+      }
       
       return { success: true, data: newExpense }
     } catch (err) {
@@ -270,6 +277,15 @@ export const useExpensesStore = defineStore('expenses', () => {
       if (index !== -1) {
         expenses.value[index] = response.data
       }
+
+      const now = new Date()
+      await Promise.allSettled([
+        loadUpcomingInstallments(1000),
+        loadMonthlyTotals(now.getMonth() + 1, now.getFullYear())
+      ])
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('expenses-updated'))
+      }
       
       return { success: true, data: response.data }
     } catch (err) {
@@ -294,6 +310,16 @@ export const useExpensesStore = defineStore('expenses', () => {
       }
       
       expenses.value = expenses.value.filter(expense => expense.id !== id)
+
+      const now = new Date()
+      await Promise.allSettled([
+        loadUpcomingInstallments(1000),
+        loadMonthlyTotals(now.getMonth() + 1, now.getFullYear())
+      ])
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('expenses-updated'))
+      }
+
       return { success: true, message: response.message }
     } catch (err) {
       error.value = err.message
@@ -321,6 +347,15 @@ export const useExpensesStore = defineStore('expenses', () => {
       const index = expenses.value.findIndex(expense => expense.id === id)
       if (index !== -1 && updated) {
         expenses.value[index] = Array.isArray(updated) ? updated[0] : updated
+      }
+
+      const now = new Date()
+      await Promise.allSettled([
+        loadUpcomingInstallments(1000),
+        loadMonthlyTotals(now.getMonth() + 1, now.getFullYear())
+      ])
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('expenses-updated'))
       }
       
       return { success: true, data: Array.isArray(updated) ? updated[0] : updated }
@@ -396,7 +431,15 @@ export const useExpensesStore = defineStore('expenses', () => {
         error.value = msg
         return { success: false, error: msg }
       }
-      
+      const now = new Date()
+      await Promise.allSettled([
+        loadUpcomingInstallments(1000),
+        loadMonthlyTotals(now.getMonth() + 1, now.getFullYear())
+      ])
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('expenses-updated'))
+      }
+
       return { success: true, data: response.data }
     } catch (err) {
       error.value = err.message

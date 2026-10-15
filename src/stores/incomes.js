@@ -60,6 +60,9 @@ export const useIncomesStore = defineStore('incomes', () => {
     try {
       const result = await incomesApi.createIncome(data)
       incomes.value.unshift(result.data)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('incomes-updated'))
+      }
       return result
     } catch (err) {
       error.value = err.message
@@ -72,6 +75,9 @@ export const useIncomesStore = defineStore('incomes', () => {
       const result = await incomesApi.updateIncome(id, data)
       const idx = incomes.value.findIndex(i => i.id === id)
       if (idx !== -1) incomes.value[idx] = result.data
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('incomes-updated'))
+      }
       return result
     } catch (err) {
       error.value = err.message
@@ -83,6 +89,9 @@ export const useIncomesStore = defineStore('incomes', () => {
     try {
       await incomesApi.deleteIncome(id)
       incomes.value = incomes.value.filter(i => i.id !== id)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('incomes-updated'))
+      }
     } catch (err) {
       error.value = err.message
       throw err

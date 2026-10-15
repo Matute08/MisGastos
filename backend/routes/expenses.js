@@ -392,9 +392,8 @@ router.get('/upcoming-installments',
   queryValidators.limit,
   handleValidationErrors,
   async (req, res) => {
+    const limit = req.query.limit || 100;
     try {
-      const limit = req.query.limit || 100;
-
       const result = await ExpensesService.getUpcomingInstallments(req.user.id, limit);
 
       res.json(result);

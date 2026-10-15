@@ -117,6 +117,8 @@
                 :total-pages-desktop="totalPagesDesktop"
                 :current-page-desktop="currentPageDesktop"
                 :visible-pages-desktop="visiblePagesDesktop"
+                :sort-field="sortField"
+                :sort-order="sortOrder"
                 :get-expense-row-key="getExpenseRowKey"
                 :get-category-icon="getCategoryIcon"
                 :format-currency="formatCurrency"
@@ -134,6 +136,7 @@
                 @previous-page-desktop="previousPageDesktop"
                 @next-page-desktop="nextPageDesktop"
                 @go-to-page-desktop="goToPageDesktop"
+                @sort="handleSort"
             />
 
             <!-- Vista Móvil: Lista de tarjetas de gastos -->
@@ -333,7 +336,7 @@ const filteredExpensesToShow = computed(() => {
     const _key = tableKey.value;
     const allData = expensesStore.filteredExpensesWithInstallments;
     
-    if (!allData || allData.length === 0 || expensesStore.loading) {
+    if (!allData || allData.length === 0) {
         return [];
     }
 
@@ -374,7 +377,7 @@ const {
     paymentStatusMap,
     loadDataCallback: async () => {
         if (filters.value && filters.value.year) {
-            await loadMonthlyData();
+            await loadMonthlyData(true);
         } else {
             await expensesStore.loadExpenses();
         }
@@ -499,11 +502,13 @@ const updateFilters = () => {
     }
 };
 
-const loadMonthlyData = async () => {
+const loadMonthlyData = async (silent = false) => {
     if (filters.value && filters.value.month && filters.value.year) {
-        expensesStore.clearMonthlyData();
-        await new Promise(resolve => setTimeout(resolve, 10));
-        forceTableUpdate();
+        if (!silent) {
+            expensesStore.clearMonthlyData();
+            await new Promise(resolve => setTimeout(resolve, 10));
+            forceTableUpdate();
+        }
         
         const backendFilters = {
             card_id: filters.value.card_id && filters.value.card_id !== 'null' ? filters.value.card_id : null,
@@ -666,7 +671,7 @@ const handleDeleteConfirm = async () => {
         const deleteResult = await expensesStore.deleteExpense(id);
         if (deleteResult.success) {
             if (filters.value && filters.value.year) {
-                await loadMonthlyData();
+                await loadMonthlyData(true);
             } else {
                 await expensesStore.loadExpenses();
             }
@@ -684,21 +689,48 @@ const openPaymentStatusModal = async (item) => {
     const currentStatusId = Number(item?.payment_status_id) || 1;
     const currentStatusCode = paymentStatusMap[currentStatusId]?.code || "pendiente";
     
+    const isInstallment = item?.is_installment === true;
+    const desc = item?.description || item?.expenses?.description || (isInstallment ? 'Cuota' : 'Gasto');
+    const subtitle = isInstallment && item?.installment_number
+        ? `Cuota ${item.installment_number} de ${item.expenses?.installments_count || item.total_installments || '?'}`
+        : (item?.available_cards?.name || item?.expenses?.available_cards?.name || '');
+    const amountVal = item?.is_installment ? (item?.installment_amount ?? item?.amount) : item?.amount;
+
     const { isConfirmed, value: selectedStatusId } = await Swal.fire({
         title: "Actualizar estado",
-        html: `...`,
+        html: `
+            <div style="text-align: left; font-family: inherit; font-size: 0.95rem;">
+                <div style="padding: 12px; background: #f8fafc; border-radius: 10px; margin-bottom: 16px; border: 1px solid #e2e8f0;">
+                    <div style="font-weight: 700; color: #1e293b; font-size: 1rem; margin-bottom: 2px;">${desc}</div>
+                    ${subtitle ? `<div style="font-size: 0.8rem; color: #64748b; margin-bottom: 6px;">${subtitle}</div>` : ''}
+                    <div style="font-weight: 700; color: #4f46e5; font-size: 1.15rem;">${formatCurrency(amountVal || 0)}</div>
+                </div>
+                <div>
+                    <label for="swal-payment-status-select" style="display: block; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; margin-bottom: 6px;">
+                        Seleccionar estado
+                    </label>
+                    <select id="swal-payment-status-select" style="width: 100%; padding: 10px 12px; font-size: 0.95rem; border: 1.5px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: #1e293b; outline: none; cursor: pointer;">
+                        <option value="1" ${currentStatusId === 1 ? 'selected' : ''}>⏳ Pendiente</option>
+                        <option value="2" ${currentStatusId === 2 ? 'selected' : ''}>✅ Pagada</option>
+                        <option value="3" ${currentStatusId === 3 ? 'selected' : ''}>⚠️ En deuda</option>
+                    </select>
+                </div>
+            </div>
+        `,
         showCancelButton: true,
         confirmButtonText: "Guardar estado",
         cancelButtonText: "Cancelar",
+        confirmButtonColor: "#4f46e5",
+        cancelButtonColor: "#64748b",
+        focusConfirm: false,
         preConfirm: () => {
-            const selected = document.querySelector('input[name="payment-status-option"]:checked');
-            return selected ? Number(selected.value) : null;
+            const select = document.getElementById('swal-payment-status-select');
+            return select ? Number(select.value) : null;
         },
     });
 
     if (!isConfirmed || !selectedStatusId) return;
     
-    const isInstallment = item.is_installment === true;
     const targetId = isInstallment ? (item.installment_id ?? item.id) : item.id;
     
     const result = isInstallment
@@ -706,13 +738,29 @@ const openPaymentStatusModal = async (item) => {
         : await expensesStore.markAsPaid(targetId, selectedStatusId);
 
     if (result?.success) {
+        item.payment_status_id = selectedStatusId;
+        if (item.payment_status) {
+            item.payment_status.id = selectedStatusId;
+            item.payment_status.code = paymentStatusMap[selectedStatusId]?.code || "pendiente";
+            item.payment_status.label = paymentStatusMap[selectedStatusId]?.label || "Pendiente";
+        }
+
         if (selectedStatusId === 2) {
             fireConfetti({ count: 50 });
         }
-        if (filters.value?.month && filters.value?.year) await loadMonthlyData();
-        else await expensesStore.loadExpenses();
+        Swal.fire({
+            icon: "success",
+            title: "Estado actualizado",
+            timer: 1600,
+            showConfirmButton: false,
+        });
+
+        if (filters.value?.month && filters.value?.year) {
+            await loadMonthlyData(true);
+        } else {
+            await expensesStore.loadExpenses();
+        }
         await expensesStore.loadUpcomingInstallments(1000);
-        Swal.fire({ icon: "success", title: "Estado actualizado", timer: 1800, showConfirmButton: false });
     }
 };
 
@@ -723,10 +771,12 @@ const openNewExpenseModal = async () => {
         const result = await Swal.fire({
             icon: 'warning',
             title: 'Sin tarjetas asociadas',
-            html: `...`,
+            text: 'Para poder registrar gastos, necesitás tener al menos una tarjeta o cuenta asociada.',
             showCancelButton: true,
             confirmButtonText: 'Ir a Cuentas',
             cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#64748b',
         });
         if (result.isConfirmed) router.push('/cuentas');
         return;
@@ -775,7 +825,7 @@ const saveExpense = async (expenseData) => {
             result = await expensesStore.createExpense(expenseData);
         }
         if (result.success) {
-            if (filters.value && filters.value.year) await loadMonthlyData();
+            if (filters.value && filters.value.year) await loadMonthlyData(true);
             else await expensesStore.loadExpenses();
             Swal.fire({ icon: "success", title: "¡Gasto guardado!" });
             closeModal();
@@ -787,7 +837,7 @@ const saveExpense = async (expenseData) => {
 
 const saveScheduledExpense = async (result) => {
     if (result.success) {
-        if (filters.value && filters.value.year) await loadMonthlyData();
+        if (filters.value && filters.value.year) await loadMonthlyData(true);
         else await expensesStore.loadExpenses();
         Swal.fire({ icon: "success", title: "¡Gasto programado creado!" });
         closeScheduledModal();
@@ -926,8 +976,84 @@ const expenseCsvColumns = [
     { key: 'status', label: 'Estado' }
 ];
 
+const sortField = ref('date');
+const sortOrder = ref('desc');
+
+const handleSort = (field) => {
+    if (sortField.value === field) {
+        sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortField.value = field;
+        sortOrder.value = (field === 'date' || field === 'amount') ? 'desc' : 'asc';
+    }
+    currentPageDesktop.value = 1;
+    currentPage.value = 1;
+};
+
+const getItemSortValue = (item, field) => {
+    if (!item) return '';
+    switch (field) {
+        case 'type':
+            return item.is_installment ? 'cuota' : item.is_scheduled ? 'programado' : 'gasto';
+        case 'description':
+            return (item.description || item.expenses?.description || '').toLowerCase();
+        case 'card':
+            return (item.expenses?.available_cards?.name || item.available_cards?.name || '').toLowerCase();
+        case 'category':
+            return (item.categories?.name || item.expenses?.categories?.name || '').toLowerCase();
+        case 'amount': {
+            const raw = item.is_installment ? (item.installment_amount ?? item.amount) : item.amount;
+            const n = Number(raw);
+            return Number.isFinite(n) ? n : 0;
+        }
+        case 'date': {
+            const dateStr = item.is_installment ? item.due_date : item.purchase_date;
+            return dateStr ? new Date(dateStr).getTime() : 0;
+        }
+        case 'status': {
+            return (getStatusLabel(item) || '').toLowerCase();
+        }
+        default:
+            return '';
+    }
+};
+
+const compareExpenses = (a, b) => {
+    const valA = getItemSortValue(a, sortField.value);
+    const valB = getItemSortValue(b, sortField.value);
+
+    let comparison = 0;
+    if (typeof valA === 'number' && typeof valB === 'number') {
+        comparison = valA - valB;
+    } else {
+        comparison = String(valA).localeCompare(String(valB), 'es', { numeric: true, sensitivity: 'base' });
+    }
+
+    if (comparison !== 0) {
+        return sortOrder.value === 'asc' ? comparison : -comparison;
+    }
+
+    // Tie-breaker
+    if (sortField.value !== 'date') {
+        const dateA = new Date(a.is_installment ? a.due_date : a.purchase_date || 0).getTime();
+        const dateB = new Date(b.is_installment ? b.due_date : b.purchase_date || 0).getTime();
+        if (dateB !== dateA) return dateB - dateA;
+    }
+    return (a.id || 0) - (b.id || 0);
+};
+
+const sortedExpenses = computed(() => {
+    const list = [...searchedExpenses.value];
+    return list.sort(compareExpenses);
+});
+
+const sortedDirectExpenses = computed(() => {
+    const list = [...searchedDirectExpenses.value];
+    return list.sort(compareExpenses);
+});
+
 const exportableExpenses = computed(() => {
-    return searchedExpenses.value.map(e => ({
+    return sortedExpenses.value.map(e => ({
         description: e.description || '',
         amount: e.is_installment ? (e.installment_amount ?? e.amount) : e.amount,
         date: e.is_installment ? (e.due_date || '') : (e.purchase_date || ''),
@@ -950,15 +1076,15 @@ const currentPage = ref(1);
 
 const paginatedExpenses = computed(() => {
     const start = (currentPage.value - 1) * itemsPerPage;
-    return searchedExpenses.value.slice(start, start + itemsPerPage);
+    return sortedExpenses.value.slice(start, start + itemsPerPage);
 });
 
 const paginatedDirectExpenses = computed(() => {
     const start = (currentPage.value - 1) * itemsPerPage;
-    return searchedDirectExpenses.value.slice(start, start + itemsPerPage);
+    return sortedDirectExpenses.value.slice(start, start + itemsPerPage);
 });
 
-const totalPages = computed(() => Math.ceil(searchedExpenses.value.length / itemsPerPage));
+const totalPages = computed(() => Math.ceil(sortedExpenses.value.length / itemsPerPage));
 
 const previousPage = () => { if (currentPage.value > 1) currentPage.value--; };
 const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
@@ -968,15 +1094,15 @@ const currentPageDesktop = ref(1);
 
 const paginatedExpensesDesktop = computed(() => {
     const start = (currentPageDesktop.value - 1) * itemsPerPageDesktop;
-    return searchedExpenses.value.slice(start, start + itemsPerPageDesktop);
+    return sortedExpenses.value.slice(start, start + itemsPerPageDesktop);
 });
 
 const paginatedDirectExpensesDesktop = computed(() => {
     const start = (currentPageDesktop.value - 1) * itemsPerPageDesktop;
-    return searchedDirectExpenses.value.slice(start, start + itemsPerPageDesktop);
+    return sortedDirectExpenses.value.slice(start, start + itemsPerPageDesktop);
 });
 
-const totalPagesDesktop = computed(() => Math.ceil(searchedExpenses.value.length / itemsPerPageDesktop));
+const totalPagesDesktop = computed(() => Math.ceil(sortedExpenses.value.length / itemsPerPageDesktop));
 
 const visiblePagesDesktop = computed(() => {
     const pages = [];

@@ -23,12 +23,16 @@ export class ApiClient {
     this.token = localStorage.getItem('token');
   }
 
-  getRetryConfig(endpoint) {
+  getRetryConfig(endpoint, options = {}) {
+    const isGet = !options.method || options.method === 'GET';
     if (
       endpoint.startsWith('/auth/login') ||
       endpoint.startsWith('/auth/register')
     ) {
       return { attempts: 3, baseDelayMs: 1200, warmup: true };
+    }
+    if (isGet) {
+      return { attempts: 3, baseDelayMs: 600, warmup: false };
     }
     return { attempts: 1, baseDelayMs: 0, warmup: false };
   }
@@ -90,7 +94,8 @@ export class ApiClient {
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
     this.syncTokenFromStorage();
-    const retryConfig = this.getRetryConfig(endpoint);
+    const retryConfig = this.getRetryConfig(endpoint, options);
+    const isGet = !options.method || options.method === 'GET';
     const fetchConfig = {
       headers: this.getHeaders(),
       ...options,
@@ -143,7 +148,7 @@ export class ApiClient {
           const canRetryStatus =
             attempt < retryConfig.attempts - 1 &&
             this.shouldRetryByStatus(response.status) &&
-            this.isCredentialExchangeEndpoint(endpoint);
+            (this.isCredentialExchangeEndpoint(endpoint) || isGet);
 
           if (canRetryStatus) {
             await this.waitBeforeRetry(attempt, retryConfig.baseDelayMs);
@@ -159,7 +164,7 @@ export class ApiClient {
 
         const canRetryNetwork =
           attempt < retryConfig.attempts - 1 &&
-          this.isCredentialExchangeEndpoint(endpoint) &&
+          (this.isCredentialExchangeEndpoint(endpoint) || isGet) &&
           this.isNetworkLikeError(error);
 
         if (canRetryNetwork) {

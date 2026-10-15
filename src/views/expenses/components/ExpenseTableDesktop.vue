@@ -15,26 +15,110 @@
                 class="rounded text-primary-600 focus:ring-primary-500"
               />
             </th>
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
-              Tipo
+            <th
+              @click="$emit('sort', 'type')"
+              class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer select-none transition-colors duration-150 group hover:bg-slate-100/80 dark:hover:bg-gray-600/50"
+              :class="sortField === 'type' ? 'text-primary-600 dark:text-primary-400 font-bold' : 'text-slate-500 dark:text-gray-400'"
+              title="Ordenar por tipo"
+            >
+              <div class="flex items-center gap-1.5">
+                <span>Tipo</span>
+                <span class="inline-flex">
+                  <ArrowUp v-if="sortField === 'type' && sortOrder === 'asc'" class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                  <ArrowDown v-else-if="sortField === 'type' && sortOrder === 'desc'" class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                  <ArrowUpDown v-else class="h-3.5 w-3.5 text-slate-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </span>
+              </div>
             </th>
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
-              Descripción
+            <th
+              @click="$emit('sort', 'description')"
+              class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer select-none transition-colors duration-150 group hover:bg-slate-100/80 dark:hover:bg-gray-600/50"
+              :class="sortField === 'description' ? 'text-primary-600 dark:text-primary-400 font-bold' : 'text-slate-500 dark:text-gray-400'"
+              title="Ordenar por descripción"
+            >
+              <div class="flex items-center gap-1.5">
+                <span>Descripción</span>
+                <span class="inline-flex">
+                  <ArrowUp v-if="sortField === 'description' && sortOrder === 'asc'" class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                  <ArrowDown v-else-if="sortField === 'description' && sortOrder === 'desc'" class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                  <ArrowUpDown v-else class="h-3.5 w-3.5 text-slate-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </span>
+              </div>
             </th>
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
-              Tarjeta
+            <th
+              @click="$emit('sort', 'card')"
+              class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer select-none transition-colors duration-150 group hover:bg-slate-100/80 dark:hover:bg-gray-600/50"
+              :class="sortField === 'card' ? 'text-primary-600 dark:text-primary-400 font-bold' : 'text-slate-500 dark:text-gray-400'"
+              title="Ordenar por tarjeta"
+            >
+              <div class="flex items-center gap-1.5">
+                <span>Tarjeta</span>
+                <span class="inline-flex">
+                  <ArrowUp v-if="sortField === 'card' && sortOrder === 'asc'" class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                  <ArrowDown v-else-if="sortField === 'card' && sortOrder === 'desc'" class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                  <ArrowUpDown v-else class="h-3.5 w-3.5 text-slate-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </span>
+              </div>
             </th>
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
-              Categoría
+            <th
+              @click="$emit('sort', 'category')"
+              class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer select-none transition-colors duration-150 group hover:bg-slate-100/80 dark:hover:bg-gray-600/50"
+              :class="sortField === 'category' ? 'text-primary-600 dark:text-primary-400 font-bold' : 'text-slate-500 dark:text-gray-400'"
+              title="Ordenar por categoría"
+            >
+              <div class="flex items-center gap-1.5">
+                <span>Categoría</span>
+                <span class="inline-flex">
+                  <ArrowUp v-if="sortField === 'category' && sortOrder === 'asc'" class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                  <ArrowDown v-else-if="sortField === 'category' && sortOrder === 'desc'" class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                  <ArrowUpDown v-else class="h-3.5 w-3.5 text-slate-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </span>
+              </div>
             </th>
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
-              Monto
+            <th
+              @click="$emit('sort', 'amount')"
+              class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer select-none transition-colors duration-150 group hover:bg-slate-100/80 dark:hover:bg-gray-600/50"
+              :class="sortField === 'amount' ? 'text-primary-600 dark:text-primary-400 font-bold' : 'text-slate-500 dark:text-gray-400'"
+              title="Ordenar por monto"
+            >
+              <div class="flex items-center gap-1.5">
+                <span>Monto</span>
+                <span class="inline-flex">
+                  <ArrowUp v-if="sortField === 'amount' && sortOrder === 'asc'" class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                  <ArrowDown v-else-if="sortField === 'amount' && sortOrder === 'desc'" class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                  <ArrowUpDown v-else class="h-3.5 w-3.5 text-slate-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </span>
+              </div>
             </th>
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
-              Fecha
+            <th
+              @click="$emit('sort', 'date')"
+              class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer select-none transition-colors duration-150 group hover:bg-slate-100/80 dark:hover:bg-gray-600/50"
+              :class="sortField === 'date' ? 'text-primary-600 dark:text-primary-400 font-bold' : 'text-slate-500 dark:text-gray-400'"
+              title="Ordenar por fecha"
+            >
+              <div class="flex items-center gap-1.5">
+                <span>Fecha</span>
+                <span class="inline-flex">
+                  <ArrowUp v-if="sortField === 'date' && sortOrder === 'asc'" class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                  <ArrowDown v-else-if="sortField === 'date' && sortOrder === 'desc'" class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                  <ArrowUpDown v-else class="h-3.5 w-3.5 text-slate-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </span>
+              </div>
             </th>
-            <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
-              Estado
+            <th
+              @click="$emit('sort', 'status')"
+              class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer select-none transition-colors duration-150 group hover:bg-slate-100/80 dark:hover:bg-gray-600/50"
+              :class="sortField === 'status' ? 'text-primary-600 dark:text-primary-400 font-bold' : 'text-slate-500 dark:text-gray-400'"
+              title="Ordenar por estado"
+            >
+              <div class="flex items-center gap-1.5">
+                <span>Estado</span>
+                <span class="inline-flex">
+                  <ArrowUp v-if="sortField === 'status' && sortOrder === 'asc'" class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                  <ArrowDown v-else-if="sortField === 'status' && sortOrder === 'desc'" class="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                  <ArrowUpDown v-else class="h-3.5 w-3.5 text-slate-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </span>
+              </div>
             </th>
             <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
               Acciones
@@ -298,7 +382,7 @@
 </template>
 
 <script setup>
-import { CreditCard, Edit, Trash2, CheckCircle2 } from 'lucide-vue-next';
+import { CreditCard, Edit, Trash2, CheckCircle2, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-vue-next';
 
 defineProps({
   hasVisibleExpenseRows: { type: Boolean, default: false },
@@ -312,6 +396,8 @@ defineProps({
   totalPagesDesktop: { type: Number, default: 1 },
   currentPageDesktop: { type: Number, default: 1 },
   visiblePagesDesktop: { type: Array, default: () => [] },
+  sortField: { type: String, default: 'date' },
+  sortOrder: { type: String, default: 'desc' },
   getExpenseRowKey: { type: Function, required: true },
   getCategoryIcon: { type: Function, required: true },
   formatCurrency: { type: Function, required: true },
@@ -331,6 +417,7 @@ defineEmits([
   'deleteExpense',
   'previousPageDesktop',
   'nextPageDesktop',
-  'goToPageDesktop'
+  'goToPageDesktop',
+  'sort'
 ]);
 </script>

@@ -119,22 +119,6 @@ export async function getExpenseInstallmentsSummary(expenseId) {
 
 export async function getUpcomingInstallments(userId, limit = 100) {
   try {
-    const { data: expenses, error: expensesError } = await supabase
-      .from('expenses')
-      .select('id')
-      .eq('user_id', userId);
-
-    if (expensesError) throw expensesError;
-
-    if (!expenses || expenses.length === 0) {
-      return {
-        success: true,
-        data: []
-      };
-    }
-
-    const expenseIds = expenses.map(expense => expense.id);
-
     const { data, error } = await supabase
       .from('installments')
       .select(`
@@ -149,7 +133,7 @@ export async function getUpcomingInstallments(userId, limit = 100) {
         ),
         payment_status(code, label)
       `)
-      .in('expense_id', expenseIds)
+      .eq('expenses.user_id', userId)
       .in('payment_status_id', [1, 2])
       .order('due_date', { ascending: true })
       .limit(limit);

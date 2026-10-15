@@ -132,14 +132,30 @@ const showAllCards = ref(false)
 const showSavingsHelp = ref(false)
 const savingsHelpRef = ref(null)
 const isLoading = ref(true)
-const previousMonthCarry = ref(0)
-const monthlyActivitySummary = ref(null)
-
-const currentChartIndex = ref(0)
-const touchStartX = ref(0)
 
 const currentMonth = new Date().getMonth() + 1
 const currentYear = new Date().getFullYear()
+
+const BALANCE_SUMMARY_CACHE_KEY = 'misgastos_activity_summary_cache'
+
+function getInitialActivitySummary() {
+  try {
+    const raw = localStorage.getItem(BALANCE_SUMMARY_CACHE_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (parsed?.period?.month === currentMonth && parsed?.period?.year === currentYear && parsed.summary) {
+        return parsed.summary
+      }
+    }
+  } catch {}
+  return null
+}
+
+const monthlyActivitySummary = ref(getInitialActivitySummary())
+const previousMonthCarry = ref(monthlyActivitySummary.value?.opening_balance || 0)
+
+const currentChartIndex = ref(0)
+const touchStartX = ref(0)
 
 const previousPeriodIncome = ref(0)
 const previousPeriodExpenses = ref(0)
@@ -324,17 +340,16 @@ const savingsNetForBalance = computed(() =>
 )
 
 const balanceView = computed(() => {
-  if (!isAnnual.value && monthlyActivitySummary.value) {
+  if (isAnnual.value) {
+    const net = totalIncomeView.value - totalExpensesView.value
+    return net - savingsNetForBalance.value
+  }
+
+  if (monthlyActivitySummary.value) {
     return monthlyActivitySummary.value.cash_balance ?? monthlyActivitySummary.value.net ?? 0
   }
 
-  const monthlyExpensesForBalance =
-    !isAnnual.value && expensesStore.monthlyTotals?.total_balance_expenses != null
-      ? expensesStore.monthlyTotals.total_balance_expenses
-      : totalExpensesView.value
-  const net = totalIncomeView.value - monthlyExpensesForBalance
-  const base = isAnnual.value ? net : previousMonthCarry.value + net
-  return base - savingsNetForBalance.value
+  return 0
 })
 
 const savingsPercentage = computed(() => {
@@ -349,11 +364,21 @@ const loadPreviousMonthCarry = async () => {
   try {
     const activityRes = await activityApi.getBalanceActivity({ month: currentMonth, year: currentYear })
     const summary = activityRes?.data?.summary || null
-    monthlyActivitySummary.value = summary
-    previousMonthCarry.value = summary?.opening_balance || 0
-  } catch {
-    monthlyActivitySummary.value = null
-    previousMonthCarry.value = 0
+    if (summary) {
+      monthlyActivitySummary.value = summary
+      previousMonthCarry.value = summary.opening_balance || 0
+      try {
+        localStorage.setItem(BALANCE_SUMMARY_CACHE_KEY, JSON.stringify({
+          period: { month: currentMonth, year: currentYear },
+          summary
+        }))
+      } catch {}
+    }
+  } catch (err) {
+    console.error('Error cargando actividad de saldo:', err)
+    if (!monthlyActivitySummary.value) {
+      previousMonthCarry.value = 0
+    }
   }
 }
 
@@ -885,13 +910,23 @@ const closeSavingsHelpOnClickOutside = (e) => {
   }
 }
 
+const handleDataUpdated = () => {
+  if (!_mounted) return
+  loadPreviousMonthCarry()
+  loadPeriodComparison()
+}
+
 onMounted(() => {
   document.addEventListener('click', closeSavingsHelpOnClickOutside)
+  window.addEventListener('expenses-updated', handleDataUpdated)
+  window.addEventListener('incomes-updated', handleDataUpdated)
 })
 
 onUnmounted(() => {
   _mounted = false
   document.removeEventListener('click', closeSavingsHelpOnClickOutside)
+  window.removeEventListener('expenses-updated', handleDataUpdated)
+  window.removeEventListener('incomes-updated', handleDataUpdated)
 })
 
 watch(isAnnual, async (annual) => {
