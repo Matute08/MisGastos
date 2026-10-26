@@ -92,6 +92,8 @@ function legacyRowToCreateBody(r) {
 
 export const useSavingsStore = defineStore('savings', () => {
   const records = ref([])
+  const jars = ref([])
+  const isLoadingJars = ref(false)
   const lastLoadError = ref(null)
   const lastFetchTime = ref(0)
   const liveExchangeRates = ref(null)
@@ -100,17 +102,27 @@ export const useSavingsStore = defineStore('savings', () => {
     [...records.value].sort((a, b) => dateKey(b.date) - dateKey(a.date))
   )
 
-  const totalSavedArs = computed(() =>
-    records.value
+  const totalSavedArs = computed(() => {
+    if (jars.value.length > 0) {
+      return jars.value
+        .filter((j) => (j.currency || 'ARS') === 'ARS')
+        .reduce((sum, j) => sum + toNumber(j.balance), 0)
+    }
+    return records.value
       .filter((r) => (r.status || 'ahorrado') === 'ahorrado')
       .reduce((sum, r) => sum + toNumber(r.amount_ars), 0)
-  )
+  })
 
-  const totalSavedUsd = computed(() =>
-    records.value
+  const totalSavedUsd = computed(() => {
+    if (jars.value.length > 0) {
+      return jars.value
+        .filter((j) => j.currency === 'USD')
+        .reduce((sum, j) => sum + toNumber(j.balance), 0)
+    }
+    return records.value
       .filter((r) => (r.status || 'ahorrado') === 'ahorrado' && r.type === 'dolares')
       .reduce((sum, r) => sum + toNumber(r.dollars), 0)
-  )
+  })
 
   async function fetchLiveRates(force = false) {
     try {
@@ -124,6 +136,7 @@ export const useSavingsStore = defineStore('savings', () => {
 
   function reset() {
     records.value = []
+    jars.value = []
     lastLoadError.value = null
     lastFetchTime.value = 0
   }
@@ -169,11 +182,17 @@ export const useSavingsStore = defineStore('savings', () => {
       return { success: true, source: 'local' }
     }
     try {
-      const res = await savingsApi.list()
+      const [res, jarsRes] = await Promise.all([
+        savingsApi.list(),
+        savingsApi.listJars().catch(() => null)
+      ])
       if (!res?.success) {
         throw new Error(res?.error || 'Error al cargar ahorros')
       }
       records.value = (res.data || []).map(normalizeRecord)
+      if (jarsRes?.success && Array.isArray(jarsRes.data)) {
+        jars.value = jarsRes.data
+      }
       lastFetchTime.value = now
       try {
         await migrateLocalToServerIfNeeded()
@@ -551,14 +570,87 @@ export const useSavingsStore = defineStore('savings', () => {
     return saved - withdrawn
   }
 
+  // --- Frascos (Jars) Actions ---
+  async function loadJars() {
+    if (!hasAuthToken()) return []
+    isLoadingJars.value = true
+    try {
+      const res = await savingsApi.listJars()
+      if (res?.success && Array.isArray(res.data)) {
+        jars.value = res.data
+        return res.data
+      }
+      return []
+    } catch (e) {
+      console.error('Error cargando frascos:', e)
+      return []
+    } finally {
+      isLoadingJars.value = false
+    }
+  }
+
+  async function createJar(payload) {
+    const res = await savingsApi.createJar(payload)
+    if (!res?.success) throw new Error(res?.error || 'No se pudo crear el frasco')
+    await load(true)
+    window.dispatchEvent(new CustomEvent('savings-updated'))
+    return res.data
+  }
+
+  async function updateJar(id, payload) {
+    const res = await savingsApi.updateJar(id, payload)
+    if (!res?.success) throw new Error(res?.error || 'No se pudo actualizar el frasco')
+    await loadJars()
+    return res.data
+  }
+
+  async function deleteJar(id) {
+    const res = await savingsApi.deleteJar(id)
+    if (!res?.success) throw new Error(res?.error || 'No se pudo eliminar el frasco')
+    await load(true)
+    window.dispatchEvent(new CustomEvent('savings-updated'))
+    return res
+  }
+
+  async function depositToJar(jarId, payload) {
+    const res = await savingsApi.depositToJar(jarId, payload)
+    if (!res?.success) throw new Error(res?.error || 'No se pudo ingresar dinero')
+    await load(true)
+    window.dispatchEvent(new CustomEvent('savings-updated'))
+    return res.data
+  }
+
+  async function withdrawFromJar(jarId, payload) {
+    const res = await savingsApi.withdrawFromJar(jarId, payload)
+    if (!res?.success) throw new Error(res?.error || 'No se pudo retirar dinero')
+    await load(true)
+    window.dispatchEvent(new CustomEvent('savings-updated'))
+    return res.data
+  }
+
+  async function getJarMovements(jarId) {
+    const res = await savingsApi.getJarMovements(jarId)
+    if (!res?.success) throw new Error(res?.error || 'No se pudieron cargar los movimientos')
+    return res.data || []
+  }
+
   return {
     records,
+    jars,
+    isLoadingJars,
     sortedRecords,
     totalSavedArs,
     totalSavedUsd,
     lastLoadError,
     reset,
     load,
+    loadJars,
+    createJar,
+    updateJar,
+    deleteJar,
+    depositToJar,
+    withdrawFromJar,
+    getJarMovements,
     addPesoSaving,
     addDollarSaving,
     registerUsage,

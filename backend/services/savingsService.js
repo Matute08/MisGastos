@@ -37,6 +37,45 @@ function validatePayload(body, { isUpdate = false } = {}) {
   return { type, direction, status };
 }
 
+export function extractJarId(note) {
+  if (!note) return null;
+  const match = String(note).match(/\[frasco:([^\]]+)\]/);
+  return match ? match[1] : null;
+}
+
+export function cleanNote(note) {
+  if (!note) return '';
+  return String(note).replace(/\[frasco:[^\]]+\]\s*/, '').trim();
+}
+
+function recordMatchesJar(record, jar) {
+  const jarIdInNote = extractJarId(record.note);
+  if (jarIdInNote) {
+    return jarIdInNote === jar.id;
+  }
+  if (jar.name && record.note) {
+    const normNote = record.note.toLowerCase().trim();
+    const normName = jar.name.toLowerCase().trim();
+    return normNote.includes(normName);
+  }
+  return false;
+}
+
+async function getUserJarsMetadata(userId) {
+  const { data, error } = await supabase.auth.admin.getUserById(userId);
+  if (error || !data?.user) return [];
+  const meta = data.user.user_metadata || {};
+  return Array.isArray(meta.savings_jars) ? meta.savings_jars : [];
+}
+
+async function saveUserJarsMetadata(userId, jars) {
+  const { data, error } = await supabase.auth.admin.getUserById(userId);
+  if (error || !data?.user) throw new Error('Usuario no encontrado');
+  const meta = { ...(data.user.user_metadata || {}), savings_jars: jars };
+  const { error: updateError } = await supabase.auth.admin.updateUserById(userId, { user_metadata: meta });
+  if (updateError) throw updateError;
+}
+
 export class SavingsService {
   static async list(userId) {
     try {
@@ -227,4 +266,290 @@ export class SavingsService {
       throw error;
     }
   }
+
+  static async listJars(userId) {
+    try {
+      let jars = await getUserJarsMetadata(userId);
+      const { data: recordsData, error: recordsError } = await supabase
+        .from('savings_records')
+        .select('*')
+        .eq('user_id', userId)
+        .order('entry_date', { ascending: false });
+
+      if (recordsError) throw recordsError;
+      const records = (recordsData || []).map(mapRow);
+
+      // Auto-initialize default jars if none exist and user has active savings
+      if (jars.length === 0) {
+        const activeSavings = records.filter(r => (r.status || 'ahorrado') === 'ahorrado' && (r.direction || 'in') === 'in');
+        const defaultJars = [];
+        const seenNames = new Set();
+
+        for (const item of activeSavings) {
+          const rawName = cleanNote(item.note) || (item.type === 'dolares' ? 'Ahorro USD' : 'Ahorro General');
+          const trimmedName = rawName.trim();
+          const key = trimmedName.toLowerCase();
+          if (!seenNames.has(key)) {
+            seenNames.add(key);
+            defaultJars.push({
+              id: 'jar-' + key.replace(/[^a-z0-9]/gi, '-').toLowerCase() + '-' + Math.random().toString(36).slice(2, 6),
+              name: trimmedName,
+              currency: item.type === 'dolares' ? 'USD' : 'ARS',
+              color: trimmedName.toLowerCase().includes('iphone') ? '#6366f1' : '#10b981',
+              icon: trimmedName.toLowerCase().includes('iphone') ? 'Smartphone' : 'PiggyBank',
+              target_amount: null,
+              created_at: item.date ? new Date(item.date).toISOString() : new Date().toISOString()
+            });
+          }
+        }
+
+        if (defaultJars.length > 0) {
+          jars = defaultJars;
+          try {
+            await saveUserJarsMetadata(userId, jars);
+          } catch (e) {
+            logger.warn('Error saving auto-initialized jars:', e.message);
+          }
+        }
+      }
+
+      // Calculate real-time balance for each jar
+      const enrichedJars = jars.map(jar => {
+        const matching = records.filter(r => recordMatchesJar(r, jar));
+        const isUsd = jar.currency === 'USD';
+
+        const deposits = matching
+          .filter(r => (r.direction === 'in' || !r.direction) && r.status === 'ahorrado')
+          .reduce((sum, r) => sum + (isUsd ? (Number(r.dollars) || 0) : Number(r.amount_ars)), 0);
+
+        const withdrawals = matching
+          .filter(r => r.direction === 'out' && r.status === 'retirado')
+          .reduce((sum, r) => sum + (isUsd ? (Number(r.dollars) || 0) : Number(r.amount_ars)), 0);
+
+        const balance = Math.max(0, deposits - withdrawals);
+        const target = Number(jar.target_amount) || null;
+        const progress = target && target > 0 ? Math.min(100, Math.round((balance / target) * 100)) : null;
+
+        return {
+          ...jar,
+          balance,
+          deposits_total: deposits,
+          withdrawals_total: withdrawals,
+          progress,
+          movements_count: matching.length,
+          last_movement_date: matching[0]?.date || jar.created_at
+        };
+      });
+
+      return { success: true, data: enrichedJars };
+    } catch (error) {
+      logger.error('Error listJars:', error);
+      throw error;
+    }
+  }
+
+  static async createJar(userId, { name, currency = 'ARS', target_amount = null, color = '#6366f1', icon = 'PiggyBank', initial_deposit = 0, entry_date }) {
+    if (!name || !name.trim()) {
+      throw Object.assign(new Error('El nombre del frasco es obligatorio'), { statusCode: 400 });
+    }
+
+    const jars = await getUserJarsMetadata(userId);
+    const id = 'jar-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    const newJar = {
+      id,
+      name: name.trim(),
+      currency: currency === 'USD' ? 'USD' : 'ARS',
+      target_amount: target_amount && Number(target_amount) > 0 ? Number(target_amount) : null,
+      color: color || '#6366f1',
+      icon: icon || 'PiggyBank',
+      created_at: new Date().toISOString()
+    };
+
+    jars.push(newJar);
+    await saveUserJarsMetadata(userId, jars);
+
+    const initialAmt = Number(initial_deposit);
+    if (initialAmt > 0) {
+      const d = entry_date || new Date().toISOString().slice(0, 10);
+      const isUsd = newJar.currency === 'USD';
+      await SavingsService.create(userId, {
+        type: isUsd ? 'dolares' : 'pesos',
+        date: d,
+        amount_ars: isUsd ? (initialAmt * 1000) : initialAmt,
+        dollars: isUsd ? initialAmt : undefined,
+        exchange_rate: isUsd ? 1000 : undefined,
+        direction: 'in',
+        status: 'ahorrado',
+        note: `[frasco:${id}] Depósito inicial`
+      });
+    }
+
+    return {
+      success: true,
+      data: {
+        ...newJar,
+        balance: initialAmt > 0 ? initialAmt : 0,
+        deposits_total: initialAmt > 0 ? initialAmt : 0,
+        withdrawals_total: 0,
+        progress: newJar.target_amount ? Math.min(100, Math.round(((initialAmt || 0) / newJar.target_amount) * 100)) : null,
+        movements_count: initialAmt > 0 ? 1 : 0
+      }
+    };
+  }
+
+  static async updateJar(userId, jarId, updates) {
+    const jars = await getUserJarsMetadata(userId);
+    const idx = jars.findIndex(j => j.id === jarId);
+    if (idx === -1) {
+      throw Object.assign(new Error('Frasco no encontrado'), { statusCode: 404 });
+    }
+
+    if (updates.name !== undefined) {
+      if (!updates.name.trim()) throw Object.assign(new Error('El nombre no puede estar vacío'), { statusCode: 400 });
+      jars[idx].name = updates.name.trim();
+    }
+    if (updates.target_amount !== undefined) {
+      jars[idx].target_amount = updates.target_amount && Number(updates.target_amount) > 0 ? Number(updates.target_amount) : null;
+    }
+    if (updates.color !== undefined) jars[idx].color = updates.color;
+    if (updates.icon !== undefined) jars[idx].icon = updates.icon;
+
+    await saveUserJarsMetadata(userId, jars);
+    return { success: true, data: jars[idx] };
+  }
+
+  static async deleteJar(userId, jarId) {
+    const jars = await getUserJarsMetadata(userId);
+    const jar = jars.find(j => j.id === jarId);
+    if (!jar) {
+      throw Object.assign(new Error('Frasco no encontrado'), { statusCode: 404 });
+    }
+
+    const { data: recordsData } = await supabase
+      .from('savings_records')
+      .select('*')
+      .eq('user_id', userId);
+
+    const records = (recordsData || []).map(mapRow);
+    const matching = records.filter(r => recordMatchesJar(r, jar));
+    const isUsd = jar.currency === 'USD';
+    const deposits = matching
+      .filter(r => (r.direction === 'in' || !r.direction) && r.status === 'ahorrado')
+      .reduce((s, r) => s + (isUsd ? (Number(r.dollars) || 0) : Number(r.amount_ars)), 0);
+    const withdrawals = matching
+      .filter(r => r.direction === 'out' && r.status === 'retirado')
+      .reduce((s, r) => s + (isUsd ? (Number(r.dollars) || 0) : Number(r.amount_ars)), 0);
+    const balance = deposits - withdrawals;
+
+    if (balance > 0) {
+      throw Object.assign(new Error(`No podés eliminar este frasco porque tiene un saldo de ${isUsd ? 'USD ' : '$ '} ${balance.toLocaleString('es-AR')}. Retirá el dinero antes de eliminarlo.`), { statusCode: 400 });
+    }
+
+    const filtered = jars.filter(j => j.id !== jarId);
+    await saveUserJarsMetadata(userId, filtered);
+    return { success: true };
+  }
+
+  static async depositToJar(userId, jarId, { amount, date, note, dollars, exchange_rate }) {
+    const jars = await getUserJarsMetadata(userId);
+    const jar = jars.find(j => j.id === jarId);
+    if (!jar) throw Object.assign(new Error('Frasco no encontrado'), { statusCode: 404 });
+
+    const isUsd = jar.currency === 'USD';
+    const entryDate = date || new Date().toISOString().slice(0, 10);
+    const customNote = note ? note.trim() : `Ingreso a ${jar.name}`;
+
+    const record = await SavingsService.create(userId, {
+      type: isUsd ? 'dolares' : 'pesos',
+      date: entryDate,
+      amount_ars: isUsd ? (Number(dollars) * Number(exchange_rate)) : Number(amount),
+      dollars: isUsd ? Number(dollars) : undefined,
+      exchange_rate: isUsd ? Number(exchange_rate) : undefined,
+      direction: 'in',
+      status: 'ahorrado',
+      note: `[frasco:${jarId}] ${customNote}`
+    });
+
+    return { success: true, data: record.data };
+  }
+
+  static async withdrawFromJar(userId, jarId, { amount, date, note, dollars, exchange_rate }) {
+    const jars = await getUserJarsMetadata(userId);
+    const jar = jars.find(j => j.id === jarId);
+    if (!jar) throw Object.assign(new Error('Frasco no encontrado'), { statusCode: 404 });
+
+    const isUsd = jar.currency === 'USD';
+    const withdrawAmt = isUsd ? Number(dollars) : Number(amount);
+    if (!Number.isFinite(withdrawAmt) || withdrawAmt <= 0) {
+      throw Object.assign(new Error('El monto a retirar debe ser mayor a 0'), { statusCode: 400 });
+    }
+
+    // Check balance
+    const { data: recordsData } = await supabase
+      .from('savings_records')
+      .select('*')
+      .eq('user_id', userId);
+
+    const records = (recordsData || []).map(mapRow);
+    const matching = records.filter(r => recordMatchesJar(r, jar));
+    const deposits = matching
+      .filter(r => (r.direction === 'in' || !r.direction) && r.status === 'ahorrado')
+      .reduce((s, r) => s + (isUsd ? (Number(r.dollars) || 0) : Number(r.amount_ars)), 0);
+    const withdrawals = matching
+      .filter(r => r.direction === 'out' && r.status === 'retirado')
+      .reduce((s, r) => s + (isUsd ? (Number(r.dollars) || 0) : Number(r.amount_ars)), 0);
+    const currentBalance = deposits - withdrawals;
+
+    if (withdrawAmt > currentBalance + 0.01) {
+      throw Object.assign(new Error(`El monto a retirar (${withdrawAmt}) supera el saldo disponible en este frasco (${currentBalance})`), { statusCode: 400 });
+    }
+
+    const entryDate = date || new Date().toISOString().slice(0, 10);
+    const customNote = note ? note.trim() : `Retiro de ${jar.name}`;
+
+    const record = await SavingsService.create(userId, {
+      type: isUsd ? 'dolares' : 'pesos',
+      date: entryDate,
+      amount_ars: isUsd ? (withdrawAmt * Number(exchange_rate || 1)) : withdrawAmt,
+      dollars: isUsd ? withdrawAmt : undefined,
+      exchange_rate: isUsd ? Number(exchange_rate || 1) : undefined,
+      direction: 'out',
+      status: 'retirado',
+      note: `[frasco:${jarId}] ${customNote}`
+    });
+
+    return { success: true, data: record.data };
+  }
+
+  static async getJarMovements(userId, jarId) {
+    const jars = await getUserJarsMetadata(userId);
+    const jar = jars.find(j => j.id === jarId);
+    if (!jar) throw Object.assign(new Error('Frasco no encontrado'), { statusCode: 404 });
+
+    const { data: recordsData, error } = await supabase
+      .from('savings_records')
+      .select('*')
+      .eq('user_id', userId)
+      .order('entry_date', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    const records = (recordsData || []).map(mapRow);
+    const matching = records.filter(r => recordMatchesJar(r, jar)).map(r => ({
+      ...r,
+      clean_note: cleanNote(r.note),
+      jar_id: jar.id,
+      jar_name: jar.name
+    }));
+
+    return { success: true, data: matching };
+  }
 }
+
+export const listJars = SavingsService.listJars.bind(SavingsService);
+export const createJar = SavingsService.createJar.bind(SavingsService);
+export const updateJar = SavingsService.updateJar.bind(SavingsService);
+export const deleteJar = SavingsService.deleteJar.bind(SavingsService);
+export const depositToJar = SavingsService.depositToJar.bind(SavingsService);
+export const withdrawFromJar = SavingsService.withdrawFromJar.bind(SavingsService);
+export const getJarMovements = SavingsService.getJarMovements.bind(SavingsService);

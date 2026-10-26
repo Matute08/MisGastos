@@ -432,15 +432,25 @@ export class ActivityService {
       const cashBalance = openingBalance + incomeTotal + savingWithdrawalTotal - expenseTotal;
       const { data: activeSavings, error: activeSavingsError } = await supabase
         .from('savings_records')
-        .select('amount_ars')
+        .select('amount_ars, direction, status, note')
         .eq('user_id', userId)
-        .eq('status', 'ahorrado')
         .lt('entry_date', endDate);
 
       if (activeSavingsError) throw activeSavingsError;
 
       const savingsBalance = (activeSavings || [])
-        .reduce((sum, saving) => sum + toNumber(saving.amount_ars), 0);
+        .reduce((sum, saving) => {
+          const isJar = saving.note && saving.note.includes('[frasco:');
+          if (isJar) {
+            if (saving.direction === 'in') return sum + toNumber(saving.amount_ars);
+            if (saving.direction === 'out' && saving.status === 'retirado') return sum - toNumber(saving.amount_ars);
+            return sum;
+          }
+          if ((saving.status || 'ahorrado') === 'ahorrado' && (saving.direction || 'in') === 'in') {
+            return sum + toNumber(saving.amount_ars);
+          }
+          return sum;
+        }, 0);
 
       return {
         success: true,
